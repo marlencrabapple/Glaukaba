@@ -1,9 +1,17 @@
 html, body {
-         background:#FFFFEE;
-         color:#800000;
+		 font-family:arial,helvetica,sans-serif;
+		 font-size:10pt;
+		 background:#FFE url(fade.png) top center repeat-x;
+		 color:#800000;
+		 padding-left:5px;
+		 padding-right:5px;
+		 margin-right:0;
+		 margin-left:0;
+		 margin-top:0px;
 }
 a {
         color:#0000EE;
+		text-decoration: none;
 }
 a:hover {
         color:#DD0000;
@@ -36,7 +44,9 @@ a:hover {
         background:#EEAA88;
         color:#800000;
         font-weight:800;
+		margin:0;margin-right:2px;padding:1px 4px;border:1px solid #aaa;outline:none;font-family:arial,helvetica,sans-serif;font-size:10pt;
 }
+
 .footer {
         text-align:center;
         font-size:12px;

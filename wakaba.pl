@@ -524,6 +524,10 @@ sub post_stuff($$$$$$$$$$$$$$)
 	$email=clean_string(decode_string($email,CHARSET));
 	$subject=clean_string(decode_string($subject,CHARSET));
 
+	my $noko = 0;
+	if($email=~/noko/i) { $email=''; $noko=1; }
+
+
 	# fix up the email/link
 	$email="mailto:$email" if $email and $email!~/^$protocol_re:/;
 
@@ -574,6 +578,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 	build_cache();
 
 	# update the individual thread cache
+	my $num;
 	if($parent) { build_thread_cache($parent); }
 	else # must find out what our new thread number is
 	{
@@ -587,7 +592,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 			$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE timestamp=? AND comment=?;") or make_error(S_SQLFAIL);
 			$sth->execute($time,$comment) or make_error(S_SQLFAIL);
 		}
-		my $num=($sth->fetchrow_array())[0];
+		$num=($sth->fetchrow_array())[0];
 
 		if($num)
 		{
@@ -600,7 +605,8 @@ sub post_stuff($$$$$$$$$$$$$$)
 	-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
 
 	# forward back to the main page
-	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
+	make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.ax.lt/glau/",ALTERNATE_REDIRECT);
+
 }
 
 sub is_whitelisted($)
