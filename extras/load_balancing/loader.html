@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<head>
+<title>Wakaba Loader</title>
+</head>
+
+
+<body>
+<div class="postarea">
+ <form id="postform" action="loader.pl" method="post" enctype="multipart/form-data"> 
+ <input type="hidden" name="task" value="post" />
+ <table>
+  <tbody>
+   <tr>
+    <td class="postblock">MD5</td>
+    <td><input type="text" name="md5" size="35" /><input type="submit" value="Submit" /></td>
+   </tr>
+   <tr>
+    <td class="postblock">File</td>
+    <td><input type="file" name="file" size="35" /></td>
+   </tr>
+   <tr>
+    <td class="postblock">Password</td>
+    <td><input type="text" name="pass" size="8" /></td>
+   </tr>
+  </tbody>
+ </table>
+ </form>
+</div>
+
+
+<div class="postarea">
+ <form id="postform" action="loader.pl" method="post" enctype="multipart/form-data">
+ <input type="hidden" name="task" value="delete" />
+ <table>
+  <tbody>
+   <tr>
+    <td class="postblock">File</td>
+    <td><input type="text" name="file" size="35" /><input type="submit" value="Delete" /></td>
+   </tr>
+   <tr>
+    <td class="postblock">Password</td>
+    <td><input type="text" name="pass" size="8" /></td>
+   </tr>
+  </tbody>
+ </table>
+ </form>
+</div>
+</body>
+
+</html>
