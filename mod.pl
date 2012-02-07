@@ -148,26 +148,6 @@ elsif($task eq "removeban")
 	my $num=$query->param("num");
 	remove_admin_entry($admin,$num);
 }
-elsif($task eq "proxy")
-{
-	my $admin=$query->param("admin");
-	make_admin_proxy_panel($admin);
-}
-elsif($task eq "addproxy")
-{
-	my $admin=$query->param("admin");
-	my $type=$query->param("type");
-	my $ip=$query->param("ip");
-	my $timestamp=$query->param("timestamp");
-	my $date=make_date(time(),DATE_STYLE);
-	add_proxy_entry($admin,$type,$ip,$timestamp,$date);
-}
-elsif($task eq "removeproxy")
-{
-	my $admin=$query->param("admin");
-	my $num=$query->param("num");
-	remove_proxy_entry($admin,$num);
-}
 elsif($task eq "spam")
 {
 	my ($admin);
@@ -180,18 +160,6 @@ elsif($task eq "updatespam")
 	my $spam=$query->param("spam");
 	update_spam_file($admin,$spam);
 }
-elsif($task eq "sqldump")
-{
-	my $admin=$query->param("admin");
-	make_sql_dump($admin);
-}
-elsif($task eq "sql")
-{
-	my $admin=$query->param("admin");
-	my $nuke=$query->param("nuke");
-	my $sql=$query->param("sql");
-	make_sql_interface($admin,$nuke,$sql);
-}
 elsif($task eq "mpost")
 {
 	my $admin=$query->param("admin");
@@ -202,11 +170,7 @@ elsif($task eq "rebuild")
 	my $admin=$query->param("admin");
 	do_rebuild_cache($admin);
 }
-elsif($task eq "nuke")
-{
-	my $admin=$query->param("admin");
-	do_nuke_database($admin);
-}
+
 
 $dbh->disconnect();
 
@@ -420,7 +384,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 
 	if($admin) # check admin password - allow both encrypted and non-encrypted
 	{
-		check_password($admin,ADMIN_PASS);
+		check_password($admin,MOD_PASS);
 	}
 	else
 	{
@@ -524,17 +488,9 @@ sub post_stuff($$$$$$$$$$$$$$)
 	$email=clean_string(decode_string($email,CHARSET));
 	$subject=clean_string(decode_string($subject,CHARSET));
 
-	# noko and nokosage
 	my $noko = 0;
-	my $nokosage = 0;
-	
-	if($email=~/noko/i){
-		if($email=~/nokosage/i){
-			$nokosage=1;
-		}
-		$noko=1;
-		$email='';
-	}
+	if($email=~/noko/i) { $email=''; $noko=1; }
+
 
 	# fix up the email/link
 	$email="mailto:$email" if $email and $email!~/^$protocol_re:/;
@@ -565,8 +521,8 @@ sub post_stuff($$$$$$$$$$$$$$)
 	
 	if ($admin)
 	{
-		$name = "<FONT COLOR='RED'>".$name."</FONT>";
-		$trip = "<FONT COLOR='RED'>".$trip."<b style='font-weight: 800'> ## Admin</b></FONT>";
+		$name = "<FONT COLOR='PURPLE'>".$name."</FONT>";
+		$trip = "<FONT COLOR='PURPLE'>".$trip."<b> ## Moderator</b></FONT>";
 	}
 	
 	# finally, write to the database
@@ -578,7 +534,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 	if($parent) # bumping
 	{
 		# check for sage, or too many replies
-		unless($email=~/sage/i or sage_count($parent_res)>MAX_RES or $nokosage==1)
+		unless($email=~/sage/i or sage_count($parent_res)>MAX_RES)
 		{
 			$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET lasthit=$time WHERE num=? OR parent=?;") or make_error(S_SQLFAIL);
 			$sth->execute($parent,$parent) or make_error(S_SQLFAIL);
@@ -593,7 +549,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 
 	# update the individual thread cache
 	my $num;
-	if($parent && !$noko) { build_thread_cache($parent); }
+	if($parent) { build_thread_cache($parent); }
 	else # must find out what our new thread number is
 	{
 		if($filename)
@@ -610,7 +566,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 
 		if($num)
 		{
-			build_thread_cache($parent || $num);
+			build_thread_cache($num);
 		}
 	}
 
@@ -757,7 +713,7 @@ sub add_proxy_entry($$$$$)
 	my ($admin,$type,$ip,$timestamp,$date)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	# Verifies IP range is sane. The price for a human-readable db...
 	unless ($ip =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255 && $4 <= 255) {
@@ -809,7 +765,7 @@ sub remove_proxy_entry($$)
 	my ($admin,$num)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_PROXY_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -830,7 +786,7 @@ sub format_comment($)
 
 		$line=~s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
+			if($res) { '<a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')">&gt;&gt;'.$1.'</a>' }
 			else { "&gt;&gt;$1"; }
 		!ge;
 
@@ -845,14 +801,6 @@ sub format_comment($)
 
 	# restore >>1 references hidden in code blocks
 	$comment=~s/&gtgt;/&gt;&gt;/g;
-	
-	# new spoiler code (can't put it in 'do_wakabamark' because of 'do_spans' messing with the order of tags
-	if($comment=~/.*\[spoiler\].*/){
-		$comment=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
-		$comment=~s/\[\/spoiler\]*/\<\/span\>/g;
-		$comment=~s/\<span class\=\'spoiler\'\>\<br \/\>/\<span class\=\'spoiler\'\>/g;
-		$comment=~s/\<\/span\>\<br \/\>/\<\/span\>/g;
-	}
 
 	return $comment;
 }
@@ -1134,7 +1082,7 @@ sub delete_stuff($$$$@)
 	my ($password,$fileonly,$archive,$admin,@posts)=@_;
 	my ($post);
 
-	check_password($admin,ADMIN_PASS) if($admin);
+	check_password($admin,MOD_PASS) if($admin);
 	make_error(S_BADDELPASS) unless($password or $admin); # refuse empty password immediately
 
 	# no password means delete always
@@ -1273,7 +1221,7 @@ sub make_admin_post_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@posts,$size,$rowtype);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1300,7 +1248,7 @@ sub make_admin_ban_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@bans,$prevtype);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' ORDER BY type ASC,num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1321,7 +1269,7 @@ sub make_admin_proxy_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@scanned,$prevtype);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	proxy_clean();
 
@@ -1345,7 +1293,7 @@ sub make_admin_spam_panel($)
 	my @spam_files=SPAM_FILES;
 	my @spam=read_array($spam_files[0]);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	make_http_header();
 	print encode_string(SPAM_PANEL_TEMPLATE->(admin=>$admin,
@@ -1358,7 +1306,7 @@ sub make_sql_dump($)
 	my ($admin)=@_;
 	my ($sth,$row,@database);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE.";") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1379,7 +1327,7 @@ sub make_sql_interface($$$)
 	my ($admin,$nuke,$sql)=@_;
 	my ($sth,$row,@results);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	if($sql)
 	{
@@ -1411,7 +1359,7 @@ sub make_admin_post($)
 {
 	my ($admin)=@_;
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	make_http_header();
 	print encode_string(ADMIN_POST_TEMPLATE->(admin=>$admin));
@@ -1426,7 +1374,7 @@ sub do_login($$$$)
 	{
 		$crypt=crypt_password($password);
 	}
-	elsif($admincookie eq crypt_password(ADMIN_PASS))
+	elsif($admincookie eq crypt_password(MOD_PASS))
 	{
 		$crypt=$admincookie;
 		$nexttask="mpanel";
@@ -1455,7 +1403,7 @@ sub do_rebuild_cache($)
 {
 	my ($admin)=@_;
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	unlink glob RES_DIR.'*';
 
@@ -1471,7 +1419,7 @@ sub add_admin_entry($$$$$$)
 	my ($admin,$type,$comment,$ival1,$ival2,$sval1)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$comment=clean_string(decode_string($comment,CHARSET));
 
@@ -1486,7 +1434,7 @@ sub remove_admin_entry($$)
 	my ($admin,$num)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_ADMIN_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -1499,7 +1447,7 @@ sub delete_all($$$)
 	my ($admin,$ip,$mask)=@_;
 	my ($sth,$row,@posts);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE ip & ? = ? & ?;") or make_error(S_SQLFAIL);
 	$sth->execute($mask,$ip,$mask) or make_error(S_SQLFAIL);
@@ -1512,7 +1460,7 @@ sub update_spam_file($$)
 {
 	my ($admin,$spam)=@_;
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,MOD_PASS);
 
 	my @spam=split /\r?\n/,$spam;
 	my @spam_files=SPAM_FILES;
@@ -1545,7 +1493,7 @@ sub check_password($$)
 {
 	my ($admin,$password)=@_;
 
-	return if($admin eq ADMIN_PASS);
+	return if($admin eq MOD_PASS);
 	return if($admin eq crypt_password($password));
 
 	make_error(S_WRONGPASS);
@@ -1566,8 +1514,7 @@ sub crypt_password($)
 
 sub make_http_header()
 {
-	# trying to remove xhtml stuff
-	print "Content-Type: text/html; charset=utf-8 \n";
+	print "Content-Type: ".get_xhtml_content_type(CHARSET,USE_XHTML)."\n";
 	print "\n";
 }
 
@@ -1868,6 +1815,9 @@ sub get_decoded_hashref($)
 	{
 		for my $k (keys %$row) # don't blame me for this shit, I got this from perlunicode.
 		{ defined && /[^\000-\177]/ && Encode::_utf8_on($_) for $row->{$k}; }
+
+		if(SQL_DBI_SOURCE=~/^DBI:mysql:/i) # OMGWTFBBQ
+		{ for my $k (keys %$row) { $$row{$k}=~s/chr\(([0-9]+)\)/chr($1)/ge; } }
 	}
 
 	return $row;
@@ -1883,6 +1833,9 @@ sub get_decoded_arrayref($)
 	{
 		# don't blame me for this shit, I got this from perlunicode.
 		defined && /[^\000-\177]/ && Encode::_utf8_on($_) for @$row;
+
+		if(SQL_DBI_SOURCE=~/^DBI:mysql:/i) # OMGWTFBBQ
+		{ s/chr\(([0-9]+)\)/chr($1)/ge for @$row; }
 	}
 
 	return $row;

@@ -1,4 +1,4 @@
-﻿use strict;
+use strict;
 
 BEGIN { require "wakautils.pl" }
 
@@ -6,8 +6,8 @@ BEGIN { require "wakautils.pl" }
 
 use constant NORMAL_HEAD_INCLUDE => q{
 
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <title><if $title><var $title> - </if><const TITLE></title>
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
@@ -21,20 +21,18 @@ form .trap { display:none }
 .postarea { text-align: center }
 .postarea table { margin: 0px auto; text-align: left }
 .thumb { border: none; float: left; margin: 2px 20px }
-.replythumb { border: none; float: left; margin: 2px 20px }
 .nothumb { float: left; background: #eee; border: 2px dashed #aaa; text-align: center; margin: 2px 20px; padding: 1em 0.5em 1em 0.5em; }
+.reply blockquote, blockquote :last-child { margin-bottom: 0em }
 .reflink a { color: inherit; text-decoration: none }
 .reply .filesize { margin-left: 20px }
 .userdelete { float: right; text-align: center; white-space: nowrap }
 .replypage .replylink { display: none }
-.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 </style>
 
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
 </loop>
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="<var expand_filename(JS_FILE)>"></script>
 <script type="text/javascript" src="http://glauchan.ax.lt/js/logo.js"></script>
@@ -54,18 +52,21 @@ form .trap { display:none }
 </script>
 
 </head>
-<if $thread><body class="replypage"></if>
-<if !$thread><body></if>
-<script>birthday();</script>
+<if $thread><body class="replypage" onresize="fixSize();" onload="fixSize();"></if>
+<if !$thread><body onresize="fixSize();" onload="fixSize();"></if>
 
-<div class="adminbarfull">
-	}.include("include/header.html").q{
-	<div class="adminbar">
-		<loop $stylesheets>
-			<a href="javascript:set_stylesheet('<var $title>')" >[<var $title>]</a>
-		</loop>
-		<!--[<a href="<var get_secure_script_name()>?task=admin"><const S_ADMIN></a>]-->
-	</div>
+<div class="adminbarfull" style="position:fixed; width: 100%; margin-top: -50px; margin-left: -10px; padding-top:2px; padding-bottom: 2px; padding-left: 8px; background: #E04000;">
+<div class="topnav" style="position: absolute">
+}.include("include/header.html").q{
+</div>
+
+<div class="adminbar" style="width: 340px; margin-right:20px; float: right;">
+<loop $stylesheets>
+	<a href="javascript:set_stylesheet('<var $title>')" style="color: #FFFFFF;">[<var $title>]</a>
+</loop>
+
+<!--[<a href="<var get_secure_script_name()>?task=admin"><const S_ADMIN></a>]-->
+</div>
 </div>
 
 <div class="logo">
@@ -108,7 +109,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" class="field4" cols="48" rows="4"></textarea></td></tr>
 
 	<if $image_inp>
-		<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" class="field5" size="30" />
+		<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" class="field5" size="35" />
 		<if $textonly_inp><label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> </label></if>
 		</td></tr>
 	</if>
@@ -124,11 +125,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<div class="rules">}.include("include/rules.html").q{</div></td></tr>
 	</tbody></table></form></div>
 	<script type="text/javascript">set_inputs("postform")</script>
-</if> 
-
-<div class="announcement">
-}.include("../announcement.html").q{
-</div>
+</if> }.include("../announcement.html").q{
 
 <form id="delform" action="<var $self>" method="post">
 
@@ -169,7 +166,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			</span>&nbsp;
 			<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
 
-			<blockquote<if $email=~/aa$/i> class="aa"</if>>
+			<blockquote>
 			<var $comment>
 			<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 			</blockquote>
@@ -205,7 +202,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 				<if $thumbnail>
 					<a target="_blank" href="<var expand_image_filename($image)>">
-					<img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="replythumb" style="width: <var $tn_width>px; height: <var $tn_height>px;" /></a>
+					<img src="<var expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" class="thumb" /></a>
 				</if>
 				<if !$thumbnail>
 					<if DELETED_THUMBNAIL>
@@ -218,7 +215,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				</if>
 			</if>
 
-			<blockquote<if $email=~/aa$/i> class="aa"</if>>
+			<blockquote>
 			<var $comment>
 			<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 			</blockquote>

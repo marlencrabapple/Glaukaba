@@ -227,6 +227,16 @@ sub do_wakabamark($;$$)
 		$simplify=0;
 	}
 
+	# old spoiler code
+	#if($res=~/.*\[spoiler\].*/){
+	#	$res=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
+	#	$res=~s/\[\/spoiler\]*/\<\/span\>/g;
+	#	$res=~s/\<p\>/ /g;
+	#	$res=~s/\<\/p\>/\<br \/\>\<br \/\>/g;
+	#	$res=~s/\<br \/\>$/ /;
+	#	$res=~s/\<\/span\>\<br \/\>\<br \/\>/\<\/span\>/g;
+	#}
+	
 	return $res;
 }
 
@@ -250,13 +260,16 @@ sub do_spans($@)
 		# do <em>
 		$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*|_) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<em>$2</em>}gx;
 
+		# do <span class="spoiler">
+		$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
+
 		# do ^H
-		if($]>5.007)
-		{
-			my $regexp;
-			$regexp=qr/(?:&#?[0-9a-zA-Z]+;|[^&<>])(?<!\^H)(??{$regexp})?\^H/;
-			$line=~s{($regexp)}{"<del>".(substr $1,0,(length $1)/3)."</del>"}gex;
-		}
+		#if($]>5.007)
+		#{
+		#	my $regexp;
+		#	$regexp=qr/(?:&#?[0-9a-zA-Z]+;|[^&<>])(?<!\^H)(??{$regexp})?\^H/;
+		#	$line=~s{($regexp)}{"<del>".(substr $1,0,(length $1)/3)."</del>"}gex;
+		#}
 
 		$line=$handler->($line) if($handler);
 

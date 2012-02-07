@@ -148,6 +148,7 @@ function do_ban(el)
 	return false;
 }
 
+
 window.onunload=function(e)
 {
 	if(style_cookie)
