@@ -846,12 +846,34 @@ sub format_comment($)
 	# restore >>1 references hidden in code blocks
 	$comment=~s/&gtgt;/&gt;&gt;/g;
 	
+	my $blocktag=0;
+	
 	# new spoiler code (can't put it in 'do_wakabamark' because of 'do_spans' messing with the order of tags
 	if($comment=~/.*\[spoiler\].*/){
 		$comment=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
 		$comment=~s/\[\/spoiler\]*/\<\/span\>/g;
 		$comment=~s/\<span class\=\'spoiler\'\>\<br \/\>/\<span class\=\'spoiler\'\>/g;
+		#$comment=~s/\<\/span\>\<br \/\>/\<\/span\>/g;
+		$blocktag=1;
+	}
+	
+	# s-jis
+	if($comment=~/.*\[sjis\].*/){
+		$comment=~s/\[sjis\]*/\<span class\=\'aa\'\>/g;
+		$comment=~s/\[\/sjis\]*/\<\/span\>/g;
+		$comment=~s/\<span class\=\'aa\'\>\<br \/\>/\<span class\=\'aa\'\>/g;
 		$comment=~s/\<\/span\>\<br \/\>/\<\/span\>/g;
+		$blocktag=1;
+	}
+	
+	# fix formatting for above functions
+	if($blocktag==1){
+		$comment=~s/\<p\>/ /g;
+		$comment=~s/\<\/p\>/\<br \/\>\<br \/\>/g;
+		$comment=~s/\<br \/\>\<br \/\>$/\<br \/\>/;
+		$comment=~s/\<\/span\>\<br \/\>\<br \/\>$/\<\/span\>/;
+		$comment=~s/\<br \/\>\<\/span\>/\<\/span\>/g;
+		$blocktag=0;
 	}
 
 	return $comment;
