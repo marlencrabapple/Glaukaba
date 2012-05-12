@@ -109,7 +109,7 @@ BEGIN {
 	eval "use constant REDIR_DIR => 'redir/'" unless (defined &REDIR_DIR);
 	eval "use constant HTML_SELF => 'wakaba.html'" unless(defined &HTML_SELF);
 	eval "use constant JS_FILE => 'wakaba3.js'" unless(defined &JS_FILE);
-	eval "use constant CSS_DIR => 'css/'" unless(defined &CSS_DIR);
+	eval "use constant CSS_DIR => '../css/boards/'" unless(defined &CSS_DIR); #changed for multiboards
 	eval "use constant PAGE_EXT => '.html'" unless(defined &PAGE_EXT);
 	eval "use constant ERRORLOG => ''" unless(defined &ERRORLOG);
 	eval "use constant CONVERT_COMMAND => 'convert'" unless(defined &CONVERT_COMMAND);
@@ -122,7 +122,7 @@ BEGIN {
 
 	eval "use constant FILETYPES => ()" unless(defined &FILETYPES);
 
-	eval "use constant WAKABA_VERSION => '3.0.9-nexus'" unless(defined &WAKABA_VERSION);
+	eval "use constant WAKABA_VERSION => '3.1.0-nexus'" unless(defined &WAKABA_VERSION);
 }
 
 1;

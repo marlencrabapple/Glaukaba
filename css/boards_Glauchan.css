@@ -1,5 +1,5 @@
 html,body {
-background:#EEF2FF url(/glau/fade-blue.png) top center repeat-x;
+background:#EEF2FF url(../../img/fade-blue.png) top center repeat-x;
 color:#000;
 font-family:arial,helvetica,sans-serif;
 font-size:10pt;
@@ -407,4 +407,7 @@ padding: 0;
 .thumb{
 width: 150px;
 height : auto;
+}
+.reportButton{
+text-decoration: none;
 }

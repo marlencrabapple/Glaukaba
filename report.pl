@@ -17,13 +17,17 @@ $reason=$formdata{'Reason'};
 
 print "Content-type:text/html\n\n";
 
-open (LOG, ">>reports.txt");
-print LOG "Submitted By. $ENV{REMOTE_ADDR}\n";
-print LOG "No. $post\n";
-print LOG "Reason: $reason\n\n";
+use POSIX qw/strftime/;
+
+open (LOG, ">>reports.html");
+print LOG strftime('<pre style="font-size: 12px;"><code>%Y-%b-%d %H:%M',localtime);
+print LOG "<br />Submitted By. $ENV{HTTP_CF_CONNECTING_IP}<br />"; # HTTP_CF_CONNECTING_IP gets IPs properly with cloudflare
+print LOG "No. $post<br />";
+print LOG "Reason: $reason<br /></code></pre>";
 close (LOG);
 
-my $url = "http://glauchan.ax.lt/glau/";
+#my $url = "http://glauchan.org/glau/";
 
-print "<script>document.write('<h1>Report Submitted. Redirecting.</h1>');</script>";
-print "<script>setTimeout(window.location = 'http://glauchan.ax.lt/glau/',2000);</script>";
+print "<script>document.write('<h1>Report Submitted. Redirecting in 5 seconds.</h1>');</script>";
+#print "<script>setTimeout(window.location = 'http://glauchan.org/glau/',2000);</script>";
+print "<script>self.close()</script>"; # changed for the new popup report form

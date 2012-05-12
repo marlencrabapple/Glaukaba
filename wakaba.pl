@@ -463,7 +463,7 @@ sub post_stuff($$$$$$$$$$$$$$)
 	my $size=get_file_size($file) if($file);
 
 	# find IP
-	my $ip=$ENV{REMOTE_ADDR};
+	my $ip=$ENV{HTTP_CF_CONNECTING_IP};
 
 	#$host = gethostbyaddr($ip);
 	my $numip=dot_to_dec($ip);
@@ -565,8 +565,8 @@ sub post_stuff($$$$$$$$$$$$$$)
 	
 	if ($admin)
 	{
-		$name = "<FONT COLOR='RED'>".$name."</FONT>";
-		$trip = "<FONT COLOR='RED'>".$trip."<b style='font-weight: 800'> ## Admin</b></FONT>";
+		$name = "<span class='adminName' title='This user is a Glauchan administrator'>".$name."</span>";
+		$trip = "<span class='adminTrip' title='This user is a Glauchan administrator'>".$trip."<span class='adminCap' title='This user is a Glauchan administrator'> ## Admin</span></span>";
 	}
 	
 	# finally, write to the database
@@ -619,8 +619,14 @@ sub post_stuff($$$$$$$$$$$$$$)
 	-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
 
 	# forward back to the main page
-	make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.ax.lt/glau/",ALTERNATE_REDIRECT);
-
+	if ($admin) #unless you're an admin, it'll go back to the manager post page
+	{
+		make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.org/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
+	}
+	else
+	{
+		make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.org/".BOARD_DIR."/",ALTERNATE_REDIRECT);
+	}
 }
 
 sub is_whitelisted($)
@@ -938,14 +944,14 @@ sub make_id_code($$$)
 	return EMAIL_ID if($link and DISPLAY_ID=~/link/i);
 	return EMAIL_ID if($link=~/sage/i and DISPLAY_ID=~/sage/i);
 
-	return resolve_host($ENV{REMOTE_ADDR}) if(DISPLAY_ID=~/host/i);
-	return $ENV{REMOTE_ADDR} if(DISPLAY_ID=~/ip/i);
+	return resolve_host($ENV{HTTP_CF_CONNECTING_IP}) if(DISPLAY_ID=~/host/i);
+	return $ENV{HTTP_CF_CONNECTING_IP} if(DISPLAY_ID=~/ip/i);
 
 	my $string="";
 	$string.=",".int($time/86400) if(DISPLAY_ID=~/day/i);
 	$string.=",".$ENV{SCRIPT_NAME} if(DISPLAY_ID=~/board/i);
 
-	return mask_ip($ENV{REMOTE_ADDR},make_key("mask",SECRET,32).$string) if(DISPLAY_ID=~/mask/i);
+	return mask_ip($ENV{HTTP_CF_CONNECTING_IP},make_key("mask",SECRET,32).$string) if(DISPLAY_ID=~/mask/i);
 
 	return hide_data($ip.$string,6,"id",SECRET,1);
 }
@@ -1485,7 +1491,8 @@ sub do_rebuild_cache($)
 	build_thread_cache_all();
 	build_cache();
 
-	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
+	#make_http_forward_new(HTML_SELF,ALTERNATE_REDIRECT,"site"); # this was supposed to do the redirect in another frame, but it isn't working
+	make_http_forward("http://glauchan.org/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
 }
 
 sub add_admin_entry($$$$$$)
@@ -1575,7 +1582,7 @@ sub check_password($$)
 
 sub crypt_password($)
 {
-	my $crypt=hide_data((shift).$ENV{REMOTE_ADDR},9,"admin",SECRET,1);
+	my $crypt=hide_data((shift).$ENV{HTTP_CF_CONNECTING_IP},9,"admin",SECRET,1);
 	$crypt=~tr/+/./; # for web shit
 	return $crypt;
 }

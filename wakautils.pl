@@ -587,6 +587,29 @@ sub make_http_forward($;$)
 	}
 }
 
+sub make_http_forward_new($;$;$)
+{
+	my ($location,$alternate_method,$target)=@_;
+
+	if($alternate_method)
+	{
+		print "Content-Type: text/html\n";
+		print "\n";
+		print "<html><head>";
+		print '<meta http-equiv="refresh" content="0; url='.$location.'" />';
+		print '<script type="text/javascript">document.location="'.$location.'";</script>';
+		print '</head><body><a href="'.$location.'" target="'.$target.'">'.$location.'</a></body></html>';
+	}
+	else
+	{
+		print "Status: 303 Go West\n";
+		print "Location: $location\n";
+		print "Content-Type: text/html\n";
+		print "\n";
+		print '<html><body><a href="'.$location.'" target="'.$target.'">'.$location.'</a></body></html>';
+	}
+}
+
 sub make_cookies(%)
 {
 	my (%cookies)=@_;

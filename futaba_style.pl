@@ -11,6 +11,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <head>
 <title><if $title><var $title> - </if><const TITLE></title>
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 
 <style type="text/css">
@@ -18,11 +19,7 @@ body { margin: 0; padding: 8px; margin-bottom: auto; padding-top: 50px; }
 blockquote blockquote { margin-left: 0em;}
 form { margin-bottom: 0px }
 form .trap { display:none }
-.postarea { text-align: center }
 .postarea table { margin: 0px auto; text-align: left }
-.thumb { border: none; float: left; margin: 2px 20px }
-.replythumb { border: none; float: left; margin: 2px 20px }
-.nothumb { float: left; background: #eee; border: 2px dashed #aaa; text-align: center; margin: 2px 20px; padding: 1em 0.5em 1em 0.5em; }
 .reflink a { color: inherit; text-decoration: none }
 .reply .filesize { margin-left: 20px }
 .userdelete { float: right; text-align: center; white-space: nowrap }
@@ -37,7 +34,8 @@ form .trap { display:none }
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="<var expand_filename(JS_FILE)>"></script>
-<script type="text/javascript" src="http://glauchan.ax.lt/js/logo.js"></script>
+<script type="text/javascript" src="http://glauchan.org/js/logo.js"></script>
+<script src="http://malsup.github.com/jquery.form.js"></script>
 
 <script type="text/javascript">
 
@@ -56,11 +54,10 @@ form .trap { display:none }
 </head>
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
-<script>birthday();</script>
 
-<div class="adminbarfull">
+<div id="topNavContainer">
 	}.include("include/header.html").q{
-	<div class="adminbar">
+	<div id="topNavRight">
 		<loop $stylesheets>
 			<a href="javascript:set_stylesheet('<var $title>')" >[<var $title>]</a>
 		</loop>
@@ -70,7 +67,6 @@ form .trap { display:none }
 
 <div class="logo">
 <div id="image" style="padding: 0; margin: 0;"></div>
-<script>doIt();</script>
 <const TITLE>
 <p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><const SUBTITLE></p>
 </div><hr class="postinghr" />
@@ -90,7 +86,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 <if $postform>
 	<div class="postarea">
-	<form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
+	<form action="<var $self>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="task" value="post" />
 	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
@@ -98,32 +94,64 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<input type="hidden" name="nofile" value="1" />
 	</if>
 	<if FORCED_ANON><input type="hidden" name="name" /></if>
-	<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name" size="28" autocomplete="off" /><input type="text" name="link" size="28" autocomplete="off" /></div></if>
-
-	<table><tbody>
-	<if !FORCED_ANON><tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" class="field1" size="28" /></td></tr></if>
-	<tr><td class="postblock"><const S_EMAIL></td><td><input type="text" name="field2" class="field2" size="28" /></td></tr>
-	<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" class="field3" size="35" />
-	<input type="submit" class="field3s" value="<const S_SUBMIT>" /></td></tr>
-	<tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" class="field4" cols="48" rows="4"></textarea></td></tr>
-
-	<if $image_inp>
-		<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" class="field5" size="30" />
-		<if $textonly_inp><label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> </label></if>
-		</td></tr>
-	</if>
-
-	<if ENABLE_CAPTCHA>
-		<tr><td class="postblock"><const S_CAPTCHA></td><td><input type="text" name="captcha" class="field6" size="10" />
-		<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
-		</td></tr>
-	</if>
-
-	<tr><td class="postblock"><const S_DELPASS></td><td><input type="password" class="field7" name="password" size="8" /> <const S_DELEXPL></td></tr>
-	<tr><td colspan="2">
-	<div class="rules">}.include("include/rules.html").q{</div></td></tr>
-	</tbody></table></form></div>
-	<script type="text/javascript">set_inputs("postform")</script>
+	<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off" /><input type="text" name="link" autocomplete="off" /></div></if>
+	
+		<div id="postForm">
+			<if !FORCED_ANON>
+				<div class="postTableContainer">
+					<div class="postBlock">Name</div>
+					<div class="postSpacer"></div>
+					<div class="postField"><input type="text" class="postInput" name="field1" id="field1" /></div>
+				</div>
+			</if>
+			<div class="postTableContainer">
+				<div class="postBlock">Link</div>
+				<div class="postSpacer"></div>
+				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" /></div>
+			</div>
+			<div class="postTableContainer">
+				<div class="postBlock">Subject</div>
+				<div class="postSpacer"></div>
+				<div class="postField">
+					<input type="text" name="field3" class="postInput" id="field3" />
+					<input type="submit" id="field3s" value="Submit" />
+				</div>
+			</div>
+			<div class="postTableContainer">
+				<div class="postBlock">Comment</div>
+				<div class="postSpacer"></div>
+				<div class="postField"><textarea name="field4" class="postInput" id="field4"></textarea></div>
+			</div>
+			<if $image_inp>
+				<div class="postTableContainer">
+					<div class="postBlock">File</div>
+					<div class="postSpacer"></div>
+					<div class="postField">
+						<input type="file" name="file" id="file" />
+						<if $textonly_inp>
+							<label><input type="checkbox" name="nofile" value="on" />No File</label>
+						</if>
+					</div>
+				</div>
+			</if>
+			<if ENABLE_CAPTCHA>
+				<tr><td class="postblock"><const S_CAPTCHA></td><td><input type="text" name="captcha" class="field6" size="10" />
+				<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
+				</td></tr>
+			</if>
+			<div class="postTableContainer">
+				<div class="postBlock">Password</div>
+				<div class="postSpacer"></div>
+				<div class="postField"><input type="password" class="postInput" id="password" name="password"/> (for post and file deletion)</div>
+			</div>
+			<div class="postTableContainer">
+				<div class="rules">
+					}.include("include/rules.html").q{
+				</div>
+			</div>
+		</div>
+	</form></div>
+	<script type="text/javascript">set_inputs("postForm")</script>
 </if> 
 
 <div class="announcement">
@@ -133,159 +161,136 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <form id="delform" action="<var $self>" method="post">
 
 <loop $threads>
-	<loop $posts>
+	<div class="thread"><loop $posts>
 		<if !$parent>
-			<div class="id">
-			<if $image>
-				<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
-				-(<em><var $size> B, <var $width>x<var $height></em>)</span>
-				<br />
-
-				<if $thumbnail>
-					<a target="_blank" href="<var expand_image_filename($image)>">
-					<img src="<var expand_filename($thumbnail)>" width="<var $tn_width>" height="<var $tn_height>" alt="<var $size>" class="thumb" /></a>
-				</if>
-				<if !$thumbnail>
-					<if DELETED_THUMBNAIL>
-						<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
-						<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb" /></a>
+			<div class="parentPost" id="parent<var $num>">
+				<div class="hat"></div>
+				<if $image>
+					<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
+					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+					<br />
+					<if $thumbnail>
+						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
+						<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>; height:<var $tn_height>;" alt="<var $size>" class="thumb opThumb" /></a>
 					</if>
-					<if !DELETED_THUMBNAIL>
-						<div class="nothumb"><a target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+					<if !$thumbnail>
+						<if DELETED_THUMBNAIL>
+							<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
+							<img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>; height:<var $tn_height>;" alt="" class="thumb opThumb" /></a>
+						</if>
+						<if !DELETED_THUMBNAIL>
+							<div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+						</if>
 					</if>
 				</if>
-			</if>
-
+				<a id="<var $num>"></a>
+				<label><input type="checkbox" name="delete" value="<var $num>" />
+				<span class="filetitle"><var $subject></span>
+				<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+				<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+				<var $date></label>
+				<span class="reflink">
+				<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
+				<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+				</span>&nbsp;
+				<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
+				
+				<a href="javascript:void(0)" onclick="reportPost(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+				
+				<blockquote<if $email=~/aa$/i> class="aa"</if>>
+				<var $comment>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+				</blockquote>
+			</div>
 			
-			<a name="<var $num>"></a>
-			<label><input type="checkbox" name="delete" value="<var $num>" />
-			<span class="filetitle"><var $subject></span>
-			<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-			<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-			<var $date></label>
-			<span class="reflink">
-			<if !$thread><a href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
-			<if $thread><a href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-			</span>&nbsp;
-			<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
-
-			<blockquote<if $email=~/aa$/i> class="aa"</if>>
-			<var $comment>
-			<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
-			</blockquote>
-
 			<if $omit>
 				<span class="omittedposts">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
 				<if !$omitimages><var sprintf S_ABBR,$omit></if>
 				</span>
 			</if>
+		</if>
+		
+		<if $parent>
+			<div class="replyContainer">
+				<div class="doubledash">&gt;&gt;</div>
+				<div class="reply" id="reply<var $num>">
+					<a id="<var $num>"></a>
+					<label><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="replytitle"><var $subject></span>
+					<if $email><span class="commentpostername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
+					<a href="javascript:void(0)" onclick="reportPost(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+					&nbsp;
+					<if $image>
+						<br />
+						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
+						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+						<br />
+
+						<if $thumbnail>
+							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
+							<img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></a>
+						</if>
+						<if !$thumbnail>
+							<if DELETED_THUMBNAIL>
+								<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
+								<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb" /></a>
+							</if>
+							<if !DELETED_THUMBNAIL>
+								<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+							</if>
+						</if>
+					</if>
+					<blockquote<if $email=~/aa$/i> class="aa"</if>>
+						<var $comment>
+						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+					</blockquote>
+				</div>
 			</div>
 		</if>
-		<if $parent>
-			<table><tbody><tr><td class="doubledash">&gt;&gt;</td>
-			<td class="reply" id="reply<var $num>">
-
-			<a name="<var $num>"></a>
-			<label><input type="checkbox" name="delete" value="<var $num>" />
-			<span class="replytitle"><var $subject></span>
-			<if $email><span class="commentpostername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-			<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-			<var $date></label>
-			<span class="reflink">
-			<if !$thread><a href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
-			<if $thread><a href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-			</span>&nbsp;
-
-			<if $image>
-				<br />
-				<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
-				-(<em><var $size> B, <var $width>x<var $height></em>)</span>
-				<br />
-
-				<if $thumbnail>
-					<a target="_blank" href="<var expand_image_filename($image)>">
-					<img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="replythumb" style="width: <var $tn_width>px; height: <var $tn_height>px;" /></a>
-				</if>
-				<if !$thumbnail>
-					<if DELETED_THUMBNAIL>
-						<a target="_blank" href="<var expand_image_filename(DELETED_IMAGE)>">
-						<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb" /></a>
-					</if>
-					<if !DELETED_THUMBNAIL>
-						<div class="nothumb"><a target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
-					</if>
-				</if>
-			</if>
-
-			<blockquote<if $email=~/aa$/i> class="aa"</if>>
-			<var $comment>
-			<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
-			</blockquote>
-
-			</td></tr></tbody></table>
-		</if>
 	</loop>
-	<br clear="left" /><hr />
+	</div>
+	<hr />
 </loop>
-<div style="float: right;">
-	<table cellpadding="0" cellspacing="0">
-		<tr>
-			<td>
-				<input type="hidden" name="task" value="delete" />
-				<b>Delete Post</b><br />
-				<table width="230" cellpadding="1" cellspacing="1">
-					<tr>
-						<td><label><input type="checkbox" name="fileonly" value="on" /> <const S_DELPICONLY></label></td>
-					</tr>
-					<tr>
-						<td><const S_DELKEY><input type="password" name="password" size="7" />
-								<input value="<const S_DELETE>" type="submit" class="field3s" />
-						</td>
-					</tr>
-				</table>
-				</form>
-				<script type="text/javascript">set_delpass("delform")</script>
-			</td>
-			<td>
-				<b>Report Post</b>
-				<form method="post" action="http://glauchan.ax.lt/glau/report.pl">
-				<table width="200px" cellpadding="1" cellspacing="1">
-					<tr>
-						<td>Post</td>
-						<td><INPUT NAME="Post" TYPE="text" SIZE=7></td>
-					</tr>
-					<tr>
-						<td>Reason</td>
-						<td><INPUT NAME="Reason" TYPE="text" SIZE=7>&nbsp;<input value="Report" type="submit" class="field3s" /></td>
-					</tr>
-				</table>
-				</FORM>
-			</td>
-		</tr>
-	</table>
+
+<div id="deleteForm">
+	<input type="hidden" name="task" value="delete" />
+	Delete Post
+	<label>[<input type="checkbox" name="fileonly" value="on" /> <const S_DELPICONLY>]</label>
+	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput"/>
+	<input value="<const S_DELETE>" type="submit" class="formButtom" />
+	<script type="text/javascript">set_delpass("delPass")</script>
 </div>
+</form>
+
+<div id="forJs" style="display:none"><var BOARD_DIR></div>
 
 <if !$thread>
-	<table class="pagenumber"><tbody><tr><td>
+	<div id="pageNumber">
 
-	<if $prevpage><form method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
+	<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
 	<if !$prevpage><const S_FIRSTPG></if>
 
-	</td><td>
+	
 
 	<loop $pages>
 		<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
 		<if $current>[<var $page>]</if>
 	</loop>
 
-	</td><td>
+	
 
-	<if $nextpage><form method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
+	<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
 	<if !$nextpage><const S_LASTPG></if>
 
-	</td></tr></tbody></table><br clear="all" />
+	</div><br />
 </if>
+
 </div>
 }.NORMAL_FOOT_INCLUDE);
 
@@ -307,14 +312,10 @@ use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE.q{
 
-[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
 <if $admin>
 	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
 	[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var $self>?task=proxy&amp;admin=<var $admin>"><const S_MANAPROXY></a>]
-	[<a href="<var $self>?task=spam&amp;admin=<var $admin>"><const S_MANASPAM></a>]
 	[<a href="<var $self>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
-	[<a href="<var $self>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
 	[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 	[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
@@ -650,7 +651,8 @@ use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="task" value="post" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="no_captcha" value="1" />
-<input type="hidden" name="no_format" value="1" />
+<br />
+<label>Format Text (0 means yes)<input type="text" name="no_format" value="0" /></label>
 
 <table><tbody>
 <tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr>

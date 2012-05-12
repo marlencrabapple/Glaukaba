@@ -1,23 +1,19 @@
 html,body {
-background:#EEF2FF url(/glau/fade-blue.png) top center repeat-x;
-color:#000;
-font-family:arial,helvetica,sans-serif;
-font-size:10pt;
-margin-left:0;
-margin-right:0;
-padding-left:5px;
-padding-right:5px;
+background:#EEF2FF url(../../img/fade-blue.png) top center repeat-x;
+color: #000000;
+font-family: arial, helvetica, sans-serif;
+font-size: 10pt;
+margin-left: 0;
+margin-right: 0;
+margin-top: 5px;
+padding-left: 5px;
+padding-right: 5px;
 }
 
 a,a:visited {
 color:#34345C;
 }
 
-td {
-font-size:10pt;
-margin:0;
-padding:0;
-}
 
 textarea {
 font-family:arial,helvetica,sans-serif;
@@ -39,55 +35,92 @@ input[type=checkbox] {
 margin:3px 3px 3px 4px;
 }
 
-.field1,.field2,.field3,.field4,.field6,.field7 {
+.postInput {
 border:1px solid #aaa;
 outline:none;
 padding:2px 4px 3px;
+}
+
+.postInput:focus {
+border:1px solid #98E;
 }
 
 .banner {
 border:1px solid #34345C;
 }
 
-.field1:focus,.field2:focus,.field3:focus,.field4:focus,.field6:focus,.field7:focus {
-border:1px solid #98E;
+#announcement{
+text-align: center;
+width: 100%;
 }
 
-td.reply {
+.thread{
+margin: 0px;
+clear: both;
+margin-bottom: 8px;
+}
+
+.reply {
+display: table;
 border:1px solid #B7C5D9;
 border-left:none;
 border-top:none;
 padding:2px;
+margin-top: 4px;
+margin-bottom: 4px;
+background:#D6DAF0;
+color:#000;
 }
 
+.replyContainer{
+display:inline;
+}
 
-.adminbar {
-clear:both;
+.parentPost{
+display: inline;
+clear: both;
+margin: 4px 0px;
+overflow: hidden;
+}
+
+#quickReply{
+top: 0;
+right: 0;
+margin-top: 30px;
+position: fixed;
+border: 1px black solid;
+border-top: none;
+padding: 2px;
+background: inherit;
+margin-right: 2px;
+}
+
+#topNavRight {
 float:right;
-margin-bottom:0;
-margin-right:20px;
-text-align:right;
-width:270px;
+padding: 5px;
 }
 
-.adminbarfull {
-background:#3b5998;
-box-shadow:-5px 2px 10px #000;
-color:#FFF;
-font-weight:700;
-margin-left:-10px;
-margin-top:-50px;
-padding-bottom:3px;
-padding-left:10px;
-padding-top:2px;
+#topNavLeft {
+float:left;
+padding: 5px;
+}
+
+#topNavContainer {
+background:#D6DAF0;
+border-bottom: 1px solid #B7C5D9;
+color:black;
+top: 0;
+left: 0;
+overflow: hidden;
 position:fixed;
 width:100%;
+z-index: 9001;
+vertical-align: center;
+height: 30px;
 }
 
-.adminbarfull a {
-color:#FFF;
-font-weight:700;
-text-decoration:none;
+#topNavContainer a {
+font-weight: normal;
 }
 
 .logo {
@@ -101,12 +134,18 @@ text-align:center;
 width:100%;
 }
 
-.pagenumber {
+#pageNumber {
+display: table;
 background:#D6DAF0;
 border:none;
 border-bottom:1px solid #B7C5D9;
 border-right:1px solid #B7C5D9;
 color:#89A;
+padding: 3px;
+}
+
+.pageForm{
+	display: inline;
 }
 
 .theader {
@@ -138,6 +177,7 @@ hr {
 border:none;
 border-top:1px solid #B7C5D9;
 height:0;
+clear: both;
 }
 
 div.c5 {margin-top: 190px;}
@@ -146,14 +186,52 @@ div.c5 {margin-top: 190px;}
   p.c2 {font-size: 11px;}
   div.c1 {background: #FFF; width: 100% position: absolute; margin-top: 440px; border-top: 1px solid #3b5998; border-bottom: 1px solid #3b5998; padding: 5px}
 
-.postblock {
+.postBlock {
 background:#98E;
 border:1px solid #000;
 color:#000;
 font-size:10pt;
-font-weight:800;
+font-weight: bold;
 line-height:20px;
 padding:0 5px;
+display:table-cell;
+width: 62px;
+vertical-align: middle;
+margin-right: 10px;
+}
+
+.postField {
+display:table-cell;
+margin-left: 10px;
+}
+
+.postSpacer {
+display: table-cell;
+}
+
+#postTableContainer{
+	display:table-row;
+}
+#postForm,#qrPostForm{
+	display:table;
+	border-spacing:1px;
+}
+
+#field1,#field2,#qrField1,#qrField2{
+	width: 200px;
+}
+
+#field3,#qrField3{
+	width: 250px;
+}
+
+#field4,#qrField4{
+	width: 360px;
+	height: 90px;
+}
+
+#password,#qrPassword{
+	width: 75px;
 }
 
 .footer {
@@ -212,7 +290,7 @@ padding:0;
 .filetitle,.replytitle,.oldpost {
 background:inherit;
 color:#0F0C5D;
-font-weight:800;
+font-weight: bold;
 }
 
 .postertrip {
@@ -221,13 +299,7 @@ color:#228854;
 
 .oldpost {
 color:#CC1105;
-font-weight:800;
-}
-
-.reply {
-background:#D6DAF0;
-color:#000;
-padding-bottom:10px;
+font-weight: bold;
 }
 
 blockquote {
@@ -235,10 +307,12 @@ font-size:10pt;
 }
 
 .doubledash {
-clear:both;
-color:#B7C5D9;
-float:left;
-vertical-align:top;
+color: #B7C5D9;
+float: left;
+margin-left: 2px;
+margin-right: 2px;
+margin-top: 0px;
+display:block;
 }
 
 .thumbnailmsg {
@@ -246,13 +320,35 @@ color:maroon;
 font-size:small;
 }
 
+.thumb {
+border: none;
+float: left;
+margin: 2px 20px;
+}
+
+.opThumb{
+margin-bottom: 2px;
+}
+
+.replyThumb {
+margin-bottom: 5px;
+}
+
+.nothumb{
+background: #eee;
+ border: 2px dashed #aaa; 
+ text-align: center; 
+ margin: 2px 20px; 
+ padding: 1em 0.5em 1em 0.5em;
+}
+
 .spoiler a.quotelink,.spoiler .unkfunc {
 color:inherit;
 }
 
 .highlight {
-background:#D6BAD0;
-border:2px dashed #EA8;
+background: #D6BAD0 !important;
+border-bottom: 1px solid #BA9DBF !important;
 color:#000;
 }
 
@@ -266,7 +362,8 @@ span:hover.spoiler {
 color:#FFF;
 }
 
-a:hover,a:hover,a.postlink {
+
+a:hover,a:hover, {
 color:#D00;
 }
 
@@ -276,9 +373,53 @@ text-decoration:none;
 
 .postername,.commentpostername {
 color:#117743;
-font-weight:800;
+font-weight: bold;
 }
 
 .omittedposts,.abbrev {
 color:#707070;
+margin-top: 10px;
+clear: both;
+display: table-cell;
+}
+
+.adminName {
+color: red;
+}
+
+.adminTrip {
+color: red;
+}
+
+.adminCap {
+color: red;
+font-weight: bold;
+}
+
+.reportButton{
+text-decoration: none;
+color: #34345C;
+}
+
+select{
+color: #000000;
+font-size: 13px;
+margin: 0;
+}
+
+.postarea{
+width: 455px;
+margin-left: auto;
+margin-right: auto;
+}
+
+#deleteForm{
+	float:right;
+}
+
+#delPass{
+width: 100px;
+}
+
+.formButtom{
 }

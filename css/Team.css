@@ -1,0 +1,44 @@
+body {
+	background:#EEF2FF url(/glau/fade-blue.png) top center repeat-x; 
+}
+
+#reportsDiv{
+	bottom: 0;
+	position: absolute;
+	background-color: white;
+	text-align: center;
+	border: 2px solid black;
+}
+#reportsFrame{
+	width: 300px;
+	height: 200px;
+}
+
+#panel{
+	width: 100%;
+}
+
+#site{
+	width: 100%;
+}
+
+#panelDiv{
+	float:left;
+	width: 49%;
+	text-align: center;
+	margin-left: 0;
+	padding-left: 0;
+}
+
+#siteDiv{
+	float:right;
+	width: 49%;
+	text-align: center;
+}
+
+#switchDiv{
+	width: 100%;
+	text-align: center;
+	font-size: 30px;
+	color: red;
+}
