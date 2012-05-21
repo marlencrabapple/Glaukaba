@@ -141,15 +141,21 @@ function get_preferred_stylesheet()
 function set_inputs(id) { with(document.getElementById(id)) {if(!field1.value) field1.value=get_cookie("name"); if(!field2.value) field2.value=get_cookie("email"); if(!password.value) password.value=get_password("password"); } }
 function set_delpass(id) { with(document.getElementById(id)) password.value=get_cookie("password"); }
 
-//function setQrInputs(id) { with(document.getElementById(id)) {if(!qrField1.value) qrField1.value=get_cookie("name"); if(!qrField2.value) qrField2.value=get_cookie("email"); if(!qrPassword.value) qrPassword.value=get_password("password"); } }
-
 function setQrInputs(){
 	document.getElementById("qrField1").value=get_cookie("name");
 	document.getElementById("qrField2").value=get_cookie("email");
 	document.getElementById("qrPassword").value=get_password("password");
 }
 
-function set_delpass(id) { with(document.getElementById(id)) delPass.value=get_cookie("password"); }
+function setPostInputs(){
+	document.getElementById("field1").value=get_cookie("name");
+	document.getElementById("field2").value=get_cookie("email");
+	document.getElementById("password").value=get_password("password");
+}
+
+function setDelPass(){
+	document.getElementById("delPass").value=get_password("password");
+}
 
 function do_ban(el)
 {
@@ -230,6 +236,7 @@ function doIt(){
 	document.getElementById("boardList").selectedIndex = 4;
 	thumbnails = document.getElementsByClassName('thumb');
 	thumbLinks = document.getElementsByClassName('thumbLink');
+	fullSize = document.getElementsByClassName('forJsImgSize');
 	var imgSrc = new Array();
 	
 	for (var i = 0; i < thumbnails.length; i++ ){
@@ -238,7 +245,7 @@ function doIt(){
 			thumbLinks[i].href = "javascript:void(0)";
 			thumbLinks[i].removeAttribute("target");
 			thumbLinks[i].addEventListener("click",function(){
-				expandThumb(thumbLinks[e],thumbnails[e],imgSrc[e], e)});
+				expandThumb(thumbLinks[e],thumbnails[e],imgSrc[e],fullSize[e], e)});
 			//alert(imgSrc[i] +"\n\n"+ thumbLinks[i] +"\n\n"+ thumbnails[i] +"\n\n"+ i);
 		})(i);
 	}
@@ -254,6 +261,21 @@ function doIt(){
 			refLinks[e].addEventListener("click",function(){
 				quickReply(refLinks[e],board)});
 		})(i);
+	}
+	
+	// mouse over quote preview and inline quote prep
+	var varReferences = document.getElementsByClassName("postlink");
+	for (var i = 0; i < varReferences.length; i++ ){
+		(function(e) {
+			varReferences[e].addEventListener("mouseover",function(){
+				quotePreview(varReferences[e],0)});
+			varReferences[e].addEventListener("mouseout",function(){
+				quotePreview(varReferences[e],1)});
+			//varReferences[e].addEventListener("click",function(){
+				//inlineQuote(varReferences[e],varReferences[e].href,0)});
+			varReferences[e].href = "javascript:void(0)";
+		})(i);
+		varReferences[i].href = "javascript:void(0)";
 	}
 }
 
@@ -308,14 +330,17 @@ function closeQuickReply(){
 	document.body.removeChild(document.getElementById("quickReply"));
 }
 
-function expandThumb(tl, tn, src, index){
+function expandThumb(tl, tn, src, fs, index){
 	if (tn.className.indexOf("expandedThumb") == -1){
 		tn.src = src;
 		tn.removeAttribute("style");
 		tn.className = tn.className + " expandedThumb";
 		
-		var imgWidth = tn.clientWidth;
-		var imgHeight = tn.clientHeight;
+		var imgWidth = fs.childNodes[1].innerHTML;
+		var imgHeight = fs.childNodes[3].innerHTML;
+		
+		console.log(imgWidth+" x "+imgHeight);
+		
 		var pageWidth = window.innerWidth;
 		var pageHeight = window.innerHeight;
 		
@@ -335,26 +360,99 @@ function expandThumb(tl, tn, src, index){
 		var className = " " + selector + " ";
 		
 		if ((" " + tn.className + " ").replace(/[\n\t]/g, " ").indexOf(" opThumb ") > -1 ){
-			if (width > height){
-				tn.style.width = "250px";
-				tn.style.height = "auto";
+			if ((width >= 250)&&(height >= 250)){
+				if (width > height){
+					tn.style.width = "250px";
+					tn.style.height = "auto";
+				}
+				else{
+					tn.style.height = "250px";
+					tn.style.width = "auto";
+				}
 			}
 			else{
-				tn.style.height = "250px";
-				tn.style.width = "auto";
+				tn.style.width = fs.childNodes[1].innerHTML + "px";
+				tn.style.height = fs.childNodes[3].innerHTML + "px";
+				console.log("Image smaller than 250px.");
 			}
 		}
 		else{
-			if (width > height){
-				tn.style.width = "126px";
-				tn.style.height = "auto";
+			if ((width >= 126)&&(height >= 126)){
+				if (width > height){
+					tn.style.width = "126px";
+					tn.style.height = "auto";
+				}
+				else{
+					tn.style.height = "126px";
+					tn.style.width = "auto";
+				}
 			}
 			else{
-				tn.style.height = "126px";
-				tn.style.width = "auto";
+				tn.style.width = fs.childNodes[1].innerHTML + "px";
+				tn.style.height = fs.childNodes[3].innerHTML + "px";
+				console.log("Image smaller than 126px.");
 			}
 		}
 	}
+}
+
+function quotePreview(reference, mode){
+	var referencedPostNumber = "reply" + reference.innerHTML.substring(8);
+	console.log(document.getElementById(referencedPostNumber));
+	
+	if (document.getElementById(referencedPostNumber) != null){
+		if (mode == 0){
+			console.log(referencedPostNumber);
+			var referencedPost = document.getElementById(referencedPostNumber).innerHTML;
+			var div = document.createElement('div');
+			div.id = "quotePreview";
+			div.className = "reply";
+			div.style.position = "absolute";
+			div.style.border = "1px solid grey";
+			div.innerHTML = referencedPost;
+
+			$(document).mousemove(function(e){
+				div.style.top = e.pageY+"px";
+				div.style.left = e.pageX+"px";
+			});
+			
+			document.body.appendChild(div);
+		}
+		
+		if (mode == 1){
+			document.getElementById("quotePreview").innerHTML = "";
+			document.body.removeChild(document.getElementById("quotePreview"));
+		}
+	}
+	else{
+		// load thread page in background and grab post
+	}
+}
+
+function inlineQuote(reference, url, mode){
+	var referencedPostNumber = "reply" + reference.innerHTML.substring(8);
+	
+	if (document.getElementById(referencedPostNumber) != null){
+		//console.log(reference.parentElement.parentElement);
+		var referencedPost = document.getElementById(referencedPostNumber).childNodes[9].innerHTML;
+		var inline = document.createElement('div');
+		inline.id = "inlineQuote";
+		inline.className = "reply";
+		inline.style.border = "1px solid grey";
+		inline.innerHTML = referencedPost;
+		reference.parentElement.parentElement.appendChild(inline);
+	}
+	else{
+		var board = document.getElementById('forJs').innerHTML;
+	}
+}
+
+function threadUpdater(){
+	
+}
+
+function hidePost(){
+	
 }
 
 // no longer in use
@@ -425,60 +523,6 @@ function birthday(birthday, play){
 
 function partyHard(){
 	birthday = 1;
-}
-
-function loadPanel(board){
-	document.getElementById("panel").src = "http://glauchan.org/" + board + "/wakaba.pl?task=admin";
-	document.getElementById("site").src = "http://glauchan.org/" + board + "/";
-	document.getElementById("reportsFrame").src = "http://glauchan.org/" + board + "/reports.html";
-}
-
-function refreshReports(){
-	document.getElementById("reportsFrame").src = document.getElementById("reportsFrame").src;
-}
-
-function toggleReportsView(){
-	if (document.getElementById("reportsFrame").style.height == "200px"){
-		document.getElementById("reportsFrame").style.height = "10px";
-	}
-	else{
-		document.getElementById("reportsFrame").style.height = "200px";
-	}
-}
-
-function togglePanelView(){
-	if (document.getElementById("panelDiv").style.width == "49%"){
-		document.getElementById("panelDiv").style.width = "40px";
-		document.getElementById("panel").style.width = "40px";
-		document.getElementById("siteDiv").style.width = (document.documentElement.clientWidth - 90) + "px";
-		document.getElementById("site").style.width = (document.documentElement.clientWidth - 90) + "px";
-	}
-	else{
-		document.getElementById("panelDiv").style.width = "49%";
-		document.getElementById("panel").style.width = "100%";
-		document.getElementById("siteDiv").style.width = "49%";
-		document.getElementById("site").style.width = "100%";
-	}
-}
-
-function toggleSiteView(){
-	if (document.getElementById("siteDiv").style.width == "49%"){
-		document.getElementById("siteDiv").style.width = "40px";
-		document.getElementById("site").style.width = "40px";
-		document.getElementById("panelDiv").style.width = (document.documentElement.clientWidth - 90) + "px";
-		document.getElementById("panel").style.width = (document.documentElement.clientWidth - 90) + "px";
-	}
-	else{
-		document.getElementById("siteDiv").style.width = "49%";
-		document.getElementById("site").style.width = "100%";
-		document.getElementById("panelDiv").style.width = "49%";
-		document.getElementById("panel").style.width = "100%";
-	}
-}
-
-function resizeTeamPanels(){
-	document.getElementById('panel').style.height = (document.documentElement.clientHeight - 120) + "px";
-	document.getElementById('site').style.height = (document.documentElement.clientHeight - 120) + "px";
 }
 
 function reportPost(post, board){

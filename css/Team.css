@@ -1,5 +1,9 @@
 body {
-	background:#EEF2FF url(/glau/fade-blue.png) top center repeat-x; 
+	background:#EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-x;
+}
+
+#everythingElse{
+	margin-top: 40px;
 }
 
 #reportsDiv{
@@ -10,7 +14,7 @@ body {
 	border: 2px solid black;
 }
 #reportsFrame{
-	width: 300px;
+	width: 250px;
 	height: 200px;
 }
 
@@ -25,7 +29,7 @@ body {
 #panelDiv{
 	float:left;
 	width: 49%;
-	text-align: center;
+	text-align: left;
 	margin-left: 0;
 	padding-left: 0;
 }
@@ -33,12 +37,11 @@ body {
 #siteDiv{
 	float:right;
 	width: 49%;
-	text-align: center;
+	text-align: right;
 }
 
-#switchDiv{
-	width: 100%;
-	text-align: center;
-	font-size: 30px;
-	color: red;
+a.divToggle{
+	text-decoration: none;
+	color: #AF0A0F;
+	font-weight: bold;
 }

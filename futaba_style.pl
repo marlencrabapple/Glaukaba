@@ -1,19 +1,13 @@
 ﻿use strict;
-
 BEGIN { require "wakautils.pl" }
-
-
-
 use constant NORMAL_HEAD_INCLUDE => q{
-
 <!DOCTYPE html>
 <html>
 <head>
-<title><if $title><var $title> - </if><const TITLE></title>
 <meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<title><if $title><var $title> - </if><const TITLE></title>
 <link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
-
 <style type="text/css">
 body { margin: 0; padding: 8px; margin-bottom: auto; padding-top: 50px; }
 blockquote blockquote { margin-left: 0em;}
@@ -151,7 +145,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			</div>
 		</div>
 	</form></div>
-	<script type="text/javascript">set_inputs("postForm")</script>
+	<script type="text/javascript">setPostInputs()</script>
 </if> 
 
 <div class="announcement">
@@ -168,6 +162,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<if $image>
 					<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+					
+					<div style="display:none" class="forJsImgSize">
+						<span><var $width></span>
+						<span><var $height></span>
+					</div>
+					
 					<br />
 					<if $thumbnail>
 						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
@@ -230,6 +230,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<br />
 						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
 						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+						
+						<div style="display:none" class="forJsImgSize">
+							<span><var $width></span>
+							<span><var $height></span>
+						</div>
+						
 						<br />
 
 						<if $thumbnail>
@@ -264,7 +270,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<label>[<input type="checkbox" name="fileonly" value="on" /> <const S_DELPICONLY>]</label>
 	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput"/>
 	<input value="<const S_DELETE>" type="submit" class="formButtom" />
-	<script type="text/javascript">set_delpass("delPass")</script>
+	<script type="text/javascript">setDelPass();</script>
 </div>
 </form>
 
