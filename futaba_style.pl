@@ -1,4 +1,5 @@
-﻿use strict;
+use strict;
+use POSIX qw/strftime/;
 BEGIN { require "wakautils.pl" }
 use constant NORMAL_HEAD_INCLUDE => q{
 <!DOCTYPE html>
@@ -27,8 +28,7 @@ form .trap { display:none }
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-<script type="text/javascript" src="<var expand_filename(JS_FILE)>"></script>
-<script type="text/javascript" src="http://glauchan.org/js/logo.js"></script>
+<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
 <script src="http://malsup.github.com/jquery.form.js"></script>
 
 <script type="text/javascript">
@@ -190,16 +190,16 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
 				<var $date></label>
 				<span class="reflink">
-				<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
+				<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
 				<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
 				</span>&nbsp;
-				<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
+				<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
 				
-				<a href="javascript:void(0)" onclick="reportPost(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+				<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
 				
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
 				</blockquote>
 			</div>
 			
@@ -222,9 +222,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
 					<var $date></label>
 					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
+					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					<a href="javascript:void(0)" onclick="reportPost(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
 					&nbsp;
 					<if $image>
 						<br />
@@ -254,7 +254,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</if>
 					<blockquote<if $email=~/aa$/i> class="aa"</if>>
 						<var $comment>
-						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
 					</blockquote>
 				</div>
 			</div>

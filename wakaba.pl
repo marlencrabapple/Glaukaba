@@ -1659,6 +1659,14 @@ sub get_reply_link($$)
 	return expand_filename(RES_DIR.$reply.PAGE_EXT);
 }
 
+# for rewritten links
+sub getPrintedReplyLink($$){
+	my ($reply,$parent)=@_;
+
+	return expand_filename(RES_DIR.$parent).'#'.$reply if($parent);
+	return expand_filename(RES_DIR.$reply);
+}
+
 sub get_page_count(;$)
 {
 	my $total=(shift or count_threads());

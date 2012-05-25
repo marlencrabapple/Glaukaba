@@ -1,19 +1,28 @@
 #!/usr/bin/perl
+use CGI;
+use CGI::Carp qw(warningsToBrowser fatalsToBrowser); 
 
-read(STDIN, $buffer,$ENV{'CONTENT_LENGTH'});
+my $buffer;
+
+#read(STDIN, $buffer,$ENV{'CONTENT_LENGTH'});
+$buffer = $ENV{'QUERY_STRING'};
+
 $buffer =~ tr/+/ /;
 $buffer =~ s/\r/ /g;
 $buffer =~ s/\n/ /g;
 $buffer =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C",hex($1))/eg;
 $buffer =~ s/<!--(.|\n)*-->/ /g;
 $buffer =~ tr/\\|[|]|<|!|"|$|{|}|*|#|'|>|||;|%/ /;
+
 @pairs = split(/&/,$buffer);
+
 foreach $pair(@pairs){
-($key,$value)=split(/=/,$pair);
-$formdata{$key}.="$value";
+	($key,$value) = split(/=/,$pair);
+	$formdata{$key}.= "$value";
 }
-$post=$formdata{'Post'};
-$reason=$formdata{'Reason'};
+
+$post = $formdata{'Post'};
+$reason = $formdata{'Reason'};
 
 print "Content-type:text/html\n\n";
 
@@ -28,6 +37,7 @@ close (LOG);
 
 #my $url = "http://glauchan.org/glau/";
 
+#print "<script>alert('".$buffer."');</script>";
 print "<script>document.write('<h1>Report Submitted. Redirecting in 5 seconds.</h1>');</script>";
 #print "<script>setTimeout(window.location = 'http://glauchan.org/glau/',2000);</script>";
 print "<script>self.close()</script>"; # changed for the new popup report form

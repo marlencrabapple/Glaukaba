@@ -226,7 +226,7 @@ function doIt(){
 	var imgPath = "<img src='"+imageArray[rand]+"' alt='logo' class='banner' />";
 
 	if (Date.getMonth == 11){
-		document.getElementById("image").innerHTML = "<img src='"+"http://glauchan.org/img/christmas.jpg"+"' alt='logo' class='banner' />";
+		document.getElementById("image").innerHTML = "<img src='"+"http://www.glauchan.org/img/christmas.jpg"+"' alt='logo' class='banner' />";
 	}
 	else{
 		document.getElementById("image").innerHTML = imgPath;
@@ -273,10 +273,14 @@ function doIt(){
 				quotePreview(varReferences[e],1)});
 			//varReferences[e].addEventListener("click",function(){
 				//inlineQuote(varReferences[e],varReferences[e].href,0)});
-			varReferences[e].href = "javascript:void(0)";
+			//varReferences[e].href = "javascript:void(0)";
 		})(i);
-		varReferences[i].href = "javascript:void(0)";
+		//varReferences[i].href = "javascript:void(0)";
 	}
+}
+
+function logoSwitch(){
+	
 }
 
 function quickReply(refLink, board){
@@ -320,7 +324,12 @@ function ajaxSubmit(){
 	$(document).ready(function() {
 		// bind 'myForm' and provide a simple callback function
 		$('#qrActualForm').ajaxForm(function() {
-			closeQuickReply();
+			try{
+				closeQuickReply();
+			}
+			catch(e){
+				closeQuickReply();
+			}
 		});
 	});
 }
@@ -474,7 +483,7 @@ function thumbSize(){
 
 function birthday(birthday, play){
 	for (var i = 0; i < document.getElementsByClassName('hat').length; i++ ){
-		document.getElementsByClassName('hat')[i].innerHTML = "<img src='http://glauchan.org/img/partyhat.gif' style='position:absolute; margin-top:-100px;'/>"
+		document.getElementsByClassName('hat')[i].innerHTML = "<img src='http://www.glauchan.org/img/partyhat.gif' style='position:absolute; margin-top:-100px;'/>"
 	}
 	
 	if (birthday == 1){
@@ -525,9 +534,9 @@ function partyHard(){
 	birthday = 1;
 }
 
-function reportPost(post, board){
-	reportWindow = window.open('', post, 'width=170,height=150,scrollbars=no');
+function reportPostPopup(post, board){
+	reportWindow = window.open('', post, 'width=190,height=170,scrollbars=no');
 	
 	//oh god why
-	reportWindow.document.write("<!DOCTYPE html><head><title>Report Post</title><link rel='stylesheet' href='http://glauchan.org/css/boards/Yotsuba B.css' type='text/css' media='screen' /><script type='text/javascript' src='http://glauchan.org/js/logo.js'></script></head><body><h3 style='color: #AF0A0F'>Report Post</h3><form method='post' action='http://glauchan.org/"+board+"/report.pl'><div id='reportFormDiv'><div id='reportPostDiv' class='reportFieldDiv'><div class='reportFieldDivText'>Post Number</div><div class='reportFieldDivInput' id='postNumberField'><INPUT NAME='Post' TYPE='text' id='postNumberInput' value='"+post+"' SIZE=7></div></div><div id='reportReasonDiv' class='reportFieldDiv'><div class='reportFieldDivText'>Reason</div><div class='reportFieldDivInput'><INPUT NAME='Reason' TYPE='text' SIZE=7>&nbsp;<input value='Report' type='submit' class='field3s' /></div></div></div></form></body>");
+	reportWindow.document.write("<!DOCTYPE html><head><title>Report Post</title><link rel='stylesheet' href='http://www.glauchan.org/css/boards/Yotsuba B.css' type='text/css' media='screen' /><script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js' type='text/javascript'></script><script src='http://malsup.github.com/jquery.form.js'></script></head><body style='margin:0'><h3 style='color: #AF0A0F'>Report Post</h3><form method='get' action='http://www.glauchan.org/"+board+"/report.pl' enctype='multipart/form-data'><div id='reportFormDiv'><div id='reportPostDiv' class='reportFieldDiv'><div class='reportFieldDivText'>Post Number</div><div class='reportFieldDivInput' id='postNumberField'><INPUT NAME='Post' TYPE='text' id='postNumberInput' value='"+post+"' SIZE=7></div></div><div id='reportReasonDiv' class='reportFieldDiv'><div class='reportFieldDivText'>Reason</div><div class='reportFieldDivInput'><INPUT NAME='Reason' TYPE='text' SIZE=7>&nbsp;<input value='Report' type='submit' class='field3s' /></div></div></div></form><script>$(document).ready(function(){$('#reportPopupForm').ajaxForm(function(){try{}catch(e){}});});</script></body>");
 }

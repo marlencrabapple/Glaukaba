@@ -14,6 +14,14 @@ a,a:visited {
 color:#34345C;
 }
 
+a.postlink{
+color: #DD0000 !important;
+}
+
+a:hover{
+color: #DD0000 !important;
+}
+
 
 textarea {
 font-family:arial,helvetica,sans-serif;
@@ -362,11 +370,6 @@ span:hover.spoiler {
 color:#FFF;
 }
 
-
-a:hover,a:hover, {
-color:#D00;
-}
-
 .rules a,.filesize,.filesize {
 text-decoration:none;
 }
@@ -397,6 +400,7 @@ font-weight: bold;
 }
 
 .reportButton{
+margin-left: 5px;
 text-decoration: none;
 color: #34345C;
 }
