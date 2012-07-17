@@ -62,7 +62,7 @@ my @background=(0xff,0xff,0xff);
 my $dbh=DBI->connect(SQL_DBI_SOURCE,SQL_USERNAME,SQL_PASSWORD,{AutoCommit=>1}) or die S_SQLCONF;
 init_captcha_database($dbh) unless(table_exists_captcha($dbh,SQL_CAPTCHA_TABLE));
 
-my $ip=($ENV{REMOTE_ADDR} or '0.0.0.0');
+my $ip=($ENV{HTTP_CF_CONNECTING_IP} or '0.0.0.0');
 my ($word,$timestamp)=get_captcha_word($dbh,$ip,$key);
 
 if(!$word)
@@ -177,6 +177,23 @@ sub delete_captcha_word($$$)
 
 	my $sth=$dbh->prepare("DELETE FROM ".SQL_CAPTCHA_TABLE." WHERE ip=? AND pagekey=?;") or return;
 	$sth->execute($ip,$key) or return;
+}
+
+#
+# Recaptcha
+#
+
+sub check_recaptcha
+{
+	my($challenge,$response,$ip)=@_;
+	
+	eval "use Captcha::reCAPTCHA";
+	return if($@);
+
+	my $c=Captcha::reCAPTCHA->new;	
+	my $result=$c->check_answer(RECAPTCHA_PRIVATE_KEY,$ip,$challenge,$response);
+	
+	make_error(S_BADCAPTCHA) unless $result->{is_valid};
 }
 
 

@@ -49,7 +49,6 @@ return 1 if(caller); # stop here if we're being called externally
 my $query=new CGI;
 my $task=($query->param("task") or $query->param("action"));
 
-
 # check for admin table
 init_admin_database() if(!table_exists(SQL_ADMIN_TABLE));
 
@@ -82,8 +81,10 @@ elsif($task eq "post")
 	my $no_captcha=$query->param("no_captcha");
 	my $no_format=$query->param("no_format");
 	my $postfix=$query->param("postfix");
+	my $challenge=$query->param("recaptcha_challenge_field");
+	my $response=$query->param("recaptcha_response_field");
 
-	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix);
+	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response);
 }
 elsif($task eq "delete")
 {
@@ -408,9 +409,9 @@ sub build_thread_cache_all()
 # Posting
 #
 
-sub post_stuff($$$$$$$$$$$$$$)
+sub post_stuff($$$$$$$$$$$$$$$$)
 {
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix)=@_;
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response)=@_;
 
 	# get a timestamp for future use
 	my $time=time();
@@ -493,7 +494,11 @@ sub post_stuff($$$$$$$$$$$$$$)
 	) unless $whitelisted;
 
 	# check captcha
-	check_captcha($dbh,$captcha,$ip,$parent) if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip));
+	if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip))
+	{
+		check_captcha($dbh,$captcha,$ip,$parent) if(ENABLE_CAPTCHA ne 'recaptcha');
+		check_recaptcha($challenge,$response,$ip) if(ENABLE_CAPTCHA eq 'recaptcha');
+	}
 
 	# proxy check
 	proxy_check($ip) if (!$whitelisted and ENABLE_PROXY_CHECK);
@@ -863,6 +868,15 @@ sub format_comment($)
 		$blocktag=1;
 	}
 	
+	# code tags
+	if($comment=~/.*\[code\].*/){
+		$comment=~s/\[code\]*/\<pre class\=\'prettyprint\'\>/g;
+		$comment=~s/\[\/code\]*/\<\/pre\>/g;
+		$comment=~s/\<pre class\=\'prettyprint\'\>\<br \/\>/\<pre class\=\'prettyprint\'\>/g;
+		$comment=~s/\<\/pre\>\<br \/\>/\<\/pre\>/g;
+		$blocktag=1;
+	}
+	
 	# s-jis
 	if($comment=~/.*\[sjis\].*/){
 		$comment=~s/\[sjis\]*/\<span class\=\'aa\'\>/g;
@@ -878,7 +892,9 @@ sub format_comment($)
 		$comment=~s/\<\/p\>/\<br \/\>\<br \/\>/g;
 		$comment=~s/\<br \/\>\<br \/\>$/\<br \/\>/;
 		$comment=~s/\<\/span\>\<br \/\>\<br \/\>$/\<\/span\>/;
+		$comment=~s/\<\/pre\>\<br \/\>\<br \/\>$/\<\/pre\>/;
 		$comment=~s/\<br \/\>\<\/span\>/\<\/span\>/g;
+		$comment=~s/\<br \/\>\<\/pre\>/\<\/pre\>/g;
 		$blocktag=0;
 	}
 
@@ -1454,7 +1470,7 @@ sub do_login($$$$)
 	{
 		$crypt=crypt_password($password);
 	}
-	elsif($admincookie eq crypt_password(ADMIN_PASS))
+	elsif($admincookie eq crypt_password(ADMIN_PASS)||$admincookie eq crypt_password(MOD_PASS)||$admincookie eq crypt_password(MOD2_PASS)||$admincookie eq crypt_password(MOD3_PASS))
 	{
 		$crypt=$admincookie;
 		$nexttask="mpanel";
@@ -1575,7 +1591,16 @@ sub check_password($$)
 	my ($admin,$password)=@_;
 
 	return if($admin eq ADMIN_PASS);
+	
+	# preliminary support for multipe users
+	return if($admin eq MOD_PASS);
+	return if($admin eq MOD2_PASS);
+	return if($admin eq MOD3_PASS);
+	
 	return if($admin eq crypt_password($password));
+	return if($admin eq crypt_password(MOD_PASS));
+	return if($admin eq crypt_password(MOD2_PASS));
+	return if($admin eq crypt_password(MOD3_PASS));
 
 	make_error(S_WRONGPASS);
 }

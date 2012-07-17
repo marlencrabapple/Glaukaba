@@ -1,3 +1,15 @@
+var isOn = 0;
+var updaterTimer;
+var updaterTimeLeft;
+var timeLeft = 30;
+var req = new XMLHttpRequest();
+var modified;
+var newPosts;
+var currentPosts;
+var postsAdded = 0;
+var logoRandomized = 0;
+var numberOfPosts = 0;
+
 function get_cookie(name)
 {
 	with(document.cookie)
@@ -38,8 +50,6 @@ function get_password(name)
 	return(pass);
 }
 
-
-
 function insert(text)
 {
 	var textarea=document.getElementById("field4");
@@ -67,6 +77,7 @@ function insert(text)
 
 function highlight(post)
 {
+	// needs logic for detecting OP
 	var cells=document.getElementsByTagName("div");
 	for(var i=0;i<cells.length;i++) if(cells[i].className=="reply highlight") cells[i].className="reply";
 
@@ -74,15 +85,13 @@ function highlight(post)
 	if(reply)
 	{
 		reply.className="reply highlight";
-/*		var match=/^([^#]*)/.exec(document.location.toString());
-		document.location=match[1]+"#"+post;*/
+		var match=/^([^#]*)/.exec(document.location.toString());
+		document.location=match[1]+"#"+post;
 		return false;
 	}
 
 	return true;
 }
-
-
 
 function set_stylesheet(styletitle,norefresh)
 {
@@ -164,7 +173,6 @@ function do_ban(el)
 	return false;
 }
 
-
 window.onunload=function(e)
 {
 	if(style_cookie)
@@ -184,6 +192,15 @@ window.onload=function(e)
 
 	if(match=/#([0-9]+)/.exec(document.location.toString()))
 	highlight(match[1]);
+	
+	doIt();
+	prettyPrint();
+	
+	// style for mobile browsers
+	//for (var i = 0; i < document.getElementsByClassName('opThumb').length; i++ ){
+		//document.getElementsByClassName('opThumb')[i].width = document.getElementsByClassName('opThumb')[i].width*.504 + "px";
+		//document.getElementsByClassName('opThumb')[i].height = document.getElementsByClassName('opThumb')[i].height*.504 + "px";
+	//}
 }
 
 if(style_cookie)
@@ -193,22 +210,125 @@ if(style_cookie)
 	set_stylesheet(title);
 }
 
-if(window.attachEvent) {
-    window.attachEvent('onload', doIt());
-} else {
-    if(window.onload) {
-        var curronload = window.onload;
-        var newonload = function() {
-            curronload();
-            doIt();
-        };
-        window.onload = newonload;
-    } else {
-        window.onload = doIt();
-    }
+function preventDef(event) {
+	event.preventDefault();
 }
 
 function doIt(){
+	if (logoRandomized == 0){
+		logoSwitch();
+		logoRandomized = 1;
+	}
+	
+	document.getElementById("boardList").selectedIndex = 4;
+	
+	// inline image expansion prep
+	thumbnails = document.getElementsByClassName('thumb');
+	thumbLinks = document.getElementsByClassName('thumbLink');
+	fullSize = document.getElementsByClassName('forJsImgSize');
+	var imgSrc = new Array();
+	
+	for (var i = 0; i < thumbnails.length; i++ ){
+		(function(e) {
+			if (thumbLinks[e].className.indexOf("processed") == -1){
+				imgSrc[e] = thumbLinks[e].href;
+				thumbLinks[e].setAttribute("class", "thumbLink processed");
+				//thumbLinks[e].href = "javascript:void(0)";
+				//thumbLinks[e].removeAttribute("target");
+				// named the inner anonymous function (i think)
+				thumbLinks[e].addEventListener("click", function(a){
+					expandThumb(thumbLinks[e],thumbnails[e],imgSrc[e],fullSize[e], e); a.preventDefault();}, true);
+				//alert(imgSrc[i] +"\n\n"+ thumbLinks[i] +"\n\n"+ thumbnails[i] +"\n\n"+ i);
+			}
+		})(i);
+	}
+
+	// quick reply prep
+	var refLinks = document.getElementsByClassName('refLinkInner');
+	var board = document.getElementById('forJs').innerHTML;
+	console.log(board);
+	
+	for (var i = 0; i < refLinks.length; i++ ){
+		if (i == 0){
+			i = numberOfPosts;
+			console.log("Number of posts = " + numberOfPosts);
+		}
+		(function(e) {
+			refLinks[e].href = "javascript:void(0)";
+			refLinks[e].addEventListener("click",function(){
+				quickReply(refLinks[e],board)});
+		})(i);
+	}
+	
+	// mouse over quote preview and inline quote prep
+	var varReferences = document.getElementsByClassName("postlink");
+	for (var i = 0; i < varReferences.length; i++ ){
+		(function(e) {
+			if (varReferences[e].className.indexOf("processed") == -1){
+			varReferences[e].setAttribute("class", "postlink processed");
+				varReferences[e].addEventListener("mouseover",function(){
+					quotePreview(varReferences[e],0)});
+				varReferences[e].addEventListener("mouseout",function(){
+					quotePreview(varReferences[e],1)});
+				//varReferences[e].addEventListener("click",function(){
+					//inlineQuote(varReferences[e],varReferences[e].href,0)});
+				//varReferences[e].href = "javascript:void(0)";
+				
+				// For auto-updater (may be obsolete now)
+				varReferences[e].innerHTML = varReferences[e].innerHTML.replace(" (OP)","");
+				varReferences[e].innerHTML = varReferences[e].innerHTML.replace(" (Cross-thread)","");
+						
+				if (document.getElementById("parent" + varReferences[e].innerHTML.substring(8)) != null){
+					varReferences[e].innerHTML += " (OP)";
+				}
+				else{
+					if (document.getElementById("reply" + varReferences[e].innerHTML.substring(8)) == null){
+						if (document.body.className == "replypage"){
+							varReferences[e].innerHTML += " (Cross-thread)"
+						}
+					}
+				}
+			}
+		})(i);
+		//varReferences[i].href = "javascript:void(0)";
+	}
+	
+	// thread updater prep
+	if (postsAdded < 1){
+		if(document.body.className=="replypage"){
+			req = new XMLHttpRequest();
+			req.open('HEAD', document.location, false);
+			req.send(null);
+			modified = req.getResponseHeader("Last-Modified");
+			
+			currentPosts = document.getElementsByClassName("replyContainer");
+			
+			var updateLink = document.createElement('a');
+			updateLink.innerHTML = "<a style='position: fixed; padding: 5px; right: 0; bottom:0;' id='threadUpdaterButton' href='javascript:void(0)' onclick='updateThread()'>Auto update</a>";
+			
+			var modifiedDiv = document.createElement('div');
+			modifiedDiv.setAttribute("id","lastModified");
+			modifiedDiv.style.display = "none";
+			modifiedDiv.innerHTML = modified;
+			
+			document.body.appendChild(modifiedDiv);
+			document.body.appendChild(updateLink);
+		}
+	}
+	
+	// hide thread prep
+	if (postsAdded < 1){
+		if (document.body.className!="replypage"){
+			// something goes here
+		}
+	}
+}
+
+function masturbate(){
+	
+}
+
+function logoSwitch(){
 	var imageArray = new Array();
 
 	imageArray[0] = "http://i.imgur.com/t1dxL.jpg"; 
@@ -221,8 +341,10 @@ function doIt(){
 	imageArray[7] = "http://i.imgur.com/DCPTv.jpg";
 	imageArray[8] = "http://i.imgur.com/jXxHC.jpg";
 	imageArray[9] = "http://i.imgur.com/pDCSm.jpg";
+	imageArray[10] = "http://i.imgur.com/5PIbe.png";
 	
-	var rand = Math.floor(Math.random()*10);
+	
+	var rand = Math.floor(Math.random()*11);
 	var imgPath = "<img src='"+imageArray[rand]+"' alt='logo' class='banner' />";
 
 	if (Date.getMonth == 11){
@@ -231,56 +353,11 @@ function doIt(){
 	else{
 		document.getElementById("image").innerHTML = imgPath;
 	}
-
-	// inline thumbnail prep
-	document.getElementById("boardList").selectedIndex = 4;
-	thumbnails = document.getElementsByClassName('thumb');
-	thumbLinks = document.getElementsByClassName('thumbLink');
-	fullSize = document.getElementsByClassName('forJsImgSize');
-	var imgSrc = new Array();
-	
-	for (var i = 0; i < thumbnails.length; i++ ){
-		(function(e) {
-			imgSrc[i] = thumbLinks[i].href;
-			thumbLinks[i].href = "javascript:void(0)";
-			thumbLinks[i].removeAttribute("target");
-			thumbLinks[i].addEventListener("click",function(){
-				expandThumb(thumbLinks[e],thumbnails[e],imgSrc[e],fullSize[e], e)});
-			//alert(imgSrc[i] +"\n\n"+ thumbLinks[i] +"\n\n"+ thumbnails[i] +"\n\n"+ i);
-		})(i);
-	}
-	
-	// quick reply prep
-	var refLinks = document.getElementsByClassName('refLinkInner');
-	var board = document.getElementById('forJs').innerHTML;
-	console.log(board);
-	
-	for (var i = 0; i < refLinks.length; i++ ){
-		(function(e) {
-			refLinks[e].href = "javascript:void(0)";
-			refLinks[e].addEventListener("click",function(){
-				quickReply(refLinks[e],board)});
-		})(i);
-	}
-	
-	// mouse over quote preview and inline quote prep
-	var varReferences = document.getElementsByClassName("postlink");
-	for (var i = 0; i < varReferences.length; i++ ){
-		(function(e) {
-			varReferences[e].addEventListener("mouseover",function(){
-				quotePreview(varReferences[e],0)});
-			varReferences[e].addEventListener("mouseout",function(){
-				quotePreview(varReferences[e],1)});
-			//varReferences[e].addEventListener("click",function(){
-				//inlineQuote(varReferences[e],varReferences[e].href,0)});
-			//varReferences[e].href = "javascript:void(0)";
-		})(i);
-		//varReferences[i].href = "javascript:void(0)";
-	}
 }
 
-function logoSwitch(){
-	
+function recaptchaRefresh(){
+	Recaptcha.reload("t");
+	document.getElementById("qrCaptcha").innerHTML = document.getElementById("recaptchaContainer").innerHTML;
 }
 
 function quickReply(refLink, board){
@@ -288,6 +365,11 @@ function quickReply(refLink, board){
 	var _div = document.createElement('div');
 	_div.id = "quickReply";
 	var parent;
+	
+	//document.getElementById("recaptcha_reload_btn").href = "javascript:recaptchaRefresh();";
+	var recaptchaInsert = document.createElement('div');
+	recaptchaInsert.id = "recaptchaInsert";
+	recaptchaInsert.innerHTML = document.getElementById("recaptchaContainer").innerHTML;
 	
 	if(refLink.parentNode.parentNode.parentNode.parentNode.childNodes[1].id==""){
 		parent = refLink.parentNode.parentNode.parentNode.childNodes[1].id;
@@ -303,15 +385,13 @@ function quickReply(refLink, board){
 
 	if(document.getElementById("quickReply") == null){
 		document.body.appendChild(_div);
-		_div.innerHTML += '<span>Quick Reply</span><a href="javascript:void(0)" style="float: right" onclick="closeQuickReply();">[ x ]</a><form id="qrActualForm" action="/'+board+'/wakaba.pl" method="post" enctype="multipart/form-data"> <input type="hidden" name="task" value="post"> <input type="hidden" name="parent" value='+ parent +'> <div class="trap">Leave these fields empty (spam trap): <input type="text" name="name" autocomplete="off"><input type="text" name="link" autocomplete="off"></div> <div id="qrPostForm"> <div class="postTableContainer"> <div class="postBlock">Name</div> <div class="postSpacer"></div> <div class="postField"><input type="text" class="postInput" name="field1" id="qrField1"></div> </div> <div class="postTableContainer"> <div class="postBlock">Link</div> <div class="postSpacer"></div> <div class="postField"><input type="text" class="postInput" name="field2" id="qrField2"></div> </div> <div class="postTableContainer"> <div class="postBlock">Subject</div> <div class="postSpacer"></div> <div class="postField"> <input type="text" name="field3" class="postInput" id="qrField3"> <input type="submit" id="qrField3s" value="Submit" onclick="setSubmitText();"> </div> </div> <div class="postTableContainer"> <div class="postBlock">Comment</div> <div class="postSpacer"></div> <div class="postField"><textarea name="field4" class="postInput" id="qrField4"></textarea></div> </div> <div class="postTableContainer"> <div class="postBlock">File</div> <div class="postSpacer"></div> <div class="postField"> <input type="file" name="file" id="file"> <label><input type="checkbox" name="nofile" value="on">No File</label> </div> </div> <div class="postTableContainer"> <div class="postBlock">Password</div> <div class="postSpacer"></div> <div class="postField"><input type="password" class="postInput" id="qrPassword" name="password"> (for post and file deletion)</div> </div> <div class="postTableContainer"> </div> </div> </form>';
+		_div.innerHTML += '<span>Quick Reply</span><a href="javascript:void(0)" style="float: right" onclick="closeQuickReply();">[ x ]</a><form id="qrActualForm" action="/' + board + '/wakaba.pl" method="post" enctype="multipart/form-data"> <input type="hidden" name="task" value="post"> <input type="hidden" name="parent" value=' + parent + '> <div class="trap">Leave these fields empty (spam trap): <input type="text" name="name" autocomplete="off"><input type="text" name="link" autocomplete="off"></div> <div id="qrPostForm"> <div class="postTableContainer"> <div class="postBlock">Name</div> <div class="postSpacer"></div> <div class="postField"><input type="text" class="postInput" name="field1" id="qrField1"></div> </div> <div class="postTableContainer"> <div class="postBlock">Link</div> <div class="postSpacer"></div> <div class="postField"><input type="text" class="postInput" name="field2" id="qrField2"></div> </div> <div class="postTableContainer"> <div class="postBlock">Subject</div> <div class="postSpacer"></div> <div class="postField"> <input type="text" name="field3" class="postInput" id="qrField3"> <input type="submit" id="qrField3s" value="Submit" onclick="setSubmitText();"> </div> </div> <div class="postTableContainer"> <div class="postBlock">Comment</div> <div class="postSpacer"></div> <div class="postField"><textarea name="field4" class="postInput" id="qrField4"></textarea></div> </div> <div class="postTableContainer" id="qrCaptcha">' + recaptchaInsert.innerHTML + '</div> <div class="postTableContainer"> <div class="postBlock">File</div> <div class="postSpacer"></div> <div class="postField"> <input type="file" name="file" id="file"> <label><input type="checkbox" name="nofile" value="on">No File</label> </div> </div> <div class="postTableContainer"> <div class="postBlock">Password</div> <div class="postSpacer"></div> <div class="postField"><input type="password" class="postInput" id="qrPassword" name="password"> (for post and file deletion)</div> </div> <div class="postTableContainer"> </div> </div> </form>';
 		
 		document.getElementById("quickReply").childNodes[2].childNodes[7].childNodes[7].childNodes[5].childNodes[0].value += ref+"\n";
 		setQrInputs("qrPostForm");
 		ajaxSubmit();
 	}
 	else{
-		//document.getElementById("quickReply").innerHTML += ref;
-		//document.getElementById("quickReply").innerHTML += document.getElementById("quickReply").childNodes[2].childNodes[7].childNodes[7].childNodes[5].childNodes[0].id;
 		document.getElementById("quickReply").childNodes[2].childNodes[7].childNodes[7].childNodes[5].childNodes[0].value += ref+"\n";
 	}
 }
@@ -322,14 +402,10 @@ function setSubmitText(){
 
 function ajaxSubmit(){
 	$(document).ready(function() {
-		// bind 'myForm' and provide a simple callback function
+		// bind 'qrActualForm' and provide a simple callback function
 		$('#qrActualForm').ajaxForm(function() {
-			try{
-				closeQuickReply();
-			}
-			catch(e){
-				closeQuickReply();
-			}
+			closeQuickReply();
+			Recaptcha.reload("t");
 		});
 	});
 }
@@ -353,12 +429,35 @@ function expandThumb(tl, tn, src, fs, index){
 		var pageWidth = window.innerWidth;
 		var pageHeight = window.innerHeight;
 		
+		// Half of this might be useless, but it works.
 		if(imgWidth > pageWidth){
-			tn.style.width = pageWidth-100 + "px";
-			tn.style.height = "auto";
+			// The next line makes no sense and I don't remember why I wrote it that way
+			//if ((" " + tn.className + " ").replace(/[\n\t]/g, " ").indexOf(" opThumb ") > -1 ){
+			if (tn.className.indexOf("opThumb") > -1){
+				if (tn.offsetLeft > 30){
+					//console.log("Offset left: " + tn.offsetLeft);
+					tn.style.width = pageWidth - 150 - tn.offsetLeft + "px";
+				}
+				else{
+					//console.log("Offset left: " + tn.offsetLeft);
+					tn.style.width = pageWidth - 150 + "px";
+				}
+			}
+			else{
+				if (tn.parentNode.parentNode.offsetLeft > 30){
+					//console.log("Offset left: " + tn.offsetLeft);
+					tn.style.width = pageWidth - 150 - tn.parentNode.parentNode.offsetLeft + "px";
+				}
+				else{
+					//console.log("Offset left: " + tn.offsetLeft);
+					tn.style.width = pageWidth - 150 + "px";
+				}
+				tn.style.height = "auto";
+			}
 		}
 	}
 	else{
+		// Need to implement scroll up
 		//tn.src = tn.src.replace(".","s.");
 		//tn.src = tn.src.replace("src","thumb");
 		tn.className = tn.className.replace(" expandedThumb","");
@@ -403,11 +502,20 @@ function expandThumb(tl, tn, src, fs, index){
 			}
 		}
 	}
+	return false;
 }
 
 function quotePreview(reference, mode){
-	var referencedPostNumber = "reply" + reference.innerHTML.substring(8);
-	console.log(document.getElementById(referencedPostNumber));
+	var referenceWork = reference.innerHTML.replace(" (OP)", "");
+	
+	if (document.getElementById("parent" + referenceWork.substring(8)) == null){
+		var referencedPostNumber = "reply" + referenceWork.substring(8);
+	}
+	else{
+		var referencedPostNumber = "parent" + referenceWork.substring(8);
+	}
+
+	//console.log(referencedPostNumber+ " = " +document.getElementById(referencedPostNumber));
 	
 	if (document.getElementById(referencedPostNumber) != null){
 		if (mode == 0){
@@ -419,10 +527,12 @@ function quotePreview(reference, mode){
 			div.style.position = "absolute";
 			div.style.border = "1px solid grey";
 			div.innerHTML = referencedPost;
+			var previewOffsetY = document.getElementById(referencedPostNumber).offsetHeight;
+			var previewOffsetX = document.getElementById(referencedPostNumber).offsetWidth;
 
 			$(document).mousemove(function(e){
-				div.style.top = e.pageY+"px";
-				div.style.left = e.pageX+"px";
+				div.style.top = (e.pageY-(previewOffsetY+10))+"px";
+				div.style.left = (e.pageX+50)+"px";
 			});
 			
 			document.body.appendChild(div);
@@ -457,11 +567,108 @@ function inlineQuote(reference, url, mode){
 }
 
 function threadUpdater(){
+	req = new XMLHttpRequest();
+	req.open('HEAD', document.location, false);
+	req.send(null);
+	modified = req.getResponseHeader("Last-Modified");
 	
+	if (document.getElementById("lastModified").innerHTML == modified){
+		console.log("No new posts");
+	}
+	else{
+		document.getElementById("lastModified").innerHTML = modified;
+		console.log("New post!");
+		postsAdded++;
+		
+		req = new XMLHttpRequest();
+		req.open('GET', document.location, false);
+		//req.requestType = "document";
+		req.send();
+		newPostsText = req.responseText;
+		
+		var newPostsFrame = document.createElement('div');
+		newPostsFrame.setAttribute("id","newPostsFrame");
+		newPostsFrame.style.display = "none";
+		newPostsFrame.innerHTML = newPostsText;
+		var newPosts = newPostsFrame.getElementsByClassName("replyContainer");
+		//document.body.appendChild(newPostsFrame);
+		
+		
+		//var newPosts = req.response.getElementsByClassName("replyContainer");
+		//console.log(newPostsFrame.innerHTML);
+		
+		
+		var newPostsAmount = newPosts.length;
+		var currentPostsAmount = currentPosts.length;
+		numberOfPosts = currentPosts.length + 1;
+		var difference = newPostsAmount - currentPostsAmount;
+		
+		//console.log("Got to before for loop "+difference);
+		
+		for (var i = 0; i < difference; i++){
+			//document.getElementsByClassName("thread")[0].innerHTML += newPosts[currentPostsAmount].innerHTML;
+			var denguson = document.createElement('div');
+			denguson.setAttribute("class","replyContainer");
+			denguson.innerHTML = newPosts[currentPostsAmount + i].innerHTML;
+			document.getElementsByClassName("thread")[0].appendChild(denguson);
+			//console.log("Made it into for loop"+i);
+		}
+		
+		doIt();
+		
+		//console.log("Made it out of for loop");
+		currentPosts = newPosts;
+	}
+	
+	updaterTimer = setTimeout("threadUpdater()",30000);
 }
 
-function hidePost(){
+function updateThread(){
+	if(isOn == 0){
+		console.log("Thread updater started.");
+		threadUpdater();
+		updaterCounter();
+		isOn = 1;
+	}
+	else{
+		console.log("Thread updater stopped");
+		clearTimeout(updaterTimer);
+		clearTimeout(updaterTimeLeft);
+		isOn = 0;
+		document.getElementById("threadUpdaterButton").innerHTML = "Auto update";
+	}
+}
+
+function updaterCounter(){
+	if (timeLeft == 0){
+		timeLeft = 30;
+	}
 	
+	document.getElementById("threadUpdaterButton").innerHTML = "-"+timeLeft;
+	timeLeft--;
+	updaterTimeLeft = setTimeout("updaterCounter()",1000);
+}
+
+// TBD: Save hidden posts in a cookie or something
+function hidePost(replyDivId){
+	var dengus = document.createElement("div");
+	dengus.innerHTML = "Post Hidden";
+	dengus.setAttribute("id","postStub"+replyDivId.substring(5));
+	
+	if((document.getElementById(replyDivId).style.display=="table")||(document.getElementById(replyDivId).style.display=="")){
+		document.getElementById(replyDivId).style.display="none";
+		//document.getElementById("replyContainer"+replyDivId.substring(5)).innerHTML+="Post Hidden";
+		document.getElementById("replyContainer"+replyDivId.substring(5)).appendChild(dengus);
+		document.getElementById("hidePostButton"+replyDivId.substring(5)).innerHTML="[ + ]";
+	}
+	else{
+		document.getElementById(replyDivId).style.display="table";
+		document.getElementById("hidePostButton"+replyDivId.substring(5)).innerHTML="[ - ]";
+		document.getElementById("replyContainer"+replyDivId.substring(5)).removeChild(document.getElementById("postStub"+replyDivId.substring(5)));
+	}
+}
+
+function hideThread(){
 }
 
 // no longer in use
@@ -539,4 +746,33 @@ function reportPostPopup(post, board){
 	
 	//oh god why
 	reportWindow.document.write("<!DOCTYPE html><head><title>Report Post</title><link rel='stylesheet' href='http://www.glauchan.org/css/boards/Yotsuba B.css' type='text/css' media='screen' /><script src='//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js' type='text/javascript'></script><script src='http://malsup.github.com/jquery.form.js'></script></head><body style='margin:0'><h3 style='color: #AF0A0F'>Report Post</h3><form method='get' action='http://www.glauchan.org/"+board+"/report.pl' enctype='multipart/form-data'><div id='reportFormDiv'><div id='reportPostDiv' class='reportFieldDiv'><div class='reportFieldDivText'>Post Number</div><div class='reportFieldDivInput' id='postNumberField'><INPUT NAME='Post' TYPE='text' id='postNumberInput' value='"+post+"' SIZE=7></div></div><div id='reportReasonDiv' class='reportFieldDiv'><div class='reportFieldDivText'>Reason</div><div class='reportFieldDivInput'><INPUT NAME='Reason' TYPE='text' SIZE=7>&nbsp;<input value='Report' type='submit' class='field3s' /></div></div></div></form><script>$(document).ready(function(){$('#reportPopupForm').ajaxForm(function(){try{}catch(e){}});});</script></body>");
+}
+
+function toggleNavMenu(){
+	var menuState = document.getElementById("overlay").style.display;
+	
+	if((menuState=="none")||(menuState=="")){
+		document.getElementById("overlay").style.display="block";
+	}
+	else{
+		document.getElementById("overlay").style.display="none";
+	}
+}
+
+function togglePostMenu(postMenuId,postMenuButtonId){
+	console.log(document.getElementById(postMenuButtonId).offsetLeft);
+	
+	var menuState = document.getElementById(postMenuId).style.display;
+
+	if((menuState=="none")||(menuState=="")){
+		document.getElementById(postMenuId).style.left = document.getElementById(postMenuButtonId).offsetLeft-2 + "px";
+		document.getElementById(postMenuId).style.display="block";
+	}
+	else{
+		document.getElementById(postMenuId).style.display="none";
+	}
+}
+
+function deletePost(){
+	
 }

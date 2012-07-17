@@ -25,11 +25,13 @@ form .trap { display:none }
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
 </loop>
+<link href="http://glauchan.org/css/prettify.css" type="text/css" rel="stylesheet" />
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
 <script src="http://malsup.github.com/jquery.form.js"></script>
+<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>
 
 <script type="text/javascript">
 
@@ -49,13 +51,30 @@ form .trap { display:none }
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
 
+<a name="top"></a>
+
+<div id="overlay" onclick="toggleNavMenu();">
+	<div id="navOptionsMenu">
+		<div id="navOptionsTopBar">
+			Something will go here.
+			
+		</div>
+		<hr>
+		<div id="navOptionsContent">
+			<h3>This menu is under construction</h3>
+			<strong>Style Options</strong>
+			<br />
+			<loop $stylesheets>
+				<a href="javascript:set_stylesheet('<var $title>')" >[<var $title>]</a>
+			</loop>
+		</div>
+	</div>
+</div>
+
 <div id="topNavContainer">
 	}.include("include/header.html").q{
 	<div id="topNavRight">
-		<loop $stylesheets>
-			<a href="javascript:set_stylesheet('<var $title>')" >[<var $title>]</a>
-		</loop>
-		<!--[<a href="<var get_secure_script_name()>?task=admin"><const S_ADMIN></a>]-->
+		<a href="javascript:void(0)" onclick="toggleNavMenu();">[Board Options]</a>
 	</div>
 </div>
 
@@ -63,7 +82,26 @@ form .trap { display:none }
 <div id="image" style="padding: 0; margin: 0;"></div>
 <const TITLE>
 <p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><const SUBTITLE></p>
-</div><hr class="postinghr" />
+</div>
+
+<hr class="postinghr" />
+
+<div id="topDengus" style="width: 728px; margin-left: auto; margin-right: auto;">
+	<script type="text/javascript"><!--
+	google_ad_client = "ca-pub-9693774509329379";
+	/* Glauchan Leaderboard */
+	google_ad_slot = "3748774988";
+	google_ad_width = 728;
+	google_ad_height = 90;
+	//-->
+	</script>
+	<script type="text/javascript"
+	src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+	</script>
+</div>
+
+<hr class="postinghr" />
+
 };
 
 use constant NORMAL_FOOT_INCLUDE => include("include/footer.html").q{
@@ -75,11 +113,21 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <div id="content">
 <if $thread>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
-	<div class="theader"><const S_POSTING></div>
+	[<a href="#bottom">Bottom</a>]
+	<div class="theader"><const S_POSTING></div> 
 </if>
 
 <if $postform>
 	<div class="postarea">
+	
+	<style type="text/css" scoped="scoped">.recaptchatable{background-color:transparent!important;border:none!important;}.recaptcha_image_cell{background-color:transparent!important;}#recaptcha_response_field{border:1px solid #AAA!important;}#recaptcha_div{height:107px;width:440px;}#recaptcha_challenge_field{width:400px}</style>
+	
+	<script type="text/javascript">
+		var RecaptchaOptions = {
+			theme : 'clean'
+		};
+	</script>
+	 
 	<form action="<var $self>" method="post" enctype="multipart/form-data">
 
 	<input type="hidden" name="task" value="post" />
@@ -98,11 +146,13 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<div class="postField"><input type="text" class="postInput" name="field1" id="field1" /></div>
 				</div>
 			</if>
+			
 			<div class="postTableContainer">
 				<div class="postBlock">Link</div>
 				<div class="postSpacer"></div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" /></div>
 			</div>
+			
 			<div class="postTableContainer">
 				<div class="postBlock">Subject</div>
 				<div class="postSpacer"></div>
@@ -111,11 +161,37 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<input type="submit" id="field3s" value="Submit" />
 				</div>
 			</div>
+			
 			<div class="postTableContainer">
 				<div class="postBlock">Comment</div>
 				<div class="postSpacer"></div>
 				<div class="postField"><textarea name="field4" class="postInput" id="field4"></textarea></div>
 			</div>
+			
+			<if ENABLE_CAPTCHA && ENABLE_CAPTCHA ne 'recaptcha'>
+				<div class="postBlock"><const S_CAPTCHA></div>
+				<div class="postSpacer"></div>
+				<div class="postField">
+					<input type="text" name="captcha" class="field6" size="10" />
+					<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
+				</div>
+			</if>
+			
+			<if ENABLE_CAPTCHA eq 'recaptcha'>
+				<div class="postTableContainer" id="recaptchaContainer">
+					<div class="postBlock"><const S_CAPTCHA></div>
+					<div class="postSpacer"></div>
+					<div class="postField">
+						<script type="text/javascript" src="http://www.google.com/recaptcha/api/challenge?k=<const RECAPTCHA_PUBLIC_KEY>"></script>
+						<noscript>
+							<iframe src="http://www.google.com/recaptcha/api/noscript?k=<const RECAPTCHA_PUBLIC_KEY>" height="300" width="500"></iframe><br />
+							<textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
+							<input type="hidden" name="recaptcha_response_field" value="manual_challenge" />
+						</noscript>
+					</div>
+				</div>
+			</if>
+			
 			<if $image_inp>
 				<div class="postTableContainer">
 					<div class="postBlock">File</div>
@@ -128,11 +204,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</div>
 				</div>
 			</if>
-			<if ENABLE_CAPTCHA>
-				<tr><td class="postblock"><const S_CAPTCHA></td><td><input type="text" name="captcha" class="field6" size="10" />
-				<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
-				</td></tr>
-			</if>
+			
 			<div class="postTableContainer">
 				<div class="postBlock">Password</div>
 				<div class="postSpacer"></div>
@@ -146,7 +218,23 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		</div>
 	</form></div>
 	<script type="text/javascript">setPostInputs()</script>
-</if> 
+</if>
+
+<hr class="postinghr" />
+
+<div id="middleDengus" style="width: 468px; margin-left: auto; margin-right: auto;">
+	<script type="text/javascript"><!--
+	google_ad_client = "ca-pub-9693774509329379";
+	/* Glauchan middle */
+	google_ad_slot = "2539338055";
+	google_ad_width = 468;
+	google_ad_height = 60;
+	//-->
+	</script>
+	<script type="text/javascript"
+	src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+	</script>
+</div>
 
 <div class="announcement">
 }.include("../announcement.html").q{
@@ -158,6 +246,22 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<div class="thread"><loop $posts>
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">
+			
+				<div class="mobileParentPostInfo">
+					<label ><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="filetitle"><var $subject></span>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					</span>&nbsp;
+					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
+					
+					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+				</div>
+				
 				<div class="hat"></div>
 				<if $image>
 					<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
@@ -171,12 +275,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<br />
 					<if $thumbnail>
 						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>; height:<var $tn_height>;" alt="<var $size>" class="thumb opThumb" /></a>
+						<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="<var $size>" class="thumb opThumb" /></a>
 					</if>
 					<if !$thumbnail>
 						<if DELETED_THUMBNAIL>
 							<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
-							<img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>; height:<var $tn_height>;" alt="" class="thumb opThumb" /></a>
+							<img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a>
 						</if>
 						<if !DELETED_THUMBNAIL>
 							<div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
@@ -184,18 +288,28 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</if>
 				</if>
 				<a id="<var $num>"></a>
-				<label><input type="checkbox" name="delete" value="<var $num>" />
-				<span class="filetitle"><var $subject></span>
-				<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-				<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-				<var $date></label>
-				<span class="reflink">
-				<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
-				<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-				</span>&nbsp;
-				<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
 				
-				<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+				<div class="parentPostInfo">
+					<label ><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="filetitle"><var $subject></span>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					</span>&nbsp;
+					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
+					
+					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					
+					<div class="postMenu" id="postMenu<var $num>">
+						<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<a href="javascript:void(0)" onclick="deletePost(<var $num>)" class="postMenuItem">Delete this post</a>
+						<span href="javascript:void(0)" class="postMenuItem">Filter</span>
+						<a href="javascript:void(0)" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Share</a>
+					</div>
+				</div>
 				
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
@@ -212,8 +326,10 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		</if>
 		
 		<if $parent>
-			<div class="replyContainer">
-				<div class="doubledash">&gt;&gt;</div>
+			<div class="replyContainer" id="replyContainer<var $num>">
+				<div class="doubledash">
+					<a class="hidePostButton" id="hidePostButton<var $num>" onclick="hidePost('reply<var $num>')" href="javascript:void(0)">[ - ]</a>
+				</div>
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<label><input type="checkbox" name="delete" value="<var $num>" />
@@ -224,7 +340,16 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+					
+					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					
+					<div class="postMenu" id="postMenu<var $num>">
+						<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<a href="javascript:void(0)" onclick="deletePost(<var $num>)" class="postMenuItem">Delete this post</a>
+						<span href="javascript:void(0)" class="postMenuItem">Filter</span>
+						<a href="javascript:void(0)" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Share</a>
+					</div>
+					
 					&nbsp;
 					<if $image>
 						<br />
@@ -263,6 +388,30 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 	<hr />
 </loop>
+
+
+
+<div id="bottomDengus" style="width: 728px; margin-left: auto; margin-right: auto;">
+	<script type="text/javascript"><!--
+	google_ad_client = "ca-pub-9693774509329379";
+	/* Glauchan Leaderboard */
+	google_ad_slot = "3748774988";
+	google_ad_width = 728;
+	google_ad_height = 90;
+	//-->
+	</script>
+	<script type="text/javascript"
+	src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+	</script>
+</div>
+
+<hr class="postinghr" />
+
+<if $thread>
+	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	[<a href="#">Top</a>]
+	<a name="bottom"></a>
+</if>
 
 <div id="deleteForm">
 	<input type="hidden" name="task" value="delete" />

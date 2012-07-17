@@ -202,12 +202,6 @@ sub do_wakabamark($;$$)
 			}
 			$res.="<$tag>$html</$tag>";
 		}
-		elsif(/^(?:    |\t)/) # code sections
-		{
-			my @code;
-			while($lines[0]=~/^(?:    |\t)(.*)/) { push @code,$1; shift @lines; }
-			$res.="<pre><code>".(join "<br />",@code)."</code></pre>";
-		}
 		elsif(/^&gt;/) # quoted sections
 		{
 			my @quote;
@@ -220,7 +214,7 @@ sub do_wakabamark($;$$)
 		else # normal paragraph
 		{
 			my @text;
-			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|    |\t)/) { push @text,shift @lines; }
+			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;)/) { push @text,shift @lines; }
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
 			else { $res.="<p>".do_spans($handler,@text)."</p>" }
 		}
@@ -289,7 +283,8 @@ sub compile_template($;$)
 	{
 		$str=~s/^\s+//;
 		$str=~s/\s+$//;
-		$str=~s/\n\s*/ /sg;
+		# commented out for adsense
+		#$str=~s/\n\s*/ /sg;
 	}
 
 	while($str=~m!(.*?)(<(/?)(var|const|if|loop)(?:|\s+(.*?[^\\]))>|$)!sg)

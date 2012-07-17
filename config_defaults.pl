@@ -57,6 +57,8 @@ BEGIN {
 	eval "use constant CAPTCHA_SCALING => 0.15" unless(defined &CAPTCHA_SCALING);
 	eval "use constant CAPTCHA_ROTATION => 0.3" unless(defined &CAPTCHA_ROTATION);
 	eval "use constant CAPTCHA_SPACING => 2.5" unless(defined &CAPTCHA_SPACING);
+	eval "use constant RECAPTCHA_PRIVATE_KEY => ''" unless(defined &RECAPTCHA_PRIVATE_KEY);
+	eval "use constant RECAPTCHA_PUBLIC_KEY => ''" unless(defined &RECAPTCHA_PUBLIC_KEY);
 
 	eval "use constant ENABLE_LOAD => 0" unless(defined &ENABLE_LOAD);
 	eval "use constant LOAD_SENDER_SCRIPT => 'sender.pl'" unless(defined &LOAD_SENDER_SCRIPT);
