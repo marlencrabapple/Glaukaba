@@ -346,7 +346,8 @@ sub include($)
 
 	$file=~s/^\s+//;
 	$file=~s/\s+$//;
-	$file=~s/\n\s*/ /sg;
+	# commented out for adsense
+	#$file=~s/\n\s*/ /sg;
 
 	return $file;
 }
@@ -1435,6 +1436,16 @@ sub encrypt_xtea($)
 
 sub decrypt_xtea($)
 {
+}
+
+sub truncateComment($){
+	my ($comment)=@_;
+	$comment =~ s/\<[^\>]*\>/ /g;
+	#$comment =~ s/\<\/.\>/ /g;
+	#$comment =~ s/\<br \/\>/ /g;
+	$comment = clean_string($comment,"");
+	$comment = substr($comment,0,60);
+	return $comment;
 }
 
 sub add(@) { my ($sum,$term); while(defined ($term=shift)) { $sum+=$term } return $sum%4294967296 }

@@ -1,11 +1,11 @@
 use strict;
 
 BEGIN {
-	use constant S_NOADMIN => 'No ADMIN_PASS or NUKE_PASS defined in the configuration';	# Returns error when the config is incomplete
+	use constant S_NOADMIN => 'No PASSWORDS or NUKE_PASS defined in the configuration';	# Returns error when the config is incomplete
 	use constant S_NOSECRET => 'No SECRET defined in the configuration';		# Returns error when the config is incomplete
 	use constant S_NOSQL => 'No SQL settings defined in the configuration';		# Returns error when the config is incomplete
 
-	die S_NOADMIN unless(defined &ADMIN_PASS);
+	die S_NOADMIN unless(defined &PASSWORDS);
 	die S_NOADMIN unless(defined &NUKE_PASS);
 	die S_NOSECRET unless(defined &SECRET);
 	die S_NOSQL unless(defined &SQL_DBI_SOURCE);
@@ -15,6 +15,9 @@ BEGIN {
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
 	eval "use constant SQL_ADMIN_TABLE => 'admin'" unless(defined &SQL_ADMIN_TABLE);
 	eval "use constant SQL_PROXY_TABLE => 'proxy'" unless(defined &SQL_PROXY_TABLE);
+	
+	# for multi user/class support DO NOT TOUCH
+	eval "use constant CURRENT_SESSION => ['noone','user']" unless(defined &CURRENT_SESSION);
 
 	eval "use constant USE_TEMPFILES => 1" unless(defined &USE_TEMPFILES);
 
@@ -124,7 +127,7 @@ BEGIN {
 
 	eval "use constant FILETYPES => ()" unless(defined &FILETYPES);
 
-	eval "use constant WAKABA_VERSION => '3.1.0-nexus'" unless(defined &WAKABA_VERSION);
+	eval "use constant WAKABA_VERSION => '3.0.9'" unless(defined &WAKABA_VERSION);
 }
 
 1;

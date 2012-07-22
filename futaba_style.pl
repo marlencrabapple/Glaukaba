@@ -2,110 +2,232 @@ use strict;
 use POSIX qw/strftime/;
 BEGIN { require "wakautils.pl" }
 use constant NORMAL_HEAD_INCLUDE => q{
-<!DOCTYPE html>
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title><if $title><var $title> - </if><const TITLE></title>
-<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
-<style type="text/css">
-body { margin: 0; padding: 8px; margin-bottom: auto; padding-top: 50px; }
-blockquote blockquote { margin-left: 0em;}
-form { margin-bottom: 0px }
-form .trap { display:none }
-.postarea table { margin: 0px auto; text-align: left }
-.reflink a { color: inherit; text-decoration: none }
-.reply .filesize { margin-left: 20px }
-.userdelete { float: right; text-align: center; white-space: nowrap }
-.replypage .replylink { display: none }
-.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
-</style>
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title><if $title><var $title> - </if><const TITLE></title>
+	<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
+	<style type="text/css">
+	body { margin: 0; margin-bottom: auto; padding-top: 50px; }
+	blockquote blockquote { margin-left: 0em;}
+	form { margin-bottom: 0px }
+	form .trap { display:none }
+	.postarea table { margin: 0px auto; text-align: left }
+	.reflink a { color: inherit; text-decoration: none }
+	.reply .filesize { margin-left: 20px }
+	.userdelete { float: right; text-align: center; white-space: nowrap }
+	.replypage .replylink { display: none }
+	.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+	</style>
 
-<loop $stylesheets>
-<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
-</loop>
-<link href="http://glauchan.org/css/prettify.css" type="text/css" rel="stylesheet" />
+	<loop $stylesheets>
+	<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
+	</loop>
+	<link href="http://glauchan.org/css/prettify.css" type="text/css" rel="stylesheet" />
+	<link href="http://glauchan.org/css/mobile.css" type="text/css" rel="stylesheet" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+	<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+	<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
+	<script src="http://malsup.github.com/jquery.form.js"></script>
+	<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>
+	<script type="text/javascript">
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-26348635-1']);
+	  _gaq.push(['_trackPageview']);
 
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
-<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
-<script src="http://malsup.github.com/jquery.form.js"></script>
-<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>
-
-<script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-26348635-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-</script>
-
-</head>
-<if $thread><body class="replypage"></if>
-<if !$thread><body></if>
-
-<a name="top"></a>
-
-<div id="overlay" onclick="toggleNavMenu();">
-	<div id="navOptionsMenu">
-		<div id="navOptionsTopBar">
-			Something will go here.
+	  (function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+	</script>
+	<script>
+		$(document).ready(function() {
+			$(".catItem").mouseenter(function () {
+				var catItem = $(this).attr("id");
+				$("#"+catItem+"Hover").fadeTo(250, 0.5, function () {
+					console.log(catItem);
+					$("#"+catItem+"Hover").css("visibility", "visible");
+				});
+			});
 			
+			$(".catItem").mouseleave(function () {
+				var catItem = $(this).attr("id");
+				$("#"+catItem+"Hover").fadeTo(250, 0, function () {
+					console.log(catItem);
+					$("#"+catItem+"Hover").css("visibility", "hidden");
+				});
+			});
+		});
+	</script>
+	</head>
+	<if $thread><body class="replypage"></if>
+	<if !$thread><body></if>
+	<a name="top"></a>
+	<div id="overlay" onclick="toggleNavMenu();">
+		<div id="navOptionsMenu">
+			<div id="navOptionsTopBar">
+				<a class="navOptionsListItem">Main</a> | 
+				<a class="navOptionsListItem">Filter</a> | 
+				<a class="navOptionsListItem">Sauce</a> | 
+				<a class="navOptionsListItem">Rice</a> | 
+				<a class="navOptionsListItem">Keybinds</a>
+			</div>
+			<hr>
+			<div id="navOptionsContent">
+				<p>
+					<strong>Style Options</strong><br />
+					<loop $stylesheets>
+						<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a><br />
+					</loop>
+				</p>
+				<p>
+					<strong>General Enhancements</strong><br />
+					<span class="navOptionsListItem">Local Time</span>: Changes timestamps to match your local time<br />
+					<span class="navOptionsListItem">Keybinds</span>: Binds actions to keys<br />
+					<span class="navOptionsListItem">Comment Expansion</span>: Expand comments that are truncated on the index page<br />
+					<span class="navOptionsListItem">Thread Expansion</span>: View all replies without leaving the index page<br />
+					<span class="navOptionsListItem">Index Navigation</span>: Navigate between threads on the index page
+				</p>
+				<p>
+					<strong>Filtering</strong><br />
+					<span class="navOptionsListItem">Anonymize</span>:<br />
+					<span class="navOptionsListItem">Enable Filter</span>:<br />
+					<span class="navOptionsListItem">Filter Replies</span>:<br />
+					<span class="navOptionsListItem">Reply Hiding</span>:<br />
+					<span class="navOptionsListItem">Thread Hiding</span>:
+				</p>
+				<p>
+					<strong>Image Options</strong><br />
+					<span class="navOptionsListItem">Inline Expansion</span>:<br />
+					<span class="navOptionsListItem">Hover Expansion</span>:<br />
+					<span class="navOptionsListItem">Sauce</span>:<br />
+					<span class="navOptionsListItem">Reveal Spoilers</span>:<br />
+					<span class="navOptionsListItem">Auto-Gif</span>:
+				</p>
+				<p>
+					<strong>Monitoring</strong><br />
+					<span class="navOptionsListItem">Thread Updater</span>:<br />
+					<span class="navOptionsListItem">Unread Count</span>:<br />
+					<span class="navOptionsListItem">Unread Favicon</span>:<br />
+					<span class="navOptionsListItem">Post in Title</span>:<br />
+					<span class="navOptionsListItem">Thread Stats</span>:
+				</p>
+				<p>
+					<strong>Posting</strong><br />
+					<span class="navOptionsListItem">Quick Reply</span>:<br />
+					<span class="navOptionsListItem">Cooldown</span>:<br />
+					<span class="navOptionsListItem">Persistent QR</span>:<br />
+					<span class="navOptionsListItem">Auto Hide QR</span>:<br />
+					<span class="navOptionsListItem">Open Reply in New Tab</span>:<br />
+					<span class="navOptionsListItem">Remeber QR size</span>:<br />
+					<span class="navOptionsListItem">Hide Original Post Form</span>:<br />
+					<span class="navOptionsListItem">Remember Subject</span>:<br />
+					<span class="navOptionsListItem">Remember Spoiler</span>:
+				</p>
+				<p>
+					<strong>Posting</strong><br />
+					<span class="navOptionsListItem">Quote Backlinks</span>:<br />
+					<span class="navOptionsListItem">Quote Highlighting</span>:<br />
+					<span class="navOptionsListItem">Inline Quotes</span>:<br />
+					<span class="navOptionsListItem">Quote Preview</span>:
+				</p>
+			</div>
 		</div>
-		<hr>
-		<div id="navOptionsContent">
-			<h3>This menu is under construction</h3>
-			<strong>Style Options</strong>
-			<br />
+	</div>
+	<div id="topNavContainer">
+		}.include("include/header.html").q{
+		<div id="topNavRight">
+			<a href="javascript:void(0)" onclick="toggleNavMenu();">[Board Options]</a>
+		</div>
+	</div>
+	<div class="logo">
+	<div id="image" style="padding: 0; margin: 0;"></div>
+	<const TITLE>
+	<p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><const SUBTITLE></p>
+	</div>
+	<hr class="postinghr" />
+		<div class="denguses">}.include("include/topad.html").q{</div>
+	<hr class="postinghr" />
+};
+
+use constant MINIMAL_HEAD_INCLUDE => q{
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+			<meta name="viewport" content="width=device-width,initial-scale=1" />
+			<title><if $title><var $title> - </if><const TITLE></title>
+			<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
+			<style type="text/css">
+			body { margin: 0; padding: 8px; margin-bottom: auto;}
+			blockquote blockquote { margin-left: 0em;}
+			form { margin-bottom: 0px }
+			form .trap { display:none }
+			.postarea table { margin: 0px auto; text-align: left }
+			.reflink a { color: inherit; text-decoration: none }
+			.reply .filesize { margin-left: 20px }
+			.userdelete { float: right; text-align: center; white-space: nowrap }
+			.replypage .replylink { display: none }
+			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+			</style>
 			<loop $stylesheets>
-				<a href="javascript:set_stylesheet('<var $title>')" >[<var $title>]</a>
+			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
 			</loop>
-		</div>
-	</div>
-</div>
+			<link href="http://glauchan.org/css/prettify.css" type="text/css" rel="stylesheet" />
+			<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+			<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+			<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
+			<script src="http://malsup.github.com/jquery.form.js"></script>
+			<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>			
+			<script>
+				$(document).ready(function() {
+					$("#reportQueueButton").click(function () {
+						if(document.getElementById("reportQueue").style.display=="none"){
+							$("#reportsContainer").load("reports.html");
+							$("#reportQueue").show("slide", { direction: "right" }, 500);
+							$("#reportsContainer").animate({ scrollTop: $("#reportsContainer").attr("scrollHeight") }, 500);
+							document.getElementById("reportsContainer").style.height = ($(window).height()- 120) +"px";
+						}
+						else{
+							$("#reportQueue").hide("slide", { direction: "right" }, 500);
+						}
+					});
+					
+					$("#closeReportQueue").click(function () {
+						$("#reportQueue").hide("slide", { direction: "right" }, 500);
+					});
+					
+					$("#refreshReportsButton").click(function () {
+						$("#reportsContainer").load("reports.html");
+					});
+					
+					$(".moveButton").click(function () {
+						var toBeOpened = $(this).attr("id");
+						$("#"+toBeOpened+"Div").show("slide", { direction: "up" }, 500);
+					});
+				});
+			</script>
+			<script type="text/javascript">
+			  var _gaq = _gaq || [];
+			  _gaq.push(['_setAccount', 'UA-26348635-1']);
+			  _gaq.push(['_trackPageview']);
 
-<div id="topNavContainer">
-	}.include("include/header.html").q{
-	<div id="topNavRight">
-		<a href="javascript:void(0)" onclick="toggleNavMenu();">[Board Options]</a>
-	</div>
-</div>
-
-<div class="logo">
-<div id="image" style="padding: 0; margin: 0;"></div>
-<const TITLE>
-<p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><const SUBTITLE></p>
-</div>
-
-<hr class="postinghr" />
-
-<div id="topDengus" style="width: 728px; margin-left: auto; margin-right: auto;">
-	<script type="text/javascript"><!--
-	google_ad_client = "ca-pub-9693774509329379";
-	/* Glauchan Leaderboard */
-	google_ad_slot = "3748774988";
-	google_ad_width = 728;
-	google_ad_height = 90;
-	//-->
-	</script>
-	<script type="text/javascript"
-	src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-	</script>
-</div>
-
-<hr class="postinghr" />
-
+			  (function() {
+				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			  })();
+			</script>
+		</head>
+	<body>
 };
 
 use constant NORMAL_FOOT_INCLUDE => include("include/footer.html").q{
-
 </body></html>
 };
 
@@ -116,7 +238,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div> 
 </if>
-
 <if $postform>
 	<div class="postarea">
 	
@@ -179,7 +300,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			
 			<if ENABLE_CAPTCHA eq 'recaptcha'>
 				<div class="postTableContainer" id="recaptchaContainer">
-					<div class="postBlock"><const S_CAPTCHA></div>
+					<div class="postBlock" id="captchaPostBlock"><const S_CAPTCHA></div>
 					<div class="postSpacer"></div>
 					<div class="postField">
 						<script type="text/javascript" src="http://www.google.com/recaptcha/api/challenge?k=<const RECAPTCHA_PUBLIC_KEY>"></script>
@@ -222,19 +343,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 <hr class="postinghr" />
 
-<div id="middleDengus" style="width: 468px; margin-left: auto; margin-right: auto;">
-	<script type="text/javascript"><!--
-	google_ad_client = "ca-pub-9693774509329379";
-	/* Glauchan middle */
-	google_ad_slot = "2539338055";
-	google_ad_width = 468;
-	google_ad_height = 60;
-	//-->
-	</script>
-	<script type="text/javascript"
-	src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-	</script>
-</div>
+<div class="denguses">}.include("include/middlead.html").q{</div>
 
 <div class="announcement">
 }.include("../announcement.html").q{
@@ -275,7 +384,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<br />
 					<if $thumbnail>
 						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="<var $size>" class="thumb opThumb" /></a>
+							<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></a>
 					</if>
 					<if !$thumbnail>
 						<if DELETED_THUMBNAIL>
@@ -365,7 +474,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 						<if $thumbnail>
 							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-							<img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></a>
+								<img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></a>
 						</if>
 						<if !$thumbnail>
 							<if DELETED_THUMBNAIL>
@@ -389,23 +498,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<hr />
 </loop>
 
+<div class="denguses">}.include("include/bottomad.html").q{</div>
 
-
-<div id="bottomDengus" style="width: 728px; margin-left: auto; margin-right: auto;">
-	<script type="text/javascript"><!--
-	google_ad_client = "ca-pub-9693774509329379";
-	/* Glauchan Leaderboard */
-	google_ad_slot = "3748774988";
-	google_ad_width = 728;
-	google_ad_height = 90;
-	//-->
-	</script>
-	<script type="text/javascript"
-	src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-	</script>
-</div>
-
-<hr class="postinghr" />
+<hr />
 
 <if $thread>
 	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
@@ -430,15 +525,10 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 	<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
 	<if !$prevpage><const S_FIRSTPG></if>
-
-	
-
 	<loop $pages>
 		<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
 		<if $current>[<var $page>]</if>
 	</loop>
-
-	
 
 	<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
 	<if !$nextpage><const S_LASTPG></if>
@@ -449,56 +539,147 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </div>
 }.NORMAL_FOOT_INCLUDE);
 
-
-
 use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
-<h1 style="text-align: center"><var $error><br /><br />
-<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a><br /><br />
-</h1>
-</div>
+	<h1 style="text-align: center"><var $error><br /><br />
+	<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a><br /><br />
+	</h1>
+	</div>
+	
 }.NORMAL_FOOT_INCLUDE);
 
+use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
+	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	<div class="theader">Catalog Mode</div>
+	<div id="catalog">
+		<loop $threads>
+			<div class="catItem" id="catItem<var $num>" style="display: inline-block;">
+				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><div class="catItemHover" id="catItem<var $num>Hover" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;"><div class="catItemHoverText" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px; line-height:<var ($tn_height*.504)>px;">&gt;&gt;<var $num></div></div></if>
+				
+				<if !$thumbnail><div id="catItem<var $num>Hover" class="catItemHoverNoThumb"><div class="catItemHoverTextNoThumb">&gt;&gt;<var $num></div></div></if></a>
+				
+				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><img src="/<var BOARD_DIR>/<var $thumbnail>" class="catImage" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if !$thumbnail><div class="catImageNoThumb"></div></if></a>
+			</div>
+		</loop>
+	</div>
+	<hr />
+	<div class="denguses">}.include("include/bottomad.html").q{</div>
+}.NORMAL_FOOT_INCLUDE);
+
+use constant LIST_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
+	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	<div class="theader">Thread Index</div>
+	<table id="threadList" style="white-space: nowrap;">
+		<thead><tr class="head">
+			<td class="postBlock">Subject</td>
+			<td class="postBlock">Last post by</td>
+			<td class="postBlock">Time</td>
+			<td class="postBlock">Post ID</td>
+		</tr></thead>
+		<tbody><loop $threads><tr>
+			<td><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></if><if !$subject><var truncateComment($comment)></if></a></td>
+			<td><span class="postername"><var $name></span><span class="postertrip"><var $trip></span></td>
+			<td><var make_date($timestamp,"tiny")></td>
+			<td>No.<var $num></td>
+		</tr></loop></tbody>
+	</table>
+	<hr />
+	<div class="denguses">}.include("include/bottomad.html").q{</div>
+	<hr />
+}.NORMAL_FOOT_INCLUDE);
+
+use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
+
+}.NORMAL_FOOT_INCLUDE);
 
 
 #
 # Admin pages
 #
 
-use constant MANAGER_HEAD_INCLUDE => NORMAL_HEAD_INCLUDE.q{
+use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
+
+<if $admin>
+	<div id="reportQueue" style="display: none; height: 100%; position: fixed; right: 0; float: right; padding-top: 30px; width: 360px; background-color:#f1f1f1; border-left: 1px solid grey;">
+		<div style="padding: 10px; clear: both;">
+			<div style="float:right;"><a id="closeReportQueue" href="javascript:void(0)">[ x ]</a></div>
+			<h3 style="margin: 0">Report Queue</h3>
+			[<a id="refreshReportsButton" href="javascript:void(0)">Refresh Reports</a>]
+		</div>
+		<div style="clear:both;"></div>
+		<div id="reportsContainer" style="clear:both; overflow-y:auto; overflow-x: hidden; height: 100%">
+		</div>
+	</div>
+	
+	<if ($session-\>[1] eq 'mod')||($session-\>[1] eq 'admin')>
+		<div id="topNavContainer">
+			<div id="topNavLeft">
+				<strong>Navigation:&nbsp;&nbsp;</strong>
+				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&admin=<var $admin>'">
+					<option value="glau">/glau/</option>
+					<option value="meta">/meta/</option>
+					<option value="test">/test/</option>
+					<option value="#">Boards</option>
+				</select>
+			</div>
+		</div>
+		<script>
+			document.getElementById("managerBoardList").selectedIndex = 3;
+		</script>
+	</if>
+	
+	<div class="logo" style="margin-top: 30px;">
+		<const TITLE>
+	</div>
+	
+	<div style="width: 100%; text-align: center; margin-bottom: 30px; margin-top: 10px;">
+		<hr / >
+		<h2 style="color: red; margin: 0;">Announcements</h3>
+		}.include("../managementannouncement.html").q{
+		<hr / >
+	</div>
+</if>
+
+[<a href="<var expand_filename(HTML_SELF)>"><const S_MANARET></a>]
 
 <if $admin>
 	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
-	[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-	[<a href="<var $self>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
-	[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
-	[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
+	
+	<if $session-\>[1] eq 'mod'>
+		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
+		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
+		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
+	</if>
+	
+	<if $session-\>[1] eq 'admin'>
+		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
+		[<a href="<var $self>?task=proxy&amp;admin=<var $admin>"><const S_MANAPROXY></a>]
+		[<a href="<var $self>?task=spam&amp;admin=<var $admin>"><const S_MANASPAM></a>]
+		[<a href="<var $self>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
+		[<a href="<var $self>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
+		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
+		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
+	</if>
+	
+	[<a id="reportQueueButton" href="javascript:void(0)"><const S_REPORTS></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
+	
+	<div style="float: right"> <strong>User:</strong> <var $session-\>[0]> <strong>Pass:</strong> <var $session-\>[1]> </div>
 </if>
-<div class="passvalid"><const S_MANAMODE></div><br />
+<div class="passvalid" style="margin-top: 5px; padding: 3px;"><const S_MANAMODE></div><br />
+
 };
 
 use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 <div align="center"><form action="<var $self>" method="post">
 <input type="hidden" name="task" value="admin" />
+<input type="hidden" name="nexttask" value="mpanel" />
 <const S_ADMINPASS>
 <input type="password" name="berra" size="8" value="" />
 <br />
 <label><input type="checkbox" name="savelogin" /> <const S_MANASAVE></label>
 <br />
-<select name="nexttask">
-<option value="mpanel"><const S_MANAPANEL></option>
-<option value="bans"><const S_MANABANS></option>
-<option value="proxy"><const S_MANAPROXY></option>
-<option value="spam"><const S_MANASPAM></option>
-<option value="sqldump"><const S_MANASQLDUMP></option>
-<option value="sql"><const S_MANASQLINT></option>
-<option value="mpost"><const S_MANAPOST></option>
-<option value="rebuild"><const S_MANAREBUILD></option>
-<option value=""></option>
-<option value="nuke"><const S_MANANUKE></option>
-</select>
 <input type="submit" value="<const S_MANASUB>" />
 </form></div>
 
@@ -506,8 +687,6 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 
 use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-
-<div class="dellist"><const S_MANAPANEL></div>
 
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="delete" />
@@ -536,9 +715,10 @@ use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<td><var clean_string(substr $subject,0,20)></td>
 	<td><b><var clean_string(substr $name,0,30)><var $trip></b></td>
 	<td><var clean_string(substr $comment,0,30)></td>
-	<td><var dec_to_dot($ip)>
+	<td><if $session-\>[1] ne 'janitor'><var dec_to_dot($ip)></if>
+		<if $session-\>[1] eq 'janitor'>ID: <var make_id_code($ip,$time,$email)></if>
 		[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
-		[<a href="<var $self>?admin=<var $admin>&amp;task=addip&amp;type=ipban&amp;ip=<var $ip>" onclick="return do_ban(this)"><const S_MPBAN></a>]
+		<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?admin=<var $admin>&amp;task=addip&amp;type=ipban&amp;ip=<var $ip>" onclick="return do_ban(this)"><const S_MPBAN></a>]</if>
 	</td>
 
 	</tr>
@@ -564,14 +744,16 @@ use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 <br /><div class="postarea">
 
+<if $session-\>[1] ne 'janitor'>
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="deleteall" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
-<tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
+<tr><td class="postBlock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
 <input type="submit" value="<const S_MPDELETEIP>" /></td></tr>
 </tbody></table></form>
+</if>
 
 </div><br />
 
@@ -594,9 +776,9 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="type" value="ipban" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
-<tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<tr><td class="postBlock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANIP>" /></td></tr>
 </tbody></table></form>
 
@@ -607,9 +789,9 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="type" value="whitelist" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
-<tr><td class="postblock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<tr><td class="postBlock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANWHITELIST>" /></td></tr>
 </tbody></table></form>
 
@@ -620,8 +802,8 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="type" value="wordban" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
-<tr><td class="postblock"><const S_BANWORDLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<tr><td class="postBlock"><const S_BANWORDLABEL></td><td><input type="text" name="string" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANWORD>" /></td></tr>
 </tbody></table></form>
 
@@ -632,8 +814,8 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="type" value="trust" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
-<tr><td class="postblock"><const S_BANTRUSTTRIP></td><td><input type="text" name="string" size="24" /></td></tr>
-<tr><td class="postblock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
+<tr><td class="postBlock"><const S_BANTRUSTTRIP></td><td><input type="text" name="string" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_BANCOMMENTLABEL></td><td><input type="text" name="comment" size="16" />
 <input type="submit" value="<const S_BANTRUST>" /></td></tr>
 </tbody></table></form>
 
@@ -674,7 +856,6 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 }.NORMAL_FOOT_INCLUDE);
 
-
 use constant PROXY_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 <div class="dellist"><const S_MANAPROXY></div>
@@ -691,8 +872,8 @@ use constant PROXY_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="type" value="white" />
 <input type="hidden" name="admin" value="<var $admin>" />
 <table><tbody>
-<tr><td class="postblock"><const S_PROXYIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postblock"><const S_PROXYTIMELABEL></td><td><input type="text" name="timestamp" size="24" />
+<tr><td class="postBlock"><const S_PROXYIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
+<tr><td class="postBlock"><const S_PROXYTIMELABEL></td><td><input type="text" name="timestamp" size="24" />
 <input type="submit" value="<const S_PROXYWHITELIST>" /></td></tr>
 </tbody></table></form>
 
@@ -765,7 +946,7 @@ use constant SQL_DUMP_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 <div class="dellist"><const S_MANASQLDUMP></div>
 
-<pre><code><var $database></code></pre>
+<pre class="sqldump"><code><var $database></code></pre>
 
 }.NORMAL_FOOT_INCLUDE);
 
@@ -776,19 +957,34 @@ use constant SQL_INTERFACE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div class="dellist"><const S_MANASQLINT></div>
 
 <div align="center">
-<form action="<var $self>" method="post">
-<input type="hidden" name="task" value="sql" />
-<input type="hidden" name="admin" value="<var $admin>" />
+	<form action="<var $self>" method="post">
+		<input type="hidden" name="task" value="sql" />
+		<input type="hidden" name="admin" value="<var $admin>" />
 
-<textarea name="sql" rows="10" cols="60"></textarea>
+		<textarea name="sql" rows="10" cols="60"></textarea>
 
-<div class="delbuttons"><const S_SQLNUKE>
-<input type="password" name="nuke" value="<var $nuke>" />
-<input type="submit" value="<const S_SQLEXECUTE>" />
+		<div class="delbuttons"><const S_SQLNUKE>
+			<input type="password" name="nuke" value="<var $nuke>" />
+			<input type="submit" value="<const S_SQLEXECUTE>" />
+		</div>
+	</form>
+	
+	<hr />
+	<br /><br /><br />
+	
+	<strong><a href="javascript:void(0)" onclick="if(document.getElementById('nukeBoard').style.display=='none'){document.getElementById('nukeBoard').style.display='block';}else{document.getElementById('nukeBoard').style.display='none';}">Nuke Board</a></strong>
+	<div id="nukeBoard" style="display:none">
+		<form action="<var $self>" method="post">
+			<input type="hidden" name="task" value="nuke" />
+			<div class="delbuttons"><const S_SQLNUKE>
+				<input type="password" name="admin" value="<var $nuke>" />
+				<input type="submit" value="Nuke Board" />
+			</div>
+		</form>
+	</div>
 </div>
 
-</form>
-</div>
+
 
 <pre><code><var $results></code></pre>
 
@@ -810,16 +1006,16 @@ use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <label>Format Text (0 means yes)<input type="text" name="no_format" value="0" /></label>
 
 <table><tbody>
-<tr><td class="postblock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr>
-<tr><td class="postblock"><const S_EMAIL></td><td><input type="text" name="field2" size="28" /></td></tr>
-<tr><td class="postblock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
+<tr><td class="postBlock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr>
+<tr><td class="postBlock"><const S_EMAIL></td><td><input type="text" name="field2" size="28" /></td></tr>
+<tr><td class="postBlock"><const S_SUBJECT></td><td><input type="text" name="field3" size="35" />
 <input type="submit" value="<const S_SUBMIT>" /></td></tr>
-<tr><td class="postblock"><const S_COMMENT></td><td><textarea name="field4" cols="48" rows="4"></textarea></td></tr>
-<tr><td class="postblock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
+<tr><td class="postBlock"><const S_COMMENT></td><td><textarea name="field4" cols="48" rows="4"></textarea></td></tr>
+<tr><td class="postBlock"><const S_UPLOADFILE></td><td><input type="file" name="file" size="35" />
 <label><input type="checkbox" name="nofile" value="on" /><const S_NOFILE> </label>
 </td></tr>
-<tr><td class="postblock"><const S_PARENT></td><td><input type="text" name="parent" size="8" /></td></tr>
-<tr><td class="postblock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /><const S_DELEXPL></td></tr>
+<tr><td class="postBlock"><const S_PARENT></td><td><input type="text" name="parent" size="8" /></td></tr>
+<tr><td class="postBlock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /><const S_DELEXPL></td></tr>
 </tbody></table></form></div><hr />
 <script type="text/javascript">set_inputs("postform")</script>
 

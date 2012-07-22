@@ -5,8 +5,7 @@ font-family: arial, helvetica, sans-serif;
 font-size: 10pt;
 margin-left: 0;
 margin-right: 0;
-padding-left: 5px;
-padding-right: 5px;
+padding: 8px;
 }
 
 a,a:visited {
@@ -140,10 +139,9 @@ color:#AF0A0F;
 font-family:tahoma;
 font-size:28px;
 font-weight:700;
-margin-top:-15px;
 text-align:center;
 width:100%;
-margin-top: 5px;
+margin-top: 30px;
 }
 
 #pageNumber {
@@ -242,15 +240,16 @@ display: table-cell;
 
 .footer {
 clear:both;
-font-size:7pt;
+font-size:xx-small;
 text-align:center;
 }
 
 .passvalid {
-background:#EA8;
+background:#E04000;
 color:#fff;
 text-align:center;
 width:100%;
+font-weight: bold;
 }
 
 .dellist {
@@ -311,11 +310,26 @@ blockquote {
 font-size:10pt;
 }
 
-pre{
+pre.prettyprint{
 display: block;
 background-color: #F1F1F1;
 border: medium none !important;
 max-width: 600px;
+overflow: auto;
+padding: 5px !important;
+font-size: 8pt;
+-webkit-tab-size: 4;
+-moz-tab-size: 4;
+-ms-tab-size: 4;
+-o-tab-size: 4;
+tab-size: 4;
+}
+
+pre.sqldump{
+display: block;
+background-color: #F1F1F1;
+border: medium none !important;
+max-width: 100%;
 overflow: auto;
 padding: 5px !important;
 font-size: 8pt;
@@ -537,4 +551,40 @@ white-space: nowrap;
 
 .hidePostButton{
 text-decoration: none;
+}
+
+#threadList{
+width: 100%;
+margin-left: auto;
+margin-right: auto;
+}
+
+#catalog{
+width: 80%;
+margin-left: auto;
+margin-right: auto;
+text-align: center;
+}
+
+.catItemHoverNoThumb{
+display:inline-block; visibility: hidden; background: #f1f1f1; position: absolute; width: 126px; height: 126px; margin: 11px; border: 2px solid #555555; border-radius: 3px 3px 3px 3px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.catItemHover{
+display:block; visibility: hidden; background: #f1f1f1; position: absolute; margin: 11px; border: 2px solid #555555; border-radius: 3px 3px 3px 3px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.catItemHoverText{
+display: block; opacity: .5; font-size: 15pt; font-weight: bold;
+}
+.catItemHoverTextNoThumb{
+display: block; width: 126px; height: 126px; line-height:126px; opacity: .5; font-size: 15pt; font-weight: bold;
+}
+
+.catImage{
+margin: 11px; border: 2px solid #555555; border-radius: 3px 3px 3px 3px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.catImageNoThumb{
+display: inline-block; width: 126px; height: 126px; margin: 10px; border: 2px solid #555555; border-radius: 3px 3px 3px 3px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }

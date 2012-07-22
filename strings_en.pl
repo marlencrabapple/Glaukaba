@@ -42,7 +42,7 @@ use constant S_MANARET => 'Return';										# Returns to HTML file instead of P
 use constant S_MANAMODE => 'Manager Mode';								# Prints heading on top of Manager page
 
 use constant S_MANALOGIN => 'Manager Login';							# Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
-use constant S_ADMINPASS => 'Admin password:';							# Prints login prompt
+use constant S_ADMINPASS => 'Manager Key:';							# Prints login prompt
 
 use constant S_MANAPANEL => 'Management Panel';							# Defines Management Panel radio button--allows the user to view the management panel (overview of all posts)
 use constant S_MANABANS => 'Bans/Whitelist';							# Defines Bans Panel button
@@ -57,7 +57,7 @@ use constant S_MANALOGOUT => 'Log out';									#
 use constant S_MANASAVE => 'Remember me on this computer';				# Defines Label for the login cookie checbox
 use constant S_MANASUB => 'Go';											# Defines name for submit button in Manager Mode
 
-use constant S_NOTAGS => 'HTML tags allowed. No formatting will be done, you must use HTML for line breaks and paragraphs.'; # Prints message on Management Board
+use constant S_NOTAGS => 'HTML tags allowed. If you set the \'Format Text\' option to 1, no formatting will be done, and you will have to use HTML for line breaks and paragraphs.'; # Prints message on Management Board
 
 use constant S_MPDELETEIP => 'Delete all';
 use constant S_MPDELETE => 'Delete';									# Defines for deletion button in Management Panel
@@ -116,8 +116,8 @@ use constant S_NOTEXT => 'Error: No comment entered.';						# Returns error for 
 use constant S_TOOLONG => 'Error: Too many characters in text field.';		# Returns error for too many characters in a given field
 use constant S_NOTALLOWED => 'Error: Posting not allowed.';					# Returns error for non-allowed post types
 use constant S_UNUSUAL => 'Error: Abnormal reply.';							# Returns error for abnormal reply? (this is a mystery!)
-use constant S_BADHOST => 'Error: Host is banned.';							# Returns error for banned host ($badip string)
-use constant S_BADHOSTPROXY => 'Error: Proxy is banned for being open.';	# Returns error for banned proxy ($badip string)
+use constant S_BADHOST => 'Error: You are banned.';							# Returns error for banned host ($badip string)
+use constant S_BADHOSTPROXY => 'Error: This proxy is banned!';	# Returns error for banned proxy ($badip string)
 use constant S_RENZOKU => 'Error: Flood detected, post discarded.';			# Returns error for $sec/post spam filter
 use constant S_RENZOKU2 => 'Error: Flood detected, file discarded.';		# Returns error for $sec/upload spam filter
 use constant S_RENZOKU3 => 'Error: Flood detected.';						# Returns error for $sec/similar posts spam filter.
@@ -135,6 +135,9 @@ use constant S_SQLCONF => 'SQL connection failure';							# Database connection 
 use constant S_SQLFAIL => 'Critical SQL problem!';							# SQL Failure
 
 use constant S_REDIR => 'If the redirect didn\'t work, please choose one of the following mirrors:';    # Redir message for html in REDIR_DIR
+
+use constant S_CLASS => 'Your user class does not have permission to do this.'; # Permissions error
+use constant S_REPORTS => 'Report Queue'; # Permissions error
 
 1;
 

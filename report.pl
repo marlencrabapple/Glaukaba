@@ -29,15 +29,14 @@ print "Content-type:text/html\n\n";
 use POSIX qw/strftime/;
 
 open (LOG, ">>reports.html");
-print LOG strftime('<pre style="font-size: 12px;"><code>%Y-%b-%d %H:%M',localtime);
+print LOG strftime('<pre style="font-size: 12px; border-bottom: 1px LightGrey solid; width: 340px; padding: 10px; padding-bottom: 5px;"><code>%Y-%b-%d %H:%M',localtime);
 print LOG "<br />Submitted By. $ENV{HTTP_CF_CONNECTING_IP}<br />"; # HTTP_CF_CONNECTING_IP gets IPs properly with cloudflare
 print LOG "No. $post<br />";
-print LOG "Reason: $reason<br /></code></pre>";
+print LOG "<span style='word-wrap: break-word; display: block; width: 340px;'>Reason: $reason</span><br /></code></pre>";
 close (LOG);
 
 #my $url = "http://glauchan.org/glau/";
 
-#print "<script>alert('".$buffer."');</script>";
+#print "<script>alert('".$buffer."');</script>"
 print "<script>document.write('<h1>Report Submitted. Redirecting in 5 seconds.</h1>');</script>";
-#print "<script>setTimeout(window.location = 'http://glauchan.org/glau/',2000);</script>";
 print "<script>self.close()</script>"; # changed for the new popup report form

@@ -1,0 +1,128 @@
+@media only screen and (max-width: 480px){
+	body{
+	background:#EEF2FF url(/image/fade-blue.png) top center repeat-x;
+	color:#000000;
+	font-family:arial,helvetica,sans-serif;
+	font-size:8pt;
+	margin-left:0;
+	margin-right:0;
+	margin-top:5px;
+	padding-left:0px;
+	padding-right:0px;
+	width:100%;
+	}
+	
+	.denguses{
+	display:none;
+	}
+	
+	.mobiledenguses{
+	width: 100%;
+	margin-left: auto;
+	margin-right: auto;
+	}
+	
+	select{
+	color: #000000;
+	font-size: 8pt;
+	margin: 0;
+	width: 100px;
+	}
+	
+	.logo {
+	font-family:Tahoma,sans-serif;
+	font-size:28px;
+	font-weight:bold;
+	letter-spacing:-2px;
+	margin-top:15px;
+	}
+	
+	img.banner{
+	border:1px solid #34345C;
+	margin:5px 0px 5px 0px;
+	height:50px;
+	width:150px;
+	}
+	
+	.thumbContainer{
+
+	}
+	.thumb{
+	max-width: 100px;
+	max-height: 100px;
+	width:auto!important;
+	height:auto!important;
+	}
+	
+	.replyContainer{
+	display:block;
+	width:95%;
+	margin-left: auto;
+	margin-right: auto;
+	}
+	.reply{
+	width: 100%;
+	}
+	.parentPost{
+	display:block;
+	width: 100%;
+	background:#D6DAF0;
+	border:1px solid #B7C5D9;
+	margin: 0;
+	}
+	.doubledash{
+	display:none;
+	}
+
+	.postarea{
+	width: 100%;
+	overflow:hidden;
+	margin-left: auto;
+	margin-right: auto;
+	}
+	
+	#field1,#field2,#qrField1,#qrField2{
+	width: 200px;
+	}
+
+	#field3,#qrField3{
+		width: 140px;
+	}
+
+	#field4,#qrField4{
+		width: 200px;
+		height: 90px;
+	}
+
+	#password,#qrPassword{
+		width: 70px;
+	}
+	
+	#captchaPostBlock{
+	display:none;
+	}
+	
+	.mobileParentPostInfo{
+	display: block;
+	overflow: hidden;
+	border-bottom: 1px solid #B7C5D9;
+	background-color: #C9CDE8;
+	padding: 5px;
+	margin-right: -5px;
+	margin-left: -5px;
+	margin-top: -5px;
+	margin-bottom: 5px;
+	}
+
+	.parentPostInfo{
+	display:none;
+	}
+	
+	hr{
+	margin: 10px;
+	}
+	
+	#recaptcha_logo, #recaptcha_tagline{
+	display: none!important;
+	}
+}

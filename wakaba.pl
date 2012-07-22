@@ -208,16 +208,50 @@ elsif($task eq "nuke")
 	my $admin=$query->param("admin");
 	do_nuke_database($admin);
 }
+elsif($task eq "list"){
+	makeList();
+}
+elsif($task eq "cat"){
+	makeCatalog();
+}
 
 $dbh->disconnect();
-
-
 
 
 
 #
 # Cache page creation
 #
+
+sub makeList(){
+	my ($sth,$row,@threads);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY num ASC") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @threads,$row;
+	}
+	
+	make_http_header();
+	print encode_string(LIST_TEMPLATE->(threads=>\@threads));
+}
+
+sub makeCatalog(){
+	my ($sth,$row,@threads);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY num ASC") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @threads,$row;
+	}
+	
+	make_http_header();
+	print encode_string(CATALOG_TEMPLATE->(threads=>\@threads));
+}
 
 sub build_cache()
 {
@@ -415,13 +449,14 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 
 	# get a timestamp for future use
 	my $time=time();
+	my @session;
 
 	# check that the request came in as a POST, or from the command line
 	make_error(S_UNJUST) if($ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST");
 
 	if($admin) # check admin password - allow both encrypted and non-encrypted
 	{
-		check_password($admin,ADMIN_PASS);
+		@session = check_password($admin,PASSWORDS);
 	}
 	else
 	{
@@ -547,6 +582,9 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 	# format comment
 	$comment=format_comment(clean_string(decode_string($comment,CHARSET))) unless $no_format;
 	$comment.=$postfix;
+	
+	# last second code tag fixes
+	$comment=~s/\<\/pre\>\<br \/\>$/\<\/pre\>/g;
 
 	# insert default values for empty fields
 	$parent=0 unless $parent;
@@ -570,8 +608,14 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 	
 	if ($admin)
 	{
-		$name = "<span class='adminName' title='This user is a Glauchan administrator'>".$name."</span>";
-		$trip = "<span class='adminTrip' title='This user is a Glauchan administrator'>".$trip."<span class='adminCap' title='This user is a Glauchan administrator'> ## Admin</span></span>";
+		if (@session[1] eq "admin"){
+			$name = "<span class='adminName' title='This user is a Glauchan administrator'>".$name."</span>";
+			$trip = "<span class='adminTrip' title='This user is a Glauchan administrator'>".$trip."<span class='adminCap' title='This user is a Glauchan administrator'> ## Admin</span></span>";
+		}
+		elsif (@session[1] eq "mod"){
+			$name = "<span class='modName' title='This user is a Glauchan moderator'>".$name."</span>";
+			$trip = "<span class='modTrip' title='This user is a Glauchan moderator'>".$trip."<span class='modCap' title='This user is a Glauchan moderator'> ## Mod</span></span>";
+		}
 	}
 	
 	# finally, write to the database
@@ -768,7 +812,7 @@ sub add_proxy_entry($$$$$)
 	my ($admin,$type,$ip,$timestamp,$date)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,PASSWORDS);
 
 	# Verifies IP range is sane. The price for a human-readable db...
 	unless ($ip =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255 && $4 <= 255) {
@@ -820,7 +864,7 @@ sub remove_proxy_entry($$)
 	my ($admin,$num)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,PASSWORDS);
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_PROXY_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -895,6 +939,8 @@ sub format_comment($)
 		$comment=~s/\<\/pre\>\<br \/\>\<br \/\>$/\<\/pre\>/;
 		$comment=~s/\<br \/\>\<\/span\>/\<\/span\>/g;
 		$comment=~s/\<br \/\>\<\/pre\>/\<\/pre\>/g;
+		#$comment=~s/\<br \/\>\<\/blockquote\>/\<\/blockquote\>/g;
+		#$comment=~s/\<br\>\<\/blockquote\>/\<\/blockquote\>/g;
 		$blocktag=0;
 	}
 
@@ -1178,7 +1224,7 @@ sub delete_stuff($$$$@)
 	my ($password,$fileonly,$archive,$admin,@posts)=@_;
 	my ($post);
 
-	check_password($admin,ADMIN_PASS) if($admin);
+	check_password($admin,PASSWORDS) if($admin);
 	make_error(S_BADDELPASS) unless($password or $admin); # refuse empty password immediately
 
 	# no password means delete always
@@ -1317,7 +1363,7 @@ sub make_admin_post_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@posts,$size,$rowtype);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1336,7 +1382,7 @@ sub make_admin_post_panel($)
 	}
 
 	make_http_header();
-	print encode_string(POST_PANEL_TEMPLATE->(admin=>$admin,posts=>\@posts,size=>$size));
+	print encode_string(POST_PANEL_TEMPLATE->(admin=>$admin,posts=>\@posts,session=>\@session,size=>$size));
 }
 
 sub make_admin_ban_panel($)
@@ -1344,7 +1390,12 @@ sub make_admin_ban_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@bans,$prevtype);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' OR type='wordban' OR type='whitelist' OR type='trust' ORDER BY type ASC,num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1357,7 +1408,7 @@ sub make_admin_ban_panel($)
 	}
 
 	make_http_header();
-	print encode_string(BAN_PANEL_TEMPLATE->(admin=>$admin,bans=>\@bans));
+	print encode_string(BAN_PANEL_TEMPLATE->(admin=>$admin,session=>\@session,bans=>\@bans));
 }
 
 sub make_admin_proxy_panel($)
@@ -1365,7 +1416,12 @@ sub make_admin_proxy_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@scanned,$prevtype);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] ne "admin"){
+		make_error(S_CLASS);
+	}
 
 	proxy_clean();
 
@@ -1380,7 +1436,7 @@ sub make_admin_proxy_panel($)
 	}
 
 	make_http_header();
-	print encode_string(PROXY_PANEL_TEMPLATE->(admin=>$admin,scanned=>\@scanned));
+	print encode_string(PROXY_PANEL_TEMPLATE->(admin=>$admin,session=>\@session,scanned=>\@scanned));
 }
 
 sub make_admin_spam_panel($)
@@ -1389,10 +1445,15 @@ sub make_admin_spam_panel($)
 	my @spam_files=SPAM_FILES;
 	my @spam=read_array($spam_files[0]);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] ne "admin"){
+		make_error(S_CLASS);
+	}
 
 	make_http_header();
-	print encode_string(SPAM_PANEL_TEMPLATE->(admin=>$admin,
+	print encode_string(SPAM_PANEL_TEMPLATE->(admin=>$admin,session=>\@session,
 	spamlines=>scalar @spam,
 	spam=>join "\n",map { clean_string($_,1) } @spam));
 }
@@ -1402,7 +1463,12 @@ sub make_sql_dump($)
 	my ($admin)=@_;
 	my ($sth,$row,@database);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] ne "admin"){
+		make_error(S_CLASS);
+	}
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE.";") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1414,7 +1480,7 @@ sub make_sql_dump($)
 	}
 
 	make_http_header();
-	print encode_string(SQL_DUMP_TEMPLATE->(admin=>$admin,
+	print encode_string(SQL_DUMP_TEMPLATE->(admin=>$admin,session=>\@session,
 	database=>join "<br />",map { clean_string($_,1) } @database));
 }
 
@@ -1423,63 +1489,81 @@ sub make_sql_interface($$$)
 	my ($admin,$nuke,$sql)=@_;
 	my ($sth,$row,@results);
 
-	check_password($admin,ADMIN_PASS);
-
-	if($sql)
-	{
-		make_error(S_WRONGPASS) if($nuke ne NUKE_PASS); # check nuke password
-
-		my @statements=grep { /^\S/ } split /\r?\n/,decode_string($sql,CHARSET,1);
-
-		foreach my $statement (@statements)
+	my @session = check_password($admin,PASSWORDS);
+	
+	if (@session[1] eq 'admin'){
+		if($sql)
 		{
-			push @results,">>> $statement";
-			if($sth=$dbh->prepare($statement))
+			make_error(S_WRONGPASS) if($nuke ne NUKE_PASS); # check nuke password
+
+			my @statements=grep { /^\S/ } split /\r?\n/,decode_string($sql,CHARSET,1);
+
+			foreach my $statement (@statements)
 			{
-				if($sth->execute())
+				push @results,">>> $statement";
+				if($sth=$dbh->prepare($statement))
 				{
-					while($row=get_decoded_arrayref($sth)) { push @results,join ' | ',@{$row} }
+					if($sth->execute())
+					{
+						while($row=get_decoded_arrayref($sth)) { push @results,join ' | ',@{$row} }
+					}
+					else { push @results,"!!! ".$sth->errstr() }
 				}
 				else { push @results,"!!! ".$sth->errstr() }
 			}
-			else { push @results,"!!! ".$sth->errstr() }
 		}
-	}
 
-	make_http_header();
-	print encode_string(SQL_INTERFACE_TEMPLATE->(admin=>$admin,nuke=>$nuke,
-	results=>join "<br />",map { clean_string($_,1) } @results));
+		make_http_header();
+		print encode_string(SQL_INTERFACE_TEMPLATE->(admin=>$admin,nuke=>$nuke,session=>\@session,
+		results=>join "<br />",map { clean_string($_,1) } @results));
+	}
+	else{
+		make_error(S_CLASS);
+	}
 }
 
 sub make_admin_post($)
 {
 	my ($admin)=@_;
 
-	check_password($admin,ADMIN_PASS);
-
-	make_http_header();
-	print encode_string(ADMIN_POST_TEMPLATE->(admin=>$admin));
+	my @session = check_password($admin,PASSWORDS);
+	
+	if ((@session[1] eq 'admin')||(@session[1] eq 'mod')){
+		make_http_header();
+		print encode_string(ADMIN_POST_TEMPLATE->(admin=>$admin,session=>\@session));
+	}
+	else{
+		make_error(S_CLASS);
+	}
 }
 
 sub do_login($$$$)
 {
 	my ($password,$nexttask,$savelogin,$admincookie)=@_;
 	my $crypt;
+	my $passwords_ref = PASSWORDS;
+	my @passwords = @$passwords_ref;
 
-	if($password)
-	{
+	if($password){
 		$crypt=crypt_password($password);
 	}
-	elsif($admincookie eq crypt_password(ADMIN_PASS)||$admincookie eq crypt_password(MOD_PASS)||$admincookie eq crypt_password(MOD2_PASS)||$admincookie eq crypt_password(MOD3_PASS))
-	{
-		$crypt=$admincookie;
-		$nexttask="mpanel";
+	else{
+		foreach my $password (@passwords){
+			if ($admincookie eq crypt_password($password)){
+				$crypt = $admincookie;
+				$nexttask="mpanel";
+			}
+		}
 	}
-
-	if($crypt)
-	{
-		if($savelogin and $nexttask ne "nuke")
-		{
+	
+	#elsif($admincookie eq crypt_password(PASSWORDS)||$admincookie eq crypt_password(USER2->[1])||$admincookie eq crypt_password(USER3->[1])||$admincookie eq crypt_password(USER4->[1]))
+	#{
+	#	$crypt=$admincookie;
+	#	$nexttask="mpanel";
+	#}
+	
+	if($crypt){
+		if($savelogin and $nexttask ne "nuke"){
 			make_cookies(wakaadmin=>$crypt,
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>time+365*24*3600);
 		}
@@ -1499,7 +1583,12 @@ sub do_rebuild_cache($)
 {
 	my ($admin)=@_;
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
 
 	unlink glob RES_DIR.'*';
 
@@ -1508,7 +1597,7 @@ sub do_rebuild_cache($)
 	build_cache();
 
 	#make_http_forward_new(HTML_SELF,ALTERNATE_REDIRECT,"site"); # this was supposed to do the redirect in another frame, but it isn't working
-	make_http_forward("http://glauchan.org/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
+	make_http_forward("http://".DOMAIN."/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
 }
 
 sub add_admin_entry($$$$$$)
@@ -1516,7 +1605,12 @@ sub add_admin_entry($$$$$$)
 	my ($admin,$type,$comment,$ival1,$ival2,$sval1)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
 
 	$comment=clean_string(decode_string($comment,CHARSET));
 
@@ -1531,7 +1625,13 @@ sub remove_admin_entry($$)
 	my ($admin,$num)=@_;
 	my ($sth);
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+	
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_ADMIN_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -1544,7 +1644,7 @@ sub delete_all($$$)
 	my ($admin,$ip,$mask)=@_;
 	my ($sth,$row,@posts);
 
-	check_password($admin,ADMIN_PASS);
+	check_password($admin,PASSWORDS);
 
 	$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE ip & ? = ? & ?;") or make_error(S_SQLFAIL);
 	$sth->execute($mask,$ip,$mask) or make_error(S_SQLFAIL);
@@ -1557,7 +1657,12 @@ sub update_spam_file($$)
 {
 	my ($admin,$spam)=@_;
 
-	check_password($admin,ADMIN_PASS);
+	my @session = check_password($admin,PASSWORDS);
+	
+	# testing permissions system
+	if (@session[1] ne "admin"){
+		make_error(S_CLASS);
+	}
 
 	my @spam=split /\r?\n/,$spam;
 	my @spam_files=SPAM_FILES;
@@ -1570,7 +1675,8 @@ sub do_nuke_database($)
 {
 	my ($admin)=@_;
 
-	check_password($admin,NUKE_PASS);
+	# check_password does not work anymore for this because of multi-user support
+	checkNukePassword($admin,NUKE_PASS);
 
 	init_database();
 	#init_admin_database();
@@ -1590,17 +1696,57 @@ sub check_password($$)
 {
 	my ($admin,$password)=@_;
 
-	return if($admin eq ADMIN_PASS);
+	#return if($admin eq PASSWORDS);
 	
 	# preliminary support for multipe users
-	return if($admin eq MOD_PASS);
-	return if($admin eq MOD2_PASS);
-	return if($admin eq MOD3_PASS);
+	#return if($admin eq USER2->[1]);
+	#return if($admin eq USER3->[1]);
+	#return if($admin eq USER4->[1]);
 	
+	#return if($admin eq crypt_password($password));
+	#return if($admin eq crypt_password(USER2->[1]));
+	#return if($admin eq crypt_password(USER3->[1]));
+	#return if($admin eq crypt_password(USER4->[1]));
+	
+	# new multi user support
+	# deferences reference. its a perl quirk or something
+	my @session;
+	
+	my $passwords_ref = PASSWORDS;
+	my @passwords = @$passwords_ref;
+	
+	my $users_ref = USERS;
+	my @users = @$users_ref;
+	
+	my $classes_ref = CLASSES;
+	my @classes = @$classes_ref;
+	
+	my $currentuser = 0;
+	
+	foreach my $dengus (@passwords){
+		if($admin eq $dengus){
+			@session[0] = @users[$currentuser];
+			@session[1] = @classes[$currentuser];
+			return @session;
+		}
+		if($admin eq crypt_password($dengus)){
+			@session[0] = @users[$currentuser];
+			@session[1] = @classes[$currentuser];
+			return @session;
+		}
+		
+		$currentuser++;
+	}
+
+	make_error(S_WRONGPASS);
+}
+
+# this may be useless in future commits once multiuser support becomes a little more stable
+sub checkNukePassword($$){
+	my ($admin,$password)=@_;
+
+	return if($admin eq NUKE_PASS);
 	return if($admin eq crypt_password($password));
-	return if($admin eq crypt_password(MOD_PASS));
-	return if($admin eq crypt_password(MOD2_PASS));
-	return if($admin eq crypt_password(MOD3_PASS));
 
 	make_error(S_WRONGPASS);
 }
@@ -1948,4 +2094,38 @@ sub get_decoded_arrayref($)
 	}
 
 	return $row;
+}
+
+sub emailUser($$$$){
+	my ($from,$to,$subject,$message)=@_;
+	
+	return;
+}
+
+sub smsUser($$$$){
+	my ($from,$to,$subject,$message)=@_;
+	
+	return;
+}
+
+sub moveThread($$$){
+	my ($from,$to,$parentpost)=@_;
+	make_error(thread_exists($from));
+	
+	
+	### How to accomplish this ###
+		# SELECT * FROM from WHERE (parent='parentpost' OR (parent='0' AND num='parentpost')) and save to an array or something
+		# Find highest post in $to's board
+		# Replace all numbers in $parentpost's thread with numbers counting from the number found
+		# Insert into $to
+		# Move thread assets
+		# Rebuild Caches
+	
+	return;
+}
+
+sub movePost($$$){
+	my ($from,$to,$post)=@_;
+	
+	return;
 }
