@@ -83,8 +83,13 @@ elsif($task eq "post")
 	my $postfix=$query->param("postfix");
 	my $challenge=$query->param("recaptcha_challenge_field");
 	my $response=$query->param("recaptcha_response_field");
+	my $sticky=$query->param("sticky");
+	my $permasage=$query->param("permasage");
+	my $locked=$query->param("locked");
+	my $spoiler=$query->param("spoiler");
+	my $nsfw=$query->param("nsfw");
 
-	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response);
+	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$spoiler,$nsfw);
 }
 elsif($task eq "delete")
 {
@@ -214,6 +219,26 @@ elsif($task eq "list"){
 elsif($task eq "cat"){
 	makeCatalog();
 }
+elsif($task eq "stickdatshit"){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	
+	# since everyone using wakaba already hates stickies, might as well continue with the trend of hated things
+	my $jimmies=$query->param("jimmies");
+	toggleSticky($admin,$num,$jimmies);
+}
+elsif($task eq "permasage"){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	my $jimmies=$query->param("jimmies");
+	togglePermasage($admin,$num,$jimmies);
+}
+elsif($task eq "lockthread"){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	my $jimmies=$query->param("jimmies");
+	toggleLockThread($admin,$num,$jimmies);
+}
 
 $dbh->disconnect();
 
@@ -226,7 +251,7 @@ $dbh->disconnect();
 sub makeList(){
 	my ($sth,$row,@threads);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY num ASC") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth))
@@ -241,7 +266,7 @@ sub makeList(){
 sub makeCatalog(){
 	my ($sth,$row,@threads);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY num ASC") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth))
@@ -259,7 +284,7 @@ sub build_cache()
 	my $page=0;
 
 	# grab all posts, in thread order (ugh, ugly kludge)
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 
 	$row=get_decoded_hashref($sth);
@@ -306,7 +331,7 @@ sub build_cache()
 
 sub build_cache_page($$@)
 {
-	my ($page,$total,@threads)=@_;
+	my ($page,$total,@threads,@stickies)=@_;
 	my ($filename,$tmpname);
 
 	if($page==0) { $filename=HTML_SELF; }
@@ -369,7 +394,8 @@ sub build_cache_page($$@)
 		prevpage=>$prevpage,
 		nextpage=>$nextpage,
 		pages=>\@pages,
-		threads=>\@threads
+		threads=>\@threads,
+		stickies=>\@stickies
 	));
 }
 
@@ -443,10 +469,11 @@ sub build_thread_cache_all()
 # Posting
 #
 
-sub post_stuff($$$$$$$$$$$$$$$$)
+sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 {
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response)=@_;
-
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$spoiler,$nsfw)=@_;
+	my $parent_res; # defining this earlier for locked threads
+	
 	# get a timestamp for future use
 	my $time=time();
 	my @session;
@@ -461,8 +488,18 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 	else
 	{
 		# forbid admin-only features
-		make_error(S_WRONGPASS) if($no_captcha or $no_format or $postfix);
+		make_error(S_WRONGPASS) if($no_captcha or $no_format or $postfix or $sticky or $permasage or $locked);
 
+		# forbid posting if thread is locked
+		if ($parent){
+			$parent_res=get_parent_post($parent) or make_error(S_NOTHREADERR);
+			if($$parent_res{locked}){
+				$locked = 1;
+			}
+			
+			make_error(S_LOCKED) if($locked==1);
+		}
+		
 		# check what kind of posting is allowed
 		if($parent)
 		{
@@ -539,11 +576,26 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 	proxy_check($ip) if (!$whitelisted and ENABLE_PROXY_CHECK);
 
 	# check if thread exists, and get lasthit value
-	my ($parent_res,$lasthit);
+	# checks for sticky as well
+	# and permasage too now
+	# and locked threads as well
+	my ($lasthit,$isSticky);
 	if($parent)
 	{
-		$parent_res=get_parent_post($parent) or make_error(S_NOTHREADERR);
 		$lasthit=$$parent_res{lasthit};
+		
+		# sets the child posts to sticky if the parent is one
+		if($$parent_res{sticky}){
+			$sticky = 1;
+		}
+		
+		if($$parent_res{permasage}){
+			$permasage = 1;
+		}
+		
+		if($$parent_res{locked}){
+			$locked = 1;
+		}
 	}
 	else
 	{
@@ -563,6 +615,7 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 	# clean up the inputs
 	$email=clean_string(decode_string($email,CHARSET));
 	$subject=clean_string(decode_string($subject,CHARSET));
+	$uploadname=clean_string(decode_string($uploadname,CHARSET));
 
 	# noko and nokosage
 	my $noko = 0;
@@ -604,7 +657,7 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 	$date.=' ID:'.make_id_code($ip,$time,$email) if(DISPLAY_ID);
 
 	# copy file, do checksums, make thumbnail, etc
-	my ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time) if($file);
+	my ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time,$nsfw) if($file);
 	
 	if ($admin)
 	{
@@ -618,16 +671,23 @@ sub post_stuff($$$$$$$$$$$$$$$$)
 		}
 	}
 	
+	# set spoilered image
+	my $tnmask;
+	
+	if($spoiler==1){
+		$tnmask = 1;
+	}
+	
 	# finally, write to the database
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
 	$sth->execute($parent,$time,$lasthit,$numip,
 	$date,$name,$trip,$email,$subject,$password,$comment,
-	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height) or make_error(S_SQLFAIL);
+	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask) or make_error(S_SQLFAIL);
 
 	if($parent) # bumping
 	{
 		# check for sage, or too many replies
-		unless($email=~/sage/i or sage_count($parent_res)>MAX_RES or $nokosage==1)
+		unless($email=~/sage/i or sage_count($parent_res)>MAX_RES or $nokosage==1 or $permasage==1)
 		{
 			$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET lasthit=$time WHERE num=? OR parent=?;") or make_error(S_SQLFAIL);
 			$sth->execute($parent,$parent) or make_error(S_SQLFAIL);
@@ -1065,9 +1125,9 @@ sub get_file_size($)
 	return($size);
 }
 
-sub process_file($$$)
+sub process_file($$$$)
 {
-	my ($file,$uploadname,$time)=@_;
+	my ($file,$uploadname,$time,$nsfw)=@_;
 	my %filetypes=FILETYPES;
 
 	# make sure to read file in binary mode on platforms that care about such things
@@ -1173,7 +1233,7 @@ sub process_file($$$)
 		if(STUPID_THUMBNAILING) { $thumbnail=$filename }
 		else
 		{
-			$thumbnail=undef unless(make_thumbnail($filename,$thumbnail,$tn_width,$tn_height,THUMBNAIL_QUALITY,CONVERT_COMMAND));
+			$thumbnail=undef unless(make_thumbnail($filename,$thumbnail,$nsfw,$tn_width,$tn_height,THUMBNAIL_QUALITY,CONVERT_COMMAND));
 		}
 	}
 	else
@@ -1910,6 +1970,8 @@ sub init_database()
 	"thumbnail TEXT,".			# Thumbnail filename with path and extension
 	"tn_width TEXT,".			# Thumbnail width in pixels
 	"tn_height TEXT".			# Thumbnail height in pixels
+	
+	"sticky TINYINT".			# A sticky
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2128,4 +2190,69 @@ sub movePost($$$){
 	my ($from,$to,$post)=@_;
 	
 	return;
+}
+
+sub toggleSticky($$$){
+	my ($admin,$num,$jimmies)=@_;
+	my ($sth);
+	my @session = check_password($admin,PASSWORDS);
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+
+	if($jimmies eq 'unrustled'){
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+	}
+	elsif($jimmies eq 'rustled'){
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+	}
+	
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	do_rebuild_cache($admin);
+	#make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
+}
+
+sub togglePermasage($$$){
+	my ($admin,$num,$jimmies)=@_;
+	my ($sth);
+	my @session = check_password($admin,PASSWORDS);
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+	
+	if($jimmies eq 'unrustled'){
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+	}
+	elsif($jimmies eq 'rustled'){
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+	}
+	
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	# not sure if this is necessary here
+	do_rebuild_cache($admin);
+}
+
+sub toggleLockThread($$$){
+	my ($admin,$num,$jimmies)=@_;
+	my ($sth);
+	my @session = check_password($admin,PASSWORDS);
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+	
+	if($jimmies eq 'unrustled'){
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+	}
+	elsif($jimmies eq 'rustled'){
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+	}
+	
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	do_rebuild_cache($admin);
 }

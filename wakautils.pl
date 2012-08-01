@@ -1223,9 +1223,9 @@ sub analyze_gif($)
 	return ($width,$height);
 }
 
-sub make_thumbnail($$$$$;$)
+sub make_thumbnail($$$$$$;$)
 {
-	my ($filename,$thumbnail,$width,$height,$quality,$convert)=@_;
+	my ($filename,$thumbnail,$nsfw,$width,$height,$quality,$convert)=@_;
 
 	# first try ImageMagick
 
@@ -1233,7 +1233,13 @@ sub make_thumbnail($$$$$;$)
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 
 	$convert="convert" unless($convert);
-	`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+	if($nsfw==1){
+		`$convert -background white -flatten -scale 1% -scale 1000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
+		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
+	}
+	else{
+		`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+	}
 
 	return 1 unless($?);
 
@@ -1446,6 +1452,17 @@ sub truncateComment($){
 	$comment = clean_string($comment,"");
 	$comment = substr($comment,0,60);
 	return $comment;
+}
+
+sub truncateLine($){
+	my($line)=@_;
+	
+	if(length($line)>=40){
+		$line = substr($line,0,40);
+		$line = $line."...";
+	}
+	
+	return $line;
 }
 
 sub add(@) { my ($sum,$term); while(defined ($term=shift)) { $sum+=$term } return $sum%4294967296 }

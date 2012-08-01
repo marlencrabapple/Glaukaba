@@ -31,6 +31,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 	<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 	<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
+	<script type="text/javascript" src="<var expand_filename(EXTRA_JS_FILE)>?<var int(rand(10000))>"></script>
 	<script src="http://malsup.github.com/jquery.form.js"></script>
 	<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>
 	<script type="text/javascript">
@@ -67,7 +68,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<if $thread><body class="replypage"></if>
 	<if !$thread><body></if>
 	<a name="top"></a>
-	<div id="overlay" onclick="toggleNavMenu();">
+		<div id="overlay">
 		<div id="navOptionsMenu">
 			<div id="navOptionsTopBar">
 				<a class="navOptionsListItem">Main</a> | 
@@ -86,54 +87,27 @@ use constant NORMAL_HEAD_INCLUDE => q{
 				</p>
 				<p>
 					<strong>General Enhancements</strong><br />
-					<span class="navOptionsListItem">Local Time</span>: Changes timestamps to match your local time<br />
-					<span class="navOptionsListItem">Keybinds</span>: Binds actions to keys<br />
-					<span class="navOptionsListItem">Comment Expansion</span>: Expand comments that are truncated on the index page<br />
-					<span class="navOptionsListItem">Thread Expansion</span>: View all replies without leaving the index page<br />
-					<span class="navOptionsListItem">Index Navigation</span>: Navigate between threads on the index page
+					Nothing here yet...
 				</p>
 				<p>
 					<strong>Filtering</strong><br />
-					<span class="navOptionsListItem">Anonymize</span>:<br />
-					<span class="navOptionsListItem">Enable Filter</span>:<br />
-					<span class="navOptionsListItem">Filter Replies</span>:<br />
-					<span class="navOptionsListItem">Reply Hiding</span>:<br />
-					<span class="navOptionsListItem">Thread Hiding</span>:
+					<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);" />Reply Hiding</label>: Hide replies<br />
 				</p>
 				<p>
 					<strong>Image Options</strong><br />
-					<span class="navOptionsListItem">Inline Expansion</span>:<br />
-					<span class="navOptionsListItem">Hover Expansion</span>:<br />
-					<span class="navOptionsListItem">Sauce</span>:<br />
-					<span class="navOptionsListItem">Reveal Spoilers</span>:<br />
-					<span class="navOptionsListItem">Auto-Gif</span>:
+					<label class="navOptionsListItem"><input id="inlineExpansion" type=checkbox onchange="toggleFeature('inlineExpansion',this.checked);" />Inline Expansion</label>: View fullsize images without opening a new window or tab<br />
 				</p>
 				<p>
 					<strong>Monitoring</strong><br />
-					<span class="navOptionsListItem">Thread Updater</span>:<br />
-					<span class="navOptionsListItem">Unread Count</span>:<br />
-					<span class="navOptionsListItem">Unread Favicon</span>:<br />
-					<span class="navOptionsListItem">Post in Title</span>:<br />
-					<span class="navOptionsListItem">Thread Stats</span>:
+					<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);" />Thread Updater</label>: Get new posts automatically without refreshing the page<br />
 				</p>
 				<p>
 					<strong>Posting</strong><br />
-					<span class="navOptionsListItem">Quick Reply</span>:<br />
-					<span class="navOptionsListItem">Cooldown</span>:<br />
-					<span class="navOptionsListItem">Persistent QR</span>:<br />
-					<span class="navOptionsListItem">Auto Hide QR</span>:<br />
-					<span class="navOptionsListItem">Open Reply in New Tab</span>:<br />
-					<span class="navOptionsListItem">Remeber QR size</span>:<br />
-					<span class="navOptionsListItem">Hide Original Post Form</span>:<br />
-					<span class="navOptionsListItem">Remember Subject</span>:<br />
-					<span class="navOptionsListItem">Remember Spoiler</span>:
+					<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);" />Quick Reply</label>: Reply without reloading the page<br />
 				</p>
 				<p>
 					<strong>Posting</strong><br />
-					<span class="navOptionsListItem">Quote Backlinks</span>:<br />
-					<span class="navOptionsListItem">Quote Highlighting</span>:<br />
-					<span class="navOptionsListItem">Inline Quotes</span>:<br />
-					<span class="navOptionsListItem">Quote Preview</span>:
+					<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);" />Quote Previews</label>: Show quoted post on hover<br />
 				</p>
 			</div>
 		</div>
@@ -163,16 +137,17 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			<title><if $title><var $title> - </if><const TITLE></title>
 			<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 			<style type="text/css">
-			body { margin: 0; padding: 8px; margin-bottom: auto;}
-			blockquote blockquote { margin-left: 0em;}
-			form { margin-bottom: 0px }
-			form .trap { display:none }
-			.postarea table { margin: 0px auto; text-align: left }
-			.reflink a { color: inherit; text-decoration: none }
-			.reply .filesize { margin-left: 20px }
-			.userdelete { float: right; text-align: center; white-space: nowrap }
-			.replypage .replylink { display: none }
-			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+				body { margin: 0; padding: 8px; margin-bottom: auto;}
+				blockquote blockquote { margin-left: 0em;}
+				form { margin-bottom: 0px }
+				form .trap { display:none }
+				.postarea table { margin: 0px auto; text-align: left }
+				.reflink a { color: inherit; text-decoration: none }
+				.reply .filesize { margin-left: 20px }
+				.userdelete { float: right; text-align: center; white-space: nowrap }
+				.replypage .replylink { display: none }
+				.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+				.admNum{ font-size: 13pt; }
 			</style>
 			<loop $stylesheets>
 			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
@@ -280,6 +255,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="postField">
 					<input type="text" name="field3" class="postInput" id="field3" />
 					<input type="submit" id="field3s" value="Submit" />
+					<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if><if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
 				</div>
 			</div>
 			
@@ -350,12 +326,10 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </div>
 
 <form id="delform" action="<var $self>" method="post">
-
 <loop $threads>
 	<div class="thread"><loop $posts>
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">
-			
 				<div class="mobileParentPostInfo">
 					<label ><input type="checkbox" name="delete" value="<var $num>" />
 					<span class="filetitle"><var $subject></span>
@@ -370,21 +344,18 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					
 					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
 				</div>
-				
 				<div class="hat"></div>
 				<if $image>
-					<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
+					<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-					
 					<div style="display:none" class="forJsImgSize">
 						<span><var $width></span>
 						<span><var $height></span>
 					</div>
-					
 					<br />
 					<if $thumbnail>
 						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-							<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></a>
+							<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a>
 					</if>
 					<if !$thumbnail>
 						<if DELETED_THUMBNAIL>
@@ -397,7 +368,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</if>
 				</if>
 				<a id="<var $num>"></a>
-				
 				<div class="parentPostInfo">
 					<label ><input type="checkbox" name="delete" value="<var $num>" />
 					<span class="filetitle"><var $subject></span>
@@ -407,25 +377,24 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif"/></if>
+					<if $locked><img src="http://<var DOMAIN>/img/closed.gif"/></if>
 					</span>&nbsp;
 					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
-					
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
-					
 					<div class="postMenu" id="postMenu<var $num>">
 						<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
 						<a href="javascript:void(0)" onclick="deletePost(<var $num>)" class="postMenuItem">Delete this post</a>
 						<span href="javascript:void(0)" class="postMenuItem">Filter</span>
-						<a href="javascript:void(0)" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Share</a>
+						<a href="http://www.facebook.com/sharer.php?u=http://www.glauchan.org&t=Glauchan" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem" target="_blank">Post to Facebook</a>
+						<a href="https://twitter.com/share?url=http://www.glauchan.org" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem" target="_blank">Post to Twitter</a>
 					</div>
 				</div>
-				
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
 				</blockquote>
 			</div>
-			
 			<if $omit>
 				<span class="omittedposts">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
@@ -433,12 +402,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				</span>
 			</if>
 		</if>
-		
 		<if $parent>
 			<div class="replyContainer" id="replyContainer<var $num>">
-				<div class="doubledash">
-					<a class="hidePostButton" id="hidePostButton<var $num>" onclick="hidePost('reply<var $num>')" href="javascript:void(0)">[ - ]</a>
-				</div>
+				<div class="doubledash">&gt;&gt;</div>
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<label><input type="checkbox" name="delete" value="<var $num>" />
@@ -449,32 +415,23 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
-					
 					<div class="postMenu" id="postMenu<var $num>">
 						<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
 						<a href="javascript:void(0)" onclick="deletePost(<var $num>)" class="postMenuItem">Delete this post</a>
 						<span href="javascript:void(0)" class="postMenuItem">Filter</span>
 						<a href="javascript:void(0)" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Share</a>
 					</div>
-					
 					&nbsp;
 					<if $image>
 						<br />
-						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><var get_filename($image)></a>
+						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-						
-						<div style="display:none" class="forJsImgSize">
-							<span><var $width></span>
-							<span><var $height></span>
-						</div>
-						
-						<br />
-
+						<div style="display:none" class="forJsImgSize"><span><var $width></span><span><var $height></span>
+						</div><br />
 						<if $thumbnail>
 							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-								<img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></a>
+								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
 						</if>
 						<if !$thumbnail>
 							<if DELETED_THUMBNAIL>
@@ -555,9 +512,7 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<loop $threads>
 			<div class="catItem" id="catItem<var $num>" style="display: inline-block;">
 				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><div class="catItemHover" id="catItem<var $num>Hover" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;"><div class="catItemHoverText" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px; line-height:<var ($tn_height*.504)>px;">&gt;&gt;<var $num></div></div></if>
-				
 				<if !$thumbnail><div id="catItem<var $num>Hover" class="catItemHoverNoThumb"><div class="catItemHoverTextNoThumb">&gt;&gt;<var $num></div></div></if></a>
-				
 				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><img src="/<var BOARD_DIR>/<var $thumbnail>" class="catImage" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if !$thumbnail><div class="catImageNoThumb"></div></if></a>
 			</div>
 		</loop>
@@ -644,13 +599,11 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 
 <if $admin>
 	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
-	
 	<if $session-\>[1] eq 'mod'>
 		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
 		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 	</if>
-	
 	<if $session-\>[1] eq 'admin'>
 		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
 		[<a href="<var $self>?task=proxy&amp;admin=<var $admin>"><const S_MANAPROXY></a>]
@@ -660,11 +613,9 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 	</if>
-	
 	[<a id="reportQueueButton" href="javascript:void(0)"><const S_REPORTS></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
-	
-	<div style="float: right"> <strong>User:</strong> <var $session-\>[0]> <strong>Pass:</strong> <var $session-\>[1]> </div>
+	<div style="float: right"> <strong>User:</strong> <var $session-\>[0]> <strong>Class:</strong> <var $session-\>[1]> </div>
 </if>
 <div class="passvalid" style="margin-top: 5px; padding: 3px;"><const S_MANAMODE></div><br />
 
@@ -704,23 +655,20 @@ use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 <loop $posts>
 	<if !$parent><tr class="managehead"><th colspan="6"></th></tr></if>
-
 	<tr class="row<var $rowtype>">
-
-	<if !$image><td></if>
-	<if $image><td rowspan="2"></if>
-	<label><input type="checkbox" name="delete" value="<var $num>" /><big><b><var $num></b></big>&nbsp;&nbsp;</label></td>
-
-	<td><var make_date($timestamp,"tiny")></td>
-	<td><var clean_string(substr $subject,0,20)></td>
-	<td><b><var clean_string(substr $name,0,30)><var $trip></b></td>
-	<td><var clean_string(substr $comment,0,30)></td>
-	<td><if $session-\>[1] ne 'janitor'><var dec_to_dot($ip)></if>
-		<if $session-\>[1] eq 'janitor'>ID: <var make_id_code($ip,$time,$email)></if>
-		[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]
-		<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?admin=<var $admin>&amp;task=addip&amp;type=ipban&amp;ip=<var $ip>" onclick="return do_ban(this)"><const S_MPBAN></a>]</if>
-	</td>
-
+		<if !$image><td></if>
+		<if $image><td rowspan="2"></if>
+		<label><input type="checkbox" name="delete" value="<var $num>" /><strong class="admNum"><var $num></strong>&nbsp;&nbsp;</label><if !$parent><a onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');" href="javascript:void(0)" class="postMenuButton" id="postMenuButton<var $num>">[ <span></span> ]</a><div class="postMenu" id="postMenu<var $num>">
+			<a class="postMenuItem" href="javascript:void(0)">Move</a>
+			<a class="postMenuItem" href="http://<var DOMAIN>/<var BOARD_DIR>/wakaba.pl?admin=<var $admin>&task=stickdatshit&num=<var $num>&jimmies=<if $sticky==1>rustled</if><if !$sticky>unrustled</if>">Toggle Sticky</a>
+			<a class="postMenuItem" href="http://<var DOMAIN>/<var BOARD_DIR>/wakaba.pl?admin=<var $admin>&task=permasage&num=<var $num>&jimmies=<if $permasage==1>rustled</if><if !$permasage>unrustled</if>">Toggle Permasage</a>
+			<a class="postMenuItem" href="http://<var DOMAIN>/<var BOARD_DIR>/wakaba.pl?admin=<var $admin>&task=lockthread&num=<var $num>&jimmies=<if $locked==1>rustled</if><if !$locked>unrustled</if>">Toggle Lock</a>
+		</div></if></td>
+		<td><var make_date($timestamp,"tiny")></td>
+		<td><var clean_string(substr $subject,0,20)></td>
+		<td><strong><var $name></strong><var $trip></td>
+		<td><var clean_string(substr $comment,0,30)></td>
+		<td><if $session-\>[1] ne 'janitor'><var dec_to_dot($ip)></if><if $session-\>[1] eq 'janitor'>ID: <var make_id_code($ip,$time,$email)></if>[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?admin=<var $admin>&amp;task=addip&amp;type=ipban&amp;ip=<var $ip>" onclick="return do_ban(this)"><const S_MPBAN></a>]</if></td>
 	</tr>
 	<if $image>
 		<tr class="row<var $rowtype>">
@@ -1003,7 +951,8 @@ use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="no_captcha" value="1" />
 <br />
-<label>Format Text (0 means yes)<input type="text" name="no_format" value="0" /></label>
+<label>Self Format<input type="checkbox" name="no_format" value="1" /></label><br />
+<label>Sticky Thread<input type="checkbox" name="sticky" value="1" /></label>
 
 <table><tbody>
 <tr><td class="postBlock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr>

@@ -137,7 +137,9 @@ use constant S_SQLFAIL => 'Critical SQL problem!';							# SQL Failure
 use constant S_REDIR => 'If the redirect didn\'t work, please choose one of the following mirrors:';    # Redir message for html in REDIR_DIR
 
 use constant S_CLASS => 'Your user class does not have permission to do this.'; # Permissions error
-use constant S_REPORTS => 'Report Queue'; # Permissions error
+use constant S_REPORTS => 'Report Queue'; # Report Queue
+
+use constant S_LOCKED => 'You cannot reply to a locked thread'; # Thread is locked
 
 1;
 
