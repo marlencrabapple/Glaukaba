@@ -662,12 +662,12 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	if ($admin)
 	{
 		if (@session[1] eq "admin"){
-			$name = "<span class='adminName' title='This user is a Glauchan administrator'>".$name."</span>";
-			$trip = "<span class='adminTrip' title='This user is a Glauchan administrator'>".$trip."<span class='adminCap' title='This user is a Glauchan administrator'> ## Admin</span></span>";
+			$name = "<span class='adminName'>".$name."</span>";
+			$trip = "<span class='adminTrip'>".$trip."<span class='adminCap'> ## Admin</span></span><img class='capIcon' title='This user is a Glauchan Administrator' alt='This user is a Glauchan Administrator' src='http://".DOMAIN."/img/adm_opct.png' />";
 		}
 		elsif (@session[1] eq "mod"){
-			$name = "<span class='modName' title='This user is a Glauchan moderator'>".$name."</span>";
-			$trip = "<span class='modTrip' title='This user is a Glauchan moderator'>".$trip."<span class='modCap' title='This user is a Glauchan moderator'> ## Mod</span></span>";
+			$name = "<span class='modName'>".$name."</span>";
+			$trip = "<span class='modTrip'>".$trip."<span class='modCap'> ## Mod</span></span><img class='capIcon' title='This user is a Glauchan Moderator' alt='This user is a Glauchan Moderator' src='http://".DOMAIN."/img/mod.png' />";
 		}
 	}
 	
@@ -1969,9 +1969,13 @@ sub init_database()
 	"height INTEGER,".			# Height of image in pixels
 	"thumbnail TEXT,".			# Thumbnail filename with path and extension
 	"tn_width TEXT,".			# Thumbnail width in pixels
-	"tn_height TEXT".			# Thumbnail height in pixels
+	"tn_height TEXT,".			# Thumbnail height in pixels
 	
-	"sticky TINYINT".			# A sticky
+	"sticky TINYINT,".			# A sticky
+	"permasage TINYINT,".
+	"locked TINYINT,".
+	"filename TEXT,".
+	"tnmask TINYINT".
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);

@@ -25,15 +25,15 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<loop $stylesheets>
 	<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
 	</loop>
-	<link href="http://glauchan.org/css/prettify.css" type="text/css" rel="stylesheet" />
-	<link href="http://glauchan.org/css/mobile.css" type="text/css" rel="stylesheet" />
+	<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
+	<link href="http://<var DOMAIN>/css/mobile.css" type="text/css" rel="stylesheet" />
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 	<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 	<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
 	<script type="text/javascript" src="<var expand_filename(EXTRA_JS_FILE)>?<var int(rand(10000))>"></script>
-	<script src="http://malsup.github.com/jquery.form.js"></script>
-	<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>
+	<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
+	<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
 	<script type="text/javascript">
 	  var _gaq = _gaq || [];
 	  _gaq.push(['_setAccount', 'UA-26348635-1']);
@@ -71,27 +71,25 @@ use constant NORMAL_HEAD_INCLUDE => q{
 		<div id="overlay">
 		<div id="navOptionsMenu">
 			<div id="navOptionsTopBar">
-				<a class="navOptionsListItem">Main</a> | 
-				<a class="navOptionsListItem">Filter</a> | 
-				<a class="navOptionsListItem">Sauce</a> | 
-				<a class="navOptionsListItem">Rice</a> | 
-				<a class="navOptionsListItem">Keybinds</a>
+				Board Options
 			</div>
 			<hr>
 			<div id="navOptionsContent">
+				<strong>These features may have bugs and are constantly changing. Make sure to clear your cache often.</strong>
 				<p>
 					<strong>Style Options</strong><br />
-					<loop $stylesheets>
-						<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a><br />
-					</loop>
+					<loop $stylesheets>[<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a>] </loop>
 				</p>
 				<p>
 					<strong>General Enhancements</strong><br />
-					Nothing here yet...
+					<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);" />Comment Expansion</label>: Expands truncated comments<br />
+					<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);" />Thread Expansion</label>: View all replies without changing pages<br />
 				</p>
 				<p>
 					<strong>Filtering</strong><br />
 					<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);" />Reply Hiding</label>: Hide replies<br />
+					<label class="navOptionsListItem"><input id="threadHiding" type=checkbox onchange="toggleFeature('threadHiding',this.checked);" />Thread Hiding</label>: Hide threads<br />
+					<label class="navOptionsListItem"><input id="anonymize" type=checkbox onchange="toggleFeature('anonymize',this.checked);" />Anonymize</label>: Makes everybody anonymous<br />
 				</p>
 				<p>
 					<strong>Image Options</strong><br />
@@ -106,8 +104,9 @@ use constant NORMAL_HEAD_INCLUDE => q{
 					<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);" />Quick Reply</label>: Reply without reloading the page<br />
 				</p>
 				<p>
-					<strong>Posting</strong><br />
+					<strong>Quoting</strong><br />
 					<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);" />Quote Previews</label>: Show quoted post on hover<br />
+					<label class="navOptionsListItem"><input id="inlineQuote" type=checkbox onchange="toggleFeature('inlineQuote',this.checked);" />Inline Quotes</label>: Show quoted post inline when clicked on<br />
 				</p>
 			</div>
 		</div>
@@ -152,13 +151,13 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			<loop $stylesheets>
 			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
 			</loop>
-			<link href="http://glauchan.org/css/prettify.css" type="text/css" rel="stylesheet" />
+			<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 			<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
 			<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 			<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
 			<script src="http://malsup.github.com/jquery.form.js"></script>
-			<script type="text/javascript" src="http://glauchan.org/js/prettify/prettify.js"></script>			
+			<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>			
 			<script>
 				$(document).ready(function() {
 					$("#reportQueueButton").click(function () {
@@ -213,42 +212,30 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div> 
 </if>
-<if $postform>
-	<div class="postarea">
-	
+<if $postform><div class="postarea">
 	<style type="text/css" scoped="scoped">.recaptchatable{background-color:transparent!important;border:none!important;}.recaptcha_image_cell{background-color:transparent!important;}#recaptcha_response_field{border:1px solid #AAA!important;}#recaptcha_div{height:107px;width:440px;}#recaptcha_challenge_field{width:400px}</style>
-	
 	<script type="text/javascript">
 		var RecaptchaOptions = {
 			theme : 'clean'
 		};
 	</script>
-	 
 	<form action="<var $self>" method="post" enctype="multipart/form-data">
-
-	<input type="hidden" name="task" value="post" />
-	<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-	<if !$image_inp and !$thread and ALLOW_TEXTONLY>
-		<input type="hidden" name="nofile" value="1" />
-	</if>
-	<if FORCED_ANON><input type="hidden" name="name" /></if>
-	<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off" /><input type="text" name="link" autocomplete="off" /></div></if>
-	
+		<input type="hidden" name="task" value="post" />
+		<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
+		<if !$image_inp and !$thread and ALLOW_TEXTONLY><input type="hidden" name="nofile" value="1" /></if>
+		<if FORCED_ANON><input type="hidden" name="name" /></if>
+		<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off" /><input type="text" name="link" autocomplete="off" /></div></if>
 		<div id="postForm">
-			<if !FORCED_ANON>
-				<div class="postTableContainer">
+			<if !FORCED_ANON><div class="postTableContainer">
 					<div class="postBlock">Name</div>
 					<div class="postSpacer"></div>
 					<div class="postField"><input type="text" class="postInput" name="field1" id="field1" /></div>
-				</div>
-			</if>
-			
+				</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Link</div>
 				<div class="postSpacer"></div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" /></div>
 			</div>
-			
 			<div class="postTableContainer">
 				<div class="postBlock">Subject</div>
 				<div class="postSpacer"></div>
@@ -258,24 +245,18 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if><if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
 				</div>
 			</div>
-			
 			<div class="postTableContainer">
 				<div class="postBlock">Comment</div>
 				<div class="postSpacer"></div>
 				<div class="postField"><textarea name="field4" class="postInput" id="field4"></textarea></div>
 			</div>
-			
-			<if ENABLE_CAPTCHA && ENABLE_CAPTCHA ne 'recaptcha'>
-				<div class="postBlock"><const S_CAPTCHA></div>
+			<if ENABLE_CAPTCHA && ENABLE_CAPTCHA ne 'recaptcha'><div class="postBlock"><const S_CAPTCHA></div>
 				<div class="postSpacer"></div>
 				<div class="postField">
 					<input type="text" name="captcha" class="field6" size="10" />
 					<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
-				</div>
-			</if>
-			
-			<if ENABLE_CAPTCHA eq 'recaptcha'>
-				<div class="postTableContainer" id="recaptchaContainer">
+				</div></if>
+			<if ENABLE_CAPTCHA eq 'recaptcha'><div class="postTableContainer" id="recaptchaContainer">
 					<div class="postBlock" id="captchaPostBlock"><const S_CAPTCHA></div>
 					<div class="postSpacer"></div>
 					<div class="postField">
@@ -286,11 +267,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<input type="hidden" name="recaptcha_response_field" value="manual_challenge" />
 						</noscript>
 					</div>
-				</div>
-			</if>
-			
-			<if $image_inp>
-				<div class="postTableContainer">
+				</div></if>
+			<if $image_inp><div class="postTableContainer">
 					<div class="postBlock">File</div>
 					<div class="postSpacer"></div>
 					<div class="postField">
@@ -299,9 +277,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<label><input type="checkbox" name="nofile" value="on" />No File</label>
 						</if>
 					</div>
-				</div>
-			</if>
-			
+				</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Password</div>
 				<div class="postSpacer"></div>
@@ -313,9 +289,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				</div>
 			</div>
 		</div>
-	</form></div>
-	<script type="text/javascript">setPostInputs()</script>
-</if>
+	</form>
+</div>
+<script type="text/javascript">setPostInputs()</script></if>
 
 <hr class="postinghr" />
 
@@ -341,32 +317,21 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
 					</span>&nbsp;
 					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
-					
 					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
 				</div>
 				<div class="hat"></div>
-				<if $image>
-					<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
 					<div style="display:none" class="forJsImgSize">
 						<span><var $width></span>
 						<span><var $height></span>
 					</div>
 					<br />
-					<if $thumbnail>
-						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-							<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a>
-					</if>
+					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
+						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
 					<if !$thumbnail>
-						<if DELETED_THUMBNAIL>
-							<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
-							<img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a>
-						</if>
-						<if !DELETED_THUMBNAIL>
-							<div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
-						</if>
-					</if>
-				</if>
+						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
+					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
 				<a id="<var $num>"></a>
 				<div class="parentPostInfo">
 					<label ><input type="checkbox" name="delete" value="<var $num>" />
@@ -383,11 +348,23 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
-						<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-						<a href="javascript:void(0)" onclick="deletePost(<var $num>)" class="postMenuItem">Delete this post</a>
-						<span href="javascript:void(0)" class="postMenuItem">Filter</span>
-						<a href="http://www.facebook.com/sharer.php?u=http://www.glauchan.org&t=Glauchan" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem" target="_blank">Post to Facebook</a>
-						<a href="https://twitter.com/share?url=http://www.glauchan.org" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem" target="_blank">Post to Twitter</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span href="javascript:void(0)" class="postMenuItem">Delete</span>
+							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+							</div>
+						</div>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span href="javascript:void(0)" class="postMenuItem">Filter</span>
+							<div class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+							</div>
+						</div>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a>
+						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 				</div>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
@@ -395,15 +372,11 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
 				</blockquote>
 			</div>
-			<if $omit>
-				<span class="omittedposts">
+			<if $omit><span class="omittedposts">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
 				<if !$omitimages><var sprintf S_ABBR,$omit></if>
-				</span>
-			</if>
-		</if>
-		<if $parent>
-			<div class="replyContainer" id="replyContainer<var $num>">
+			</span></if></if>
+		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
 				<div class="doubledash">&gt;&gt;</div>
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
@@ -417,12 +390,24 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
-						<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-						<a href="javascript:void(0)" onclick="deletePost(<var $num>)" class="postMenuItem">Delete this post</a>
-						<span href="javascript:void(0)" class="postMenuItem">Filter</span>
-						<a href="javascript:void(0)" onclick="sharePost(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Share</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span href="javascript:void(0)" class="postMenuItem">Delete</span>
+							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+							</div>
+						</div>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span href="javascript:void(0)" class="postMenuItem">Filter</span>
+							<div class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+							</div>
+						</div>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a>
+						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
-					&nbsp;
 					<if $image>
 						<br />
 						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
@@ -440,17 +425,14 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							</if>
 							<if !DELETED_THUMBNAIL>
 								<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
-							</if>
-						</if>
-					</if>
+							</if></if></if>
 					<blockquote<if $email=~/aa$/i> class="aa"</if>>
 						<var $comment>
 						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
 					</blockquote>
 				</div>
-			</div>
-		</if>
-	</loop>
+			</div></if>
+		</loop>
 	</div>
 	<hr />
 </loop>
