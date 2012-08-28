@@ -1450,16 +1450,28 @@ sub truncateComment($){
 	#$comment =~ s/\<\/.\>/ /g;
 	#$comment =~ s/\<br \/\>/ /g;
 	$comment = clean_string($comment,"");
-	$comment = substr($comment,0,60);
+	if(length($comment)>=60){
+		$comment = substr($comment,0,60);
+		$comment = $comment."(...)"
+	}
+	# disabled for performance reasons (even if there weren't any)
+	# get rid of trailing white space
+	#if(index($comment," ")==length($comment)){
+	#	$comment = substr($comment,0,length($comment)-1);
+	#}
+	#make_error($comment);
 	return $comment;
 }
 
 sub truncateLine($){
 	my($line)=@_;
 	
-	if(length($line)>=40){
-		$line = substr($line,0,40);
-		$line = $line."...";
+	if(length($line)>=25){
+		my $lastindex = rindex($line, '.');
+		my $filename = substr($line,0,$lastindex);
+		my $fileext = substr($line,$lastindex);
+		$line = substr($filename,0,25);
+		$line = $line."(...)".$fileext;
 	}
 	
 	return $line;

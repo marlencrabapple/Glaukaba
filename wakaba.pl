@@ -49,8 +49,9 @@ return 1 if(caller); # stop here if we're being called externally
 my $query=new CGI;
 my $task=($query->param("task") or $query->param("action"));
 
-# check for admin table
+# check for admin tables
 init_admin_database() if(!table_exists(SQL_ADMIN_TABLE));
+initUserDatabase() if(!table_exists(SQL_USER_TABLE));
 
 # check for proxy table
 init_proxy_database() if(!table_exists(SQL_PROXY_TABLE));
@@ -86,10 +87,11 @@ elsif($task eq "post")
 	my $sticky=$query->param("sticky");
 	my $permasage=$query->param("permasage");
 	my $locked=$query->param("locked");
+	my $capcode=$query->param("capcode");
 	my $spoiler=$query->param("spoiler");
 	my $nsfw=$query->param("nsfw");
 
-	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$spoiler,$nsfw);
+	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw);
 }
 elsif($task eq "delete")
 {
@@ -98,17 +100,22 @@ elsif($task eq "delete")
 	my $archive=$query->param("archive");
 	my $admin=$query->param("admin");
 	my @posts=$query->param("delete");
-
+	
+	#make_error("ur a faggot1") unless(@posts=~m/[0-9]*/);
+	make_error("ur a faggot2") unless($fileonly=~m/[0-9]*/);
+	make_error("ur a faggot3") unless($archive=~m/[0-9]*/);
+	
 	delete_stuff($password,$fileonly,$archive,$admin,@posts);
 }
 elsif($task eq "admin")
 {
+	my $user=$query->param("user");
 	my $password=$query->param("berra"); # lol obfuscation
-	my $nexttask=$query->param("nexttask");
+	my $nexttask=$query->param("nexttask"); # I should delete this
 	my $savelogin=$query->param("savelogin");
 	my $admincookie=$query->cookie("wakaadmin");
 
-	do_login($password,$nexttask,$savelogin,$admincookie);
+	do_login($user,$password,$nexttask,$savelogin,$admincookie);
 }
 elsif($task eq "logout")
 {
@@ -239,25 +246,66 @@ elsif($task eq "lockthread"){
 	my $jimmies=$query->param("jimmies");
 	toggleLockThread($admin,$num,$jimmies);
 }
+elsif($task eq "report"){
+	my $num=$query->param("num");
+	my $board=$query->param("board");
+	my $reason=$query->param("reason");
+	report($num,$board,$reason) if(length $reason>1); # lol perl style
+	makeReport($num, $board);
+}
+elsif($task eq "register"){
+	my $admin=$query->param("admin");
+	makeRegister($admin) unless length($admin)<1;
+}
+elsif($task eq "adduser"){
+	my $user=$query->param("user");
+	my $pass=$query->param("pass");
+	my $class=$query->param("class");
+	my $email=$query->param("email");
+	my $admin=$query->param("admin");
+	
+	addUser($admin,$user,$pass,$email,$class);
+}
+elsif($task eq 'manageusers'){
+	my $admin=$query->param("admin");
+	makeManageUsers($admin);
+}
+elsif($task eq 'removeuser'){
+	my $admin=$query->param("admin");
+	my $user=$query->param("user");
+	removeUser($user,$admin);
+}
+elsif($task eq 'changepass'){
+	my $admin=$query->param("admin");
+	my $user=$query->param("user");
+	makeChangePass($admin,$user);
+}
+elsif($task eq 'setnewpass'){
+	my $admin=$query->param("admin");
+	my $user=$query->param("user");
+	my $oldpass=$query->param("oldpass");
+	my $newpass=$query->param("newpass");
+	setNewPass($user,$oldpass,$newpass,$admin);
+}
 
 $dbh->disconnect();
 
-
-
-#
-# Cache page creation
-#
-
 sub makeList(){
-	my ($sth,$row,@threads);
+	my ($sth,$row,@threads,@postcount,@threadsize,$index);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth))
-	{
+	while($row=get_decoded_hashref($sth)){
+		my ($posts,$size)=count_posts($$row{num});
+		$$row{'postcount'}=$posts; # add post count field to hash
+		#push @postcount,$posts;
+		#push @threadsize,$size;
 		push @threads,$row;
+		#make_error($row);
 	}
+	
+	#make_error(scalar('@postcount: '.@postcount.' @threadsize: '.@threadsize));
 	
 	make_http_header();
 	print encode_string(LIST_TEMPLATE->(threads=>\@threads));
@@ -278,12 +326,47 @@ sub makeCatalog(){
 	print encode_string(CATALOG_TEMPLATE->(threads=>\@threads));
 }
 
+sub makeReport($$){
+	my ($num,$board)=@_;
+	
+	make_http_header();
+	print encode_string(REPORT_TEMPLATE->(num=>$num,board=>$board));
+}
+
+sub report($$$){
+	my ($num,$board,$reason)=@_;
+	
+	my %reasons = ("vio","Rule violation",
+					"illegal","Illegal content",
+					"spam","Spam/advertising/flooding");
+					
+	make_error("ur a faggot1") unless($num=~m/[0-9]*/);
+	make_error("ur a faggot2") unless($board=~m/(glau|meta|test)/); # will replace with global board list soon
+	make_error("ur a faggot3") unless($reason=~m/(vio|illegal|spam)/);
+	# this would be what we did if we allowed free input for the report reason
+	#$reason=clean_string(decode_string($reason,CHARSET));
+	
+	open (LOG, ">>reports.html");
+	print LOG '<pre style="font-size: 12px; border-bottom: 1px LightGrey solid; width: 340px; padding: 10px; padding-bottom: 5px;"><code>'.make_date(time(),DATE_STYLE);
+	print LOG "<br />Submitted By. $ENV{HTTP_CF_CONNECTING_IP}<br />"; # HTTP_CF_CONNECTING_IP gets IPs properly with cloudflare
+	print LOG "No. $num<br />";
+	print LOG "<span style='word-wrap: break-word; display: block; width: 340px;'>Reason: $reasons{$reason}</span><br /></code></pre>";
+	close (LOG);
+	
+	make_http_forward('javascript:window.close();',ALTERNATE_REDIRECT);
+}
+
+#
+# Cache page creation
+#
+
 sub build_cache()
 {
 	my ($sth,$row,@thread);
 	my $page=0;
 
 	# grab all posts, in thread order (ugh, ugly kludge)
+	# lol stickies
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 
@@ -395,7 +478,7 @@ sub build_cache_page($$@)
 		nextpage=>$nextpage,
 		pages=>\@pages,
 		threads=>\@threads,
-		stickies=>\@stickies
+		stickies=>\@stickies # i don't even think this is a thing anymore.
 	));
 }
 
@@ -463,15 +546,13 @@ sub build_thread_cache_all()
 	}
 }
 
-
-
 #
 # Posting
 #
 
 sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 {
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$spoiler,$nsfw)=@_;
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw)=@_;
 	my $parent_res; # defining this earlier for locked threads
 	
 	# get a timestamp for future use
@@ -483,6 +564,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 
 	if($admin) # check admin password - allow both encrypted and non-encrypted
 	{
+		if ($parent){
+			$parent_res=get_parent_post($parent) or make_error(S_NOTHREADERR);
+		}
+		
 		@session = check_password($admin,PASSWORDS);
 	}
 	else
@@ -493,6 +578,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 		# forbid posting if thread is locked
 		if ($parent){
 			$parent_res=get_parent_post($parent) or make_error(S_NOTHREADERR);
+			
 			if($$parent_res{locked}){
 				$locked = 1;
 			}
@@ -542,6 +628,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	my $numip=dot_to_dec($ip);
 
 	# set up cookies
+	# fuck cookies. i need to change this to local storage
 	my $c_name=$name;
 	my $c_email=$email;
 	my $c_password=$password;
@@ -579,7 +666,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	# checks for sticky as well
 	# and permasage too now
 	# and locked threads as well
-	my ($lasthit,$isSticky);
+	my ($lasthit);
+	
 	if($parent)
 	{
 		$lasthit=$$parent_res{lasthit};
@@ -659,7 +747,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	# copy file, do checksums, make thumbnail, etc
 	my ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time,$nsfw) if($file);
 	
-	if ($admin)
+	if (($admin)&&($capcode==1))
 	{
 		if (@session[1] eq "admin"){
 			$name = "<span class='adminName'>".$name."</span>";
@@ -734,7 +822,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	}
 	else
 	{
-		make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.org/".BOARD_DIR."/",ALTERNATE_REDIRECT);
+		make_http_forward($noko ? getPrintedReplyLink($num,$parent) : "http://glauchan.org/".BOARD_DIR."/",ALTERNATE_REDIRECT);
 	}
 }
 
@@ -754,6 +842,11 @@ sub is_whitelisted($)
 sub is_trusted($)
 {
 	my ($trip)=@_;
+	my $key = TRIPKEY; # constants r stoopid
+	
+	$trip =~ s/$key+//g; # removes the key so shit doesn't break.
+	#$trip =~ s/\'\:3/dicks/g;
+	
 	my ($sth);
         $sth=$dbh->prepare("SELECT count(*) FROM ".SQL_ADMIN_TABLE." WHERE type='trust' AND sval1 = ?;") or make_error(S_SQLFAIL);
         $sth->execute($trip) or make_error(S_SQLFAIL);
@@ -945,7 +1038,7 @@ sub format_comment($)
 
 		$line=~s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
+			if($res) { '<a href="'.getPrintedReplyLink($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
 			else { "&gt;&gt;$1"; }
 		!ge;
 
@@ -1285,10 +1378,12 @@ sub delete_stuff($$$$@)
 	my ($post);
 
 	check_password($admin,PASSWORDS) if($admin);
+	
 	make_error(S_BADDELPASS) unless($password or $admin); # refuse empty password immediately
 
 	# no password means delete always
-	$password="" if($admin); 
+	$password="" if($admin);
+	$archive = 0 unless($admin); # security fix (august 2012)
 
 	foreach $post (@posts)
 	{
@@ -1304,6 +1399,7 @@ sub delete_stuff($$$$@)
 	{ make_http_forward(HTML_SELF,ALTERNATE_REDIRECT); }
 }
 
+# this needs to archive (or log) janitor/moderator deletions. it should be fairly simple.
 sub delete_post($$$$)
 {
 	my ($post,$password,$fileonly,$archiving)=@_;
@@ -1311,6 +1407,7 @@ sub delete_post($$$$)
 	my $thumb=THUMB_DIR;
 	my $archive=ARCHIVE_DIR;
 	my $src=IMG_DIR;
+	my $hasimage = 0;
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($post) or make_error(S_SQLFAIL);
@@ -1351,6 +1448,7 @@ sub delete_post($$$$)
 		{
 			if($$row{image})
 			{
+				$hasimage = 1;
 				system(LOAD_SENDER_SCRIPT." $$row{image} &") if(ENABLE_LOAD);
 
 				# remove images
@@ -1396,14 +1494,27 @@ sub delete_post($$$$)
 			}
 			else # removing parent image
 			{
-				build_thread_cache($$row{num});
+				if(($fileonly)&&($hasimage==0)){
+					make_error("Put that in your milk!");
+				}
+				else{
+					build_thread_cache($$row{num});
+				}
 			}
 		}
 		else # removing a reply, or a reply's image
 		{
-			build_thread_cache($$row{parent});
+			if(($fileonly)&&($hasimage==0)){
+				make_error("Put that in your milk!");
+			}
+			else{
+				build_thread_cache($$row{parent});
+			}
 		}
 	}
+	# Trying to figure out how this function isn't a gigantic security hole.
+	# GOOD NEWS! I figured it out! Apparently prepared statements are a magical thing that no one but WAHA knows about.
+	#make_error($post);
 }
 
 
@@ -1597,36 +1708,38 @@ sub make_admin_post($)
 	}
 }
 
-sub do_login($$$$)
+sub do_login($$$$$)
 {
-	my ($password,$nexttask,$savelogin,$admincookie)=@_;
+	my ($user,$password,$nexttask,$savelogin,$admincookie)=@_;
 	my $crypt;
-	my $passwords_ref = PASSWORDS;
-	my @passwords = @$passwords_ref;
-
+	my $time=time();
+	my $lastip = $ENV{HTTP_CF_CONNECTING_IP};
+	
 	if($password){
 		$crypt=crypt_password($password);
 	}
-	else{
-		foreach my $password (@passwords){
-			if ($admincookie eq crypt_password($password)){
-				$crypt = $admincookie;
-				$nexttask="mpanel";
-			}
+	elsif($admincookie){
+		$user=substr($admincookie,0,index($admincookie,":"));
+
+		my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($user) or make_error($sth->errstr);
+		
+		my $dengus=get_decoded_hashref($sth);
+	
+		if ($admincookie eq $user.":".crypt_password($$dengus{pass})){
+			$crypt = crypt_password($$dengus{pass}); # BECAUSE FUCK YOU THAT'S WHY
+			$nexttask="mpanel"; # BECAUSE FUCK YOU THAT'S WHY AGAIN
 		}
 	}
 	
-	#elsif($admincookie eq crypt_password(PASSWORDS)||$admincookie eq crypt_password(USER2->[1])||$admincookie eq crypt_password(USER3->[1])||$admincookie eq crypt_password(USER4->[1]))
-	#{
-	#	$crypt=$admincookie;
-	#	$nexttask="mpanel";
-	#}
-	
 	if($crypt){
 		if($savelogin and $nexttask ne "nuke"){
-			make_cookies(wakaadmin=>$crypt,
+			make_cookies(wakaadmin=>$user.":".$crypt,
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>time+365*24*3600);
 		}
+		
+		my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET lastdate=?,lastip=? WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($time,$lastip,$user) or make_error($sth->errstr);
 
 		make_http_forward(get_script_name()."?task=$nexttask&admin=$crypt",ALTERNATE_REDIRECT);
 	}
@@ -1754,22 +1867,13 @@ sub do_nuke_database($)
 
 sub check_password($$)
 {
-	my ($admin,$password)=@_;
-
-	#return if($admin eq PASSWORDS);
-	
-	# preliminary support for multipe users
-	#return if($admin eq USER2->[1]);
-	#return if($admin eq USER3->[1]);
-	#return if($admin eq USER4->[1]);
-	
-	#return if($admin eq crypt_password($password));
-	#return if($admin eq crypt_password(USER2->[1]));
-	#return if($admin eq crypt_password(USER3->[1]));
-	#return if($admin eq crypt_password(USER4->[1]));
+	my ($admin,$password)=@_; # $password is useless now
+	my $dengus;
 	
 	# new multi user support
 	# deferences reference. its a perl quirk or something
+	# 8-26-2012 - Apparently everything I did here is better done with hashes. Oh well.
+	# 8-28-2012 - CHANGED EVERYTHING. DEAL WITH IT
 	my @session;
 	
 	my $passwords_ref = PASSWORDS;
@@ -1783,19 +1887,38 @@ sub check_password($$)
 	
 	my $currentuser = 0;
 	
-	foreach my $dengus (@passwords){
-		if($admin eq $dengus){
-			@session[0] = @users[$currentuser];
-			@session[1] = @classes[$currentuser];
+	# Maybe a map would speed this up. Hashes too. Its kinda stupid (and a little insecure [maybe]) to loop through every password until you find a user that matches
+	# Maybe if I use hashes, I could implement a username system as well. Oh well, who cares. This is good enough as of today (See above). 
+	#foreach my $dengus (@passwords){
+	#	if($admin eq $dengus){
+	#		@session[0] = @users[$currentuser];
+	#		@session[1] = @classes[$currentuser];
+	#		return @session;
+	#	}
+	#	if($admin eq crypt_password($dengus)){
+	#		@session[0] = @users[$currentuser];
+	#		@session[1] = @classes[$currentuser];
+	#		return @session;
+	#	}
+	#	
+	#	$currentuser++;
+	#}
+	
+	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	while($dengus=get_decoded_hashref($sth))
+	{
+		if($admin eq $$dengus{pass}){
+			@session[0] = $$dengus{user};
+			@session[1] = $$dengus{class};
 			return @session;
 		}
-		if($admin eq crypt_password($dengus)){
-			@session[0] = @users[$currentuser];
-			@session[1] = @classes[$currentuser];
+		if($admin eq crypt_password($$dengus{pass})){
+			@session[0] = $$dengus{user};
+			@session[1] = $$dengus{class};
 			return @session;
 		}
-		
-		$currentuser++;
 	}
 
 	make_error(S_WRONGPASS);
@@ -1826,7 +1949,8 @@ sub crypt_password($)
 
 sub make_http_header()
 {
-	# trying to remove xhtml stuff
+	# >2012 >xhtml
+	#print "Content-Type: ".get_xhtml_content_type(CHARSET,0)."\n";
 	print "Content-Type: text/html; charset=utf-8 \n";
 	print "\n";
 }
@@ -1994,6 +2118,23 @@ sub init_admin_database()
 	"ival1 TEXT,".			# Integer value 1 (usually IP)
 	"ival2 TEXT,".			# Integer value 2 (usually netmask)
 	"sval1 TEXT".				# String value 1
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub initUserDatabase(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_USER_TABLE.";") if(table_exists(SQL_USER_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_USER_TABLE." (".
+
+	"user TEXT,".
+	"pass TEXT,".
+	"email TEXT,".
+	"class TEXT,".
+	"lastip TEXT,".
+	"lastdate INTEGER".
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2176,6 +2317,7 @@ sub smsUser($$$$){
 
 sub moveThread($$$){
 	my ($from,$to,$parentpost)=@_;
+	make_error("Not yet implemented");
 	make_error(thread_exists($from));
 	
 	
@@ -2192,7 +2334,7 @@ sub moveThread($$$){
 
 sub movePost($$$){
 	my ($from,$to,$post)=@_;
-	
+	make_error("Not yet implemented");
 	return;
 }
 
@@ -2206,13 +2348,16 @@ sub toggleSticky($$$){
 	}
 
 	if($jimmies eq 'unrustled'){
-		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	elsif($jimmies eq 'rustled'){
-		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=NULL WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	
-	$sth->execute() or make_error(S_SQLFAIL);
+	#$sth->execute() or make_error(S_SQLFAIL);
+	$sth->execute($num,$num) or make_error(S_SQLFAIL);
 
 	do_rebuild_cache($admin);
 	#make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
@@ -2228,13 +2373,16 @@ sub togglePermasage($$$){
 	}
 	
 	if($jimmies eq 'unrustled'){
-		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	elsif($jimmies eq 'rustled'){
-		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=NULL WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	
-	$sth->execute() or make_error(S_SQLFAIL);
+	#$sth->execute() or make_error(S_SQLFAIL);
+	$sth->execute($num,$num) or make_error(S_SQLFAIL);
 
 	# not sure if this is necessary here
 	do_rebuild_cache($admin);
@@ -2250,13 +2398,139 @@ sub toggleLockThread($$$){
 	}
 	
 	if($jimmies eq 'unrustled'){
-		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	elsif($jimmies eq 'rustled'){
-		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=NULL WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	
-	$sth->execute() or make_error(S_SQLFAIL);
+	#$sth->execute() or make_error(S_SQLFAIL);
+	$sth->execute($num,$num) or make_error(S_SQLFAIL);
 	
 	do_rebuild_cache($admin);
+}
+
+sub makeRegister($){
+	my ($admin)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	
+	make_error(S_CLASS) unless @session[1] eq "admin"; # lol perl style
+	make_http_header();
+	print encode_string(REGISTER_TEMPLATE->(admin=>$admin,session=>\@session));
+}
+
+sub makeManageUsers($){
+	my ($admin)=@_;
+	my (@users,$row);
+	my @session = check_password($admin,PASSWORDS);
+	
+	make_error(S_CLASS) unless @session[1] eq "admin"; # lol perl style
+	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE) or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @users,$row;
+	}
+	
+	make_http_header();
+	print encode_string(MANAGE_USERS_TEMPLATE->(admin=>$admin,session=>\@session,users=>\@users));
+}
+
+sub addUser($$$$$){
+	#"user TEXT,".
+	#"pass TEXT,".
+	#"email TEXT,".
+	#"class TEXT,".
+	#"lastip TEXT,".
+	#"lastdate TEXT".
+	
+	my ($admin,$user,$pass,$email,$class)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	
+	make_error(S_CLASS) unless @session[1] eq "admin";
+	
+	$user=clean_string(decode_string($user,CHARSET));
+	$pass=clean_string(decode_string($pass,CHARSET));
+	$email=clean_string(decode_string($email,CHARSET));
+	
+	make_error("Invalid Class") unless $class=~m/(admin|mod|janitor|vip)/;
+	make_error(S_CLASS) unless @session[1] eq "admin";
+	#make_error($admin." * ".$user." * ".$pass." * ".$class." * ".$email);
+	
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL);") or make_error(S_SQLFAIL);
+	$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
+}
+
+sub removeUser($$){
+	my ($user,$admin)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	
+	make_error(S_CLASS) unless @session[1] eq "admin";
+	$user=clean_string(decode_string($user,CHARSET));
+	
+	my $sth=$dbh->prepare("DELETE FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+	$sth->execute($user) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
+}
+
+sub makeChangePass(??){
+	my ($admin,$user)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	
+	if (@session[1] ne "admin"){
+		if (@session[0] ne $user){ make_error("ya turkey")};
+	}
+	
+	make_http_header();
+	if($user){print encode_string(CHANGE_PASS_TEMPLATE->(admin=>$admin,user=>$user,session=>\@session));}
+	else {print encode_string(CHANGE_PASS_TEMPLATE->(admin=>$admin,user=>@session[0],session=>\@session));}
+}
+
+sub setNewPass(????){
+	my ($user,$oldpass,$newpass,$admin)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	my ($sth);
+	
+	$oldpass=clean_string(decode_string($oldpass,CHARSET));
+	$newpass=clean_string(decode_string($newpass,CHARSET));
+	$user=clean_string(decode_string($user,CHARSET));
+	
+	if (@session[1] ne "admin"){
+		if (@session[0] ne $user){ make_error("ya turkey")};
+		
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($user) or make_error(S_SQLFAIL);
+		my $dengus=get_decoded_hashref($sth);
+		
+		if ($$dengus{pass} ne $oldpass){make_error("ya turkey");}
+		
+		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=? WHERE user=?") or make_error(S_SQLFAIL);
+		$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
+		
+		make_http_forward(get_script_name()."?admin=$admin&task=logout",ALTERNATE_REDIRECT);
+	}
+	
+	if(@session[0] eq $user){
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($user) or make_error(S_SQLFAIL);
+		my $dengus=get_decoded_hashref($sth);
+		
+		if ($$dengus{pass} ne $oldpass){make_error("ya turkey");}
+		
+		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=? WHERE user=?") or make_error(S_SQLFAIL);
+		$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
+		
+		make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
+	}
+	
+	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=? WHERE user=?") or make_error(S_SQLFAIL);
+	$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=logout",ALTERNATE_REDIRECT);
 }

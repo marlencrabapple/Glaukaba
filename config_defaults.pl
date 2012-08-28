@@ -14,6 +14,7 @@ BEGIN {
 
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
 	eval "use constant SQL_ADMIN_TABLE => 'admin'" unless(defined &SQL_ADMIN_TABLE);
+	eval "use constant SQL_USER_TABLE => 'users'" unless(defined &SQL_USER_TABLE);
 	eval "use constant SQL_PROXY_TABLE => 'proxy'" unless(defined &SQL_PROXY_TABLE);
 	
 	# for multi user/class support DO NOT TOUCH
@@ -114,7 +115,7 @@ BEGIN {
 	eval "use constant REDIR_DIR => 'redir/'" unless (defined &REDIR_DIR);
 	eval "use constant HTML_SELF => 'wakaba.html'" unless(defined &HTML_SELF);
 	eval "use constant JS_FILE => 'wakaba3.js'" unless(defined &JS_FILE);
-	eval "use constant CSS_DIR => '../css/boards/'" unless(defined &CSS_DIR); #changed for multiboards
+	
 	eval "use constant PAGE_EXT => '.html'" unless(defined &PAGE_EXT);
 	eval "use constant ERRORLOG => ''" unless(defined &ERRORLOG);
 	eval "use constant CONVERT_COMMAND => 'convert'" unless(defined &CONVERT_COMMAND);

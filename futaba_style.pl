@@ -10,7 +10,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<title><if $title><var $title> - </if><const TITLE></title>
 	<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 	<style type="text/css">
-	body { margin: 0; margin-bottom: auto; padding-top: 50px; }
+	body { margin: 0; margin-bottom: auto; }
 	blockquote blockquote { margin-left: 0em;}
 	form { margin-bottom: 0px }
 	form .trap { display:none }
@@ -23,15 +23,15 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	</style>
 
 	<loop $stylesheets>
-	<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
+	<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
 	</loop>
 	<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 	<link href="http://<var DOMAIN>/css/mobile.css" type="text/css" rel="stylesheet" />
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 	<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-	<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
-	<script type="text/javascript" src="<var expand_filename(EXTRA_JS_FILE)>?<var int(rand(10000))>"></script>
+	<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+	<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
 	<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 	<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
 	<script type="text/javascript">
@@ -114,7 +114,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<div id="topNavContainer">
 		}.include("include/header.html").q{
 		<div id="topNavRight">
-			<a href="javascript:void(0)" onclick="toggleNavMenu();">[Board Options]</a>
+			<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">[Board Options]</a>
 		</div>
 	</div>
 	<div class="logo">
@@ -149,13 +149,14 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 				.admNum{ font-size: 13pt; }
 			</style>
 			<loop $stylesheets>
-			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="<var $path><var $filename>" title="<var $title>" />
+			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 			</loop>
 			<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 			<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
 			<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-			<script type="text/javascript" src="<var expand_filename(JS_FILE)>?<var int(rand(10000))>"></script>
+			<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+			<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
 			<script src="http://malsup.github.com/jquery.form.js"></script>
 			<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>			
 			<script>
@@ -208,7 +209,7 @@ use constant NORMAL_FOOT_INCLUDE => include("include/footer.html").q{
 use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <div id="content">
 <if $thread>
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div> 
 </if>
@@ -342,22 +343,22 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif"/></if>
-					<if $locked><img src="http://<var DOMAIN>/img/closed.gif"/></if>
+					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
 					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
 						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span href="javascript:void(0)" class="postMenuItem">Delete</span>
+							<span class="postMenuItem">Delete</span>
 							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
 								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
 								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
 							</div>
 						</div>
 						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span href="javascript:void(0)" class="postMenuItem">Filter</span>
+							<span class="postMenuItem">Filter</span>
 							<div class="postMenu subMenu">
 								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 							</div>
@@ -392,14 +393,14 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
 						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span href="javascript:void(0)" class="postMenuItem">Delete</span>
+							<span class="postMenuItem">Delete</span>
 							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
 								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
 								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
 							</div>
 						</div>
 						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span href="javascript:void(0)" class="postMenuItem">Filter</span>
+							<span class="postMenuItem">Filter</span>
 							<div class="postMenu subMenu">
 								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 							</div>
@@ -442,7 +443,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <hr />
 
 <if $thread>
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	[<a href="#">Top</a>]
 	<a name="bottom"></a>
 </if>
@@ -488,7 +489,7 @@ use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	<div class="theader">Catalog Mode</div>
 	<div id="catalog">
 		<loop $threads>
@@ -503,18 +504,52 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<div class="denguses">}.include("include/bottomad.html").q{</div>
 }.NORMAL_FOOT_INCLUDE);
 
+use constant REPORT_TEMPLATE => compile_template(q{
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+			<title>Reporting Post No.<var $num> on /<var $board>/</title>
+			<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
+			<style type="text/css">
+				body { margin: 0; padding: 8px; margin-bottom: auto;}
+				h3 {margin: 0; margin-bottom: 5px;}
+			</style>
+			<loop $stylesheets><link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" /></loop>
+			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+			<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+			<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
+		</head>
+		<body>
+			<h3>Reporting Post No.<var $num> on /<var $board>/</h3>
+			<form action="<var $self>" method="post" enctype="multipart/form-data">
+				<input type="hidden" name="task" value="report" />
+				<input type="hidden" name="num" value="<var $num>" />
+				<input type="hidden" name="board" value="<var $board>" />
+				<fieldset style="margin-bottom: 5px;"><legend>Report type</legend>
+					<input type="radio" name="reason" id="cat1" value="vio"> <label for="cat1">Rule violation</label><br/>
+					<input type="radio" name="reason" id="cat2" value="illegal"> <label for="cat2">Illegal content</label><br/>
+					<input type="radio" name="reason" id="cat3" value="spam"> <label for="cat3">Spam/advertising/flooding</label>
+				</fieldset>
+				<input type="submit" value="<const S_SUBMIT>" />
+			</form>
+			<p style="font-size: 10px">Note: Submitting frivolous reports will result in a ban. When reporting, make sure that the post in question violates the global/board rules, or contains content illegal in the United States.</p>
+		</body>
+	</html>
+});
+
 use constant LIST_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
-	[<a href="<var expand_filename(HTML_SELF)>"><const S_RETURN></a>]
+	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	<div class="theader">Thread Index</div>
 	<table id="threadList" style="white-space: nowrap;">
 		<thead><tr class="head">
 			<td class="postBlock">Subject</td>
-			<td class="postBlock">Last post by</td>
+			<td class="postBlock">Created by</td>
 			<td class="postBlock">Time</td>
-			<td class="postBlock">Post ID</td>
+			<td class="postBlock">Post No.</td>
 		</tr></thead>
 		<tbody><loop $threads><tr>
-			<td><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></if><if !$subject><var truncateComment($comment)></if></a></td>
+			<td><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount-1> <if $postcount\>1>replies</if><if $postcount==1>reply</if>]</td>
 			<td><span class="postername"><var $name></span><span class="postertrip"><var $trip></span></td>
 			<td><var make_date($timestamp,"tiny")></td>
 			<td>No.<var $num></td>
@@ -571,7 +606,7 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 	
 	<div style="width: 100%; text-align: center; margin-bottom: 30px; margin-top: 10px;">
 		<hr / >
-		<h2 style="color: red; margin: 0;">Announcements</h3>
+		<h2 style="color: red; margin: 0;">Announcements</h2>
 		}.include("../managementannouncement.html").q{
 		<hr / >
 	</div>
@@ -594,7 +629,9 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		[<a href="<var $self>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
 		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
+		[<a href="<var $self>?task=manageusers&amp;admin=<var $admin>">Manage Users</a>]
 	</if>
+	[<a href="<var $self>?task=changepass&amp;admin=<var $admin>">Change Password</a>]
 	[<a id="reportQueueButton" href="javascript:void(0)"><const S_REPORTS></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
 	<div style="float: right"> <strong>User:</strong> <var $session-\>[0]> <strong>Class:</strong> <var $session-\>[1]> </div>
@@ -605,12 +642,13 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 
 use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
-<div align="center"><form action="<var $self>" method="post">
+<div align="center"><form id="login" action="<var $self>" method="post">
 <input type="hidden" name="task" value="admin" />
 <input type="hidden" name="nexttask" value="mpanel" />
-<const S_ADMINPASS>
-<input type="password" name="berra" size="8" value="" />
-<br />
+Username
+<input type="text" name="user" size="8" value="" /><br />
+Password
+<input type="password" name="berra" size="8" value="" /><br />
 <label><input type="checkbox" name="savelogin" /> <const S_MANASAVE></label>
 <br />
 <input type="submit" value="<const S_MANASUB>" />
@@ -925,7 +963,7 @@ use constant SQL_INTERFACE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
-<div align="center"><em><const S_NOTAGS></em></div>
+<div align="center"><em><const S_NOTAGS></em><br /></div>
 
 <div class="postarea">
 <form id="postform" action="<var $self>" method="post" enctype="multipart/form-data">
@@ -933,8 +971,6 @@ use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <input type="hidden" name="admin" value="<var $admin>" />
 <input type="hidden" name="no_captcha" value="1" />
 <br />
-<label>Self Format<input type="checkbox" name="no_format" value="1" /></label><br />
-<label>Sticky Thread<input type="checkbox" name="sticky" value="1" /></label>
 
 <table><tbody>
 <tr><td class="postBlock"><const S_NAME></td><td><input type="text" name="field1" size="28" /></td></tr>
@@ -947,12 +983,56 @@ use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 </td></tr>
 <tr><td class="postBlock"><const S_PARENT></td><td><input type="text" name="parent" size="8" /></td></tr>
 <tr><td class="postBlock"><const S_DELPASS></td><td><input type="password" name="password" size="8" /><const S_DELEXPL></td></tr>
+<tr><td class="postBlock">Other</td><td><label>Self Format<input type="checkbox" name="no_format" value="1" /></label> <label> Use Capcode<input type="checkbox" name="capcode" value="1" /></label></td></tr>
 </tbody></table></form></div><hr />
 <script type="text/javascript">set_inputs("postform")</script>
 
 }.NORMAL_FOOT_INCLUDE);
 
+use constant REGISTER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+	<div align="center"><em>Add a new user.</em></div>
+	<div class="postarea"><form id="registForm" action="<var $self>" method="post" enctype="multipart/form-data">
+		<table><tbody><input type="hidden" name="task" value="adduser" />
+		<input type="hidden" name="admin" value="<var $admin>" />
+		<tr><td class="postBlock"><const S_NAME></td><td><input type="text" name="user" size="28" /></td></tr>
+		<tr><td class="postBlock"><const S_DELPASS></td><td><input type="password" name="pass" size="28" /></td></tr>
+		<tr><td class="postBlock">Email</td><td><input type="text" name="email" size="28" /></td></tr>
+		<tr><td class="postBlock">Class</td><td><select name="class">
+			<option value="janitor">Janitor</option>
+			<option value="mod">Moderator</option>
+			<option value="admin">Administrator</option>
+			<option value="vip">VIPPER</option>
+		</select></td></tr>
+		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	</tbody></table></form></div>
+}.NORMAL_FOOT_INCLUDE);
 
+use constant MANAGE_USERS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<table align="center" style="white-space: nowrap"><tbody><thead><td class="postBlock">Username</td><td class="postBlock">Email</td><td class="postBlock">Class</td><td class="postBlock">Last Session</td><td class="postBlock">Options</td></thead>
+<tbody>
+<loop $users>
+<tr><td><var $user></td><td><var $email></td><td><var $class></td><td><var $lastip> on <var make_date($lastdate,tiny)></td><td>
+<a href="<var $self>?admin=<var $admin>&amp;task=removeuser&amp;user=<var $user>">[Remove]</a> 
+<a href="<var $self>?admin=<var $admin>&amp;task=changepass&amp;user=<var $user>">[Change Password]</a> 
+<a href="#">[Disable]</a></td></tr>
+</loop>
+<tr><td><br/></td></tr>
+<tr><td>[<a href="<var $self>?task=register&amp;admin=<var $admin>">Add User</a>]</td></tr>
+<tbody></table>
+
+}.NORMAL_FOOT_INCLUDE);
+
+use constant CHANGE_PASS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<div align="center"><em>Changing password for <if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if></em></div>
+	<div class="postarea"><form id="changePass" action="<var $self>" method="post" enctype="multipart/form-data">
+		<table><tbody><input type="hidden" name="task" value="setnewpass" />
+		<input type="hidden" name="admin" value="<var $admin>" />
+		<input type="hidden" name="user" value="<if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if>" />
+		<tr><td class="postBlock">Old Pass</td><td><input type="password" name="oldpass" size="28" /></td></tr>
+		<tr><td class="postBlock">New Pass</td><td><input type="password" name="newpass" size="28" /></td></tr>
+		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	</tbody></table></form></div>
+}.NORMAL_FOOT_INCLUDE);
 
 no strict;
 $stylesheets=get_stylesheets(); # make stylesheets visible to the templates
@@ -968,18 +1048,20 @@ sub get_stylesheets()
 		my %sheet;
 
 		$sheet{filename}=$_;
+		$sheet{filename}=~s/ /%20/g;
 
 		($sheet{title})=m!([^/]+)\.css$!i;
 		$sheet{title}=ucfirst $sheet{title};
 		$sheet{title}=~s/_/ /g;
 		$sheet{title}=~s/ ([a-z])/ \u$1/g;
 		$sheet{title}=~s/([a-z])([A-Z])/$1 $2/g;
+		#$sheet{title}=~s/ /'%20'/g;
 
 		if($sheet{title} eq DEFAULT_STYLE) { $sheet{default}=1; $found=1; }
 		else { $sheet{default}=0; }
 
 		\%sheet;
-	} glob(CSS_DIR."*.css");
+	} glob("..".CSS_DIR."*.css");
 
 	$stylesheets[0]{default}=1 if(@stylesheets and !$found);
 

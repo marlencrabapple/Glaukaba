@@ -3,9 +3,11 @@ background:#EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-
 color: #000000;
 font-family: arial, helvetica, sans-serif;
 font-size: 10pt;
-margin-left: 0;
-margin-right: 0;
-padding: 8px;
+margin: 0;
+padding: 0;
+padding-left: 3px;
+padding-right: 3px;
+padding-top: 8px;
 }
 
 a,a:visited {
@@ -217,12 +219,14 @@ display: table-cell;
 	display:table-row;
 }
 #postForm,#qrPostForm{
-	display:table;
-	border-spacing:1px;
+display:table;
+border-spacing:1px;
+margin-left: auto;
+margin-right: auto;
 }
 
 #field1,#field2,#qrField1,#qrField2{
-	width: 200px;
+	width: 250px;
 }
 
 #field3,#qrField3{
@@ -230,8 +234,8 @@ display: table-cell;
 }
 
 #field4,#qrField4{
-	width: 360px;
-	height: 90px;
+	width: 350px;
+	height: 80px;
 }
 
 #password,#qrPassword{
@@ -441,12 +445,6 @@ select{
 color: #000000;
 font-size: 13px;
 margin: 0;
-}
-
-.postarea{
-width: 590px;
-margin-left: auto;
-margin-right: auto;
 }
 
 #deleteForm{
