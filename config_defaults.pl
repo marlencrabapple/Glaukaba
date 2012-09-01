@@ -15,6 +15,7 @@ BEGIN {
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
 	eval "use constant SQL_ADMIN_TABLE => 'admin'" unless(defined &SQL_ADMIN_TABLE);
 	eval "use constant SQL_USER_TABLE => 'users'" unless(defined &SQL_USER_TABLE);
+	eval "use constant SQL_MESSAGE_TABLE => 'msgs'" unless(defined &SQL_MESSAGE_TABLE);
 	eval "use constant SQL_PROXY_TABLE => 'proxy'" unless(defined &SQL_PROXY_TABLE);
 	
 	# for multi user/class support DO NOT TOUCH

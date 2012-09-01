@@ -17,6 +17,7 @@ BEGIN { require "config.pl"; }
 BEGIN { require "config_defaults.pl"; }
 BEGIN { require "strings_en.pl"; }		# edit this line to change the language
 BEGIN { require "futaba_style.pl"; }	# edit this line to change the board style
+BEGIN { require "admin_style.pl"; } # awwwwwwwwwwww shit
 BEGIN { require "captcha.pl"; }
 BEGIN { require "wakautils.pl"; }
 
@@ -35,7 +36,6 @@ if(CONVERT_CHARSETS)
 }
 
 
-
 #
 # Global init
 #
@@ -52,6 +52,7 @@ my $task=($query->param("task") or $query->param("action"));
 # check for admin tables
 init_admin_database() if(!table_exists(SQL_ADMIN_TABLE));
 initUserDatabase() if(!table_exists(SQL_USER_TABLE));
+initMessageDatabase() if(!table_exists(SQL_MESSAGE_TABLE));
 
 # check for proxy table
 init_proxy_database() if(!table_exists(SQL_PROXY_TABLE));
@@ -124,7 +125,8 @@ elsif($task eq "logout")
 elsif($task eq "mpanel")
 {
 	my $admin=$query->param("admin");
-	make_admin_post_panel($admin);
+	#make_admin_post_panel($admin);
+	makePage($admin,0);
 }
 elsif($task eq "deleteall")
 {
@@ -145,6 +147,8 @@ elsif($task eq "addip")
 	my $comment=$query->param("comment");
 	my $ip=$query->param("ip");
 	my $mask=$query->param("mask");
+	#my $ref=$query->param("ref");
+	#add_admin_entry($admin,$type,$comment,parse_range($ip,$mask),'',$ref);
 	add_admin_entry($admin,$type,$comment,parse_range($ip,$mask),'');
 }
 elsif($task eq "addstring")
@@ -287,6 +291,38 @@ elsif($task eq 'setnewpass'){
 	my $newpass=$query->param("newpass");
 	setNewPass($user,$oldpass,$newpass,$admin);
 }
+elsif($task eq 'composemsg'){
+	my $admin=$query->param("admin");
+	my $parentmsg=$query->param("replyto");
+	
+	makeComposeMessage($admin,$parentmsg);
+}
+elsif($task eq 'sendmsg'){
+	my $admin=$query->param("admin");
+	my $msg=$query->param("message");
+	my $to=$query->param("to");
+	my $parentmsg=$query->param("replyto");
+	sendMessage($admin,$msg,$to,$parentmsg);
+}
+elsif($task eq 'inbox'){
+	my $admin=$query->param("admin");
+	makeInbox($admin);
+}
+elsif($task eq 'viewmsg'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	makeViewMessage($admin,$num);
+}
+elsif($task eq 'viewthreads'){
+	my $admin=$query->param("admin");
+	my $page=$query->param("page");
+	makePage($admin,$page);
+}
+elsif($task eq 'viewthread'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	makeThread($admin,$num);
+}
 
 $dbh->disconnect();
 
@@ -414,7 +450,7 @@ sub build_cache()
 
 sub build_cache_page($$@)
 {
-	my ($page,$total,@threads,@stickies)=@_;
+	my ($page,$total,@threads)=@_;
 	my ($filename,$tmpname);
 
 	if($page==0) { $filename=HTML_SELF; }
@@ -477,8 +513,7 @@ sub build_cache_page($$@)
 		prevpage=>$prevpage,
 		nextpage=>$nextpage,
 		pages=>\@pages,
-		threads=>\@threads,
-		stickies=>\@stickies # i don't even think this is a thing anymore.
+		threads=>\@threads # i don't even think this is a thing anymore.
 	));
 }
 
@@ -751,11 +786,11 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	{
 		if (@session[1] eq "admin"){
 			$name = "<span class='adminName'>".$name."</span>";
-			$trip = "<span class='adminTrip'>".$trip."<span class='adminCap'> ## Admin</span></span><img class='capIcon' title='This user is a Glauchan Administrator' alt='This user is a Glauchan Administrator' src='http://".DOMAIN."/img/adm_opct.png' />";
+			$trip = "<span class='adminTrip'>".$trip."<span class='adminCap'> ## Admin</span></span><img class='capIcon' title='This user is a Glauchan Administrator' alt='This user is a Glauchan Administrator' src='http://".DOMAIN."/img/adm_opct2.png' />";
 		}
 		elsif (@session[1] eq "mod"){
 			$name = "<span class='modName'>".$name."</span>";
-			$trip = "<span class='modTrip'>".$trip."<span class='modCap'> ## Mod</span></span><img class='capIcon' title='This user is a Glauchan Moderator' alt='This user is a Glauchan Moderator' src='http://".DOMAIN."/img/mod.png' />";
+			$trip = "<span class='modTrip'>".$trip."<span class='modCap'> ## Mod</span></span><img class='capIcon' title='This user is a Glauchan Moderator' alt='This user is a Glauchan Moderator' src='http://".DOMAIN."/img/mod_opct.png' />";
 		}
 	}
 	
@@ -818,7 +853,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	# forward back to the main page
 	if ($admin) #unless you're an admin, it'll go back to the manager post page
 	{
-		make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.org/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
+		make_http_forward(get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
+		#make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.org/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
 	}
 	else
 	{
@@ -1712,19 +1748,25 @@ sub do_login($$$$$)
 {
 	my ($user,$password,$nexttask,$savelogin,$admincookie)=@_;
 	my $crypt;
+	my $dengus;
 	my $time=time();
 	my $lastip = $ENV{HTTP_CF_CONNECTING_IP};
 	
-	if($password){
-		$crypt=crypt_password($password);
+	if($password and $user){
+		my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($user) or make_error($sth->errstr);
+		$dengus=get_decoded_hashref($sth);
+		
+		if($$dengus{pass} eq $password){
+			$crypt=crypt_password($password);
+		}
 	}
 	elsif($admincookie){
 		$user=substr($admincookie,0,index($admincookie,":"));
-
+		
 		my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($user) or make_error($sth->errstr);
-		
-		my $dengus=get_decoded_hashref($sth);
+		$dengus=get_decoded_hashref($sth);
 	
 		if ($admincookie eq $user.":".crypt_password($$dengus{pass})){
 			$crypt = crypt_password($$dengus{pass}); # BECAUSE FUCK YOU THAT'S WHY
@@ -1733,6 +1775,16 @@ sub do_login($$$$$)
 	}
 	
 	if($crypt){
+		# did it differently sendMessage()
+			# check for new messages
+			#my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE touser=? ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
+			#$sth->execute($user) or make_error($sth->errstr);
+			#my $dongus = get_decoded_hashref($sth);
+			
+			#if($$dengus{lasthit}<$$dongus{lasthit}){
+			#	# new messages
+			#}
+		
 		if($savelogin and $nexttask ne "nuke"){
 			make_cookies(wakaadmin=>$user.":".$crypt,
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>time+365*24*3600);
@@ -1775,7 +1827,7 @@ sub do_rebuild_cache($)
 
 sub add_admin_entry($$$$$$)
 {
-	my ($admin,$type,$comment,$ival1,$ival2,$sval1)=@_;
+	my ($admin,$type,$comment,$ival1,$ival2,$sval1,$ref)=@_;
 	my ($sth);
 
 	my @session = check_password($admin,PASSWORDS);
@@ -1789,7 +1841,11 @@ sub add_admin_entry($$$$$$)
 
 	$sth=$dbh->prepare("INSERT INTO ".SQL_ADMIN_TABLE." VALUES(null,?,?,?,?,?);") or make_error(S_SQLFAIL);
 	$sth->execute($type,$comment,$ival1,$ival2,$sval1) or make_error(S_SQLFAIL);
-
+	
+	if($ref){
+		make_http_forward(get_script_name()."?admin=$admin&task=viewthread&num=$ref",ALTERNATE_REDIRECT);
+	}
+	
 	make_http_forward(get_script_name()."?admin=$admin&task=bans",ALTERNATE_REDIRECT);
 }
 
@@ -1876,16 +1932,16 @@ sub check_password($$)
 	# 8-28-2012 - CHANGED EVERYTHING. DEAL WITH IT
 	my @session;
 	
-	my $passwords_ref = PASSWORDS;
-	my @passwords = @$passwords_ref;
+	#my $passwords_ref = PASSWORDS;
+	#my @passwords = @$passwords_ref;
 	
-	my $users_ref = USERS;
-	my @users = @$users_ref;
+	#my $users_ref = USERS;
+	#my @users = @$users_ref;
 	
-	my $classes_ref = CLASSES;
-	my @classes = @$classes_ref;
+	#my $classes_ref = CLASSES;
+	#my @classes = @$classes_ref;
 	
-	my $currentuser = 0;
+	#my $currentuser = 0;
 	
 	# Maybe a map would speed this up. Hashes too. Its kinda stupid (and a little insecure [maybe]) to loop through every password until you find a user that matches
 	# Maybe if I use hashes, I could implement a username system as well. Oh well, who cares. This is good enough as of today (See above). 
@@ -1912,11 +1968,13 @@ sub check_password($$)
 		if($admin eq $$dengus{pass}){
 			@session[0] = $$dengus{user};
 			@session[1] = $$dengus{class};
+			@session[2] = $$dengus{newmsgs};
 			return @session;
 		}
 		if($admin eq crypt_password($$dengus{pass})){
 			@session[0] = $$dengus{user};
 			@session[1] = $$dengus{class};
+			@session[2] = $$dengus{newmsgs};
 			return @session;
 		}
 	}
@@ -2134,10 +2192,30 @@ sub initUserDatabase(){
 	"email TEXT,".
 	"class TEXT,".
 	"lastip TEXT,".
-	"lastdate INTEGER".
+	"lastdate INTEGER,".
+	"newmsgs TINYINT".
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub initMessageDatabase(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_MESSAGE_TABLE.";") if(table_exists(SQL_MESSAGE_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_MESSAGE_TABLE." (".
+
+	"touser TEXT,".
+	"fromuser TEXT,".
+	"message TEXT,".
+	"num ".get_sql_autoincrement().",".
+	"parent INTEGER,".
+	"timestamp INTEGER,".
+	"lasthit INTEGER,".
+	"wasread TINYINT".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
 }
 
 sub init_proxy_database()
@@ -2348,19 +2426,15 @@ sub toggleSticky($$$){
 	}
 
 	if($jimmies eq 'unrustled'){
-		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	elsif($jimmies eq 'rustled'){
-		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=NULL WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	
-	#$sth->execute() or make_error(S_SQLFAIL);
 	$sth->execute($num,$num) or make_error(S_SQLFAIL);
 
 	do_rebuild_cache($admin);
-	#make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
 
 sub togglePermasage($$$){
@@ -2373,18 +2447,14 @@ sub togglePermasage($$$){
 	}
 	
 	if($jimmies eq 'unrustled'){
-		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	elsif($jimmies eq 'rustled'){
-		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=NULL WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
-	
-	#$sth->execute() or make_error(S_SQLFAIL);
+
 	$sth->execute($num,$num) or make_error(S_SQLFAIL);
 
-	# not sure if this is necessary here
 	do_rebuild_cache($admin);
 }
 
@@ -2398,15 +2468,12 @@ sub toggleLockThread($$$){
 	}
 	
 	if($jimmies eq 'unrustled'){
-		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	elsif($jimmies eq 'rustled'){
-		#$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=NULL WHERE parent=$num OR (num=$num AND parent=0)") or make_error(S_SQLFAIL);
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=NULL WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
 	}
 	
-	#$sth->execute() or make_error(S_SQLFAIL);
 	$sth->execute($num,$num) or make_error(S_SQLFAIL);
 	
 	do_rebuild_cache($admin);
@@ -2440,13 +2507,6 @@ sub makeManageUsers($){
 }
 
 sub addUser($$$$$){
-	#"user TEXT,".
-	#"pass TEXT,".
-	#"email TEXT,".
-	#"class TEXT,".
-	#"lastip TEXT,".
-	#"lastdate TEXT".
-	
 	my ($admin,$user,$pass,$email,$class)=@_;
 	my @session = check_password($admin,PASSWORDS);
 	
@@ -2458,9 +2518,8 @@ sub addUser($$$$$){
 	
 	make_error("Invalid Class") unless $class=~m/(admin|mod|janitor|vip)/;
 	make_error(S_CLASS) unless @session[1] eq "admin";
-	#make_error($admin." * ".$user." * ".$pass." * ".$class." * ".$email);
 	
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
 	$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
@@ -2533,4 +2592,244 @@ sub setNewPass(????){
 	$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=logout",ALTERNATE_REDIRECT);
+}
+
+sub makeComposeMessage(??){
+	my ($admin,$parentmsg)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	
+	make_http_header();
+	print encode_string(COMPOSE_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,parentmsg=>$parentmsg));
+}
+
+sub makeViewMessage(??){
+	my ($admin,$num)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	my (@messages,$row);
+	
+	my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE num=? OR parent=? ORDER BY timestamp ASC;") or make_error(S_SQLFAIL);
+	$sth->execute($num,$num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @messages,$row;
+	}
+	
+	my $threadLength = scalar @messages;
+	
+	# Unread/Read logic
+	if ($threadLength==1){
+		if(($messages[0]{wasread}==0)&&($messages[0]{touser} eq @session[0])){
+			$sth=$dbh->prepare("UPDATE ".SQL_MESSAGE_TABLE." SET wasread=1 WHERE num=?") or make_error(S_SQLFAIL);
+			$sth->execute($num) or make_error($sth->errstr);
+		}
+	}
+	else{
+		if(($messages[0]{wasread}==0)&&($messages[$threadLength-1]{touser} eq @session[0])){
+			$sth=$dbh->prepare("UPDATE ".SQL_MESSAGE_TABLE." SET wasread=1 WHERE num=?") or make_error(S_SQLFAIL);
+			$sth->execute($num) or make_error($sth->errstr);
+		}
+	}
+	
+	make_http_header();
+	print encode_string(VIEW_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages,num=>$num));
+}
+
+sub sendMessage($$$$){
+	my ($admin,$msg,$to,$parentmsg)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	my $from=@session[0];
+	my $time=time();
+	
+	#$msg=clean_string(decode_string($msg,CHARSET));
+	$msg=format_comment(clean_string(decode_string($msg,CHARSET)));
+	$to=clean_string(decode_string($to,CHARSET));
+	
+	if ($parentmsg>0){
+		# gets the msgs parent
+		my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+		$sth->execute($parentmsg) or make_error($sth->errstr);
+		my $dengus=get_decoded_hashref($sth);
+		
+		# $to is empty for some crazy reason
+		if($$dengus{fromuser} ne @session[0]){
+			$to=$$dengus{fromuser};
+		}
+		else{
+			$to=$$dengus{touser};
+		}
+		
+		# writes the message
+		$sth=$dbh->prepare("INSERT INTO ".SQL_MESSAGE_TABLE." VALUES(?,?,?,null,?,?,null,null);") or make_error(S_SQLFAIL);
+		$sth->execute($to,$from,$msg,$parentmsg,$time) or make_error(S_SQLFAIL);
+		
+		# updates parent msgs lasthit
+		$sth=$dbh->prepare("UPDATE ".SQL_MESSAGE_TABLE." SET lasthit=?,wasread=null WHERE num=?") or make_error(S_SQLFAIL);
+		$sth->execute($time,$$dengus{num}) or make_error(S_SQLFAIL);
+	}
+	else{
+		my $sth=$dbh->prepare("INSERT INTO ".SQL_MESSAGE_TABLE." VALUES(?,?,?,null,null,?,?,null);") or make_error(S_SQLFAIL);
+		$sth->execute($to,$from,$msg,$time,$time) or make_error(S_SQLFAIL);
+	}
+	
+	# Gives the user a new message notification
+	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newmsgs=1 WHERE user=?") or make_error(S_SQLFAIL);
+	$sth->execute($to) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=inbox",ALTERNATE_REDIRECT);
+}
+
+sub makeInbox($){
+	my ($admin)=@_;
+	my (@messages,$row);
+	my @session = check_password($admin,PASSWORDS);
+	
+	my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE (touser=? OR fromuser=?) AND (parent IS NULL) ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(@session[0],@session[0]) or make_error($sth->errstr);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		if (($$row{fromuser} eq @session[0])&&($$row{lasthit}>$$row{timestamp})){
+			push @messages,$row;
+		}
+		elsif($$row{touser} eq @session[0]){
+			push @messages,$row;
+		}
+	}
+	
+	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newmsgs=0 WHERE user=?") or make_error(S_SQLFAIL);
+	$sth->execute(@session[0]) or make_error(S_SQLFAIL);
+	
+	make_http_header();
+	print encode_string(INBOX_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages));
+}
+
+sub makePage($$){
+	
+}
+
+sub makeThread($$){
+	my ($admin,$thread)=@_;
+	my ($sth,$row,@thread);
+	#my ($filename,$tmpname);
+
+	my @session = check_password($admin,PASSWORDS);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
+	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
+
+	while($row=get_decoded_hashref($sth)) { push(@thread,$row); }
+
+	make_error(S_NOTHREADERR) if($thread[0]{parent});
+
+	#$filename=RES_DIR.$thread.PAGE_EXT;
+	
+	make_http_header();
+	print encode_string(ADMIN_PAGE_TEMPLATE->(
+		thread=>$thread,
+		postform=>(ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES),
+		image_inp=>ALLOW_IMAGE_REPLIES,
+		textonly_inp=>0,
+		dummy=>$thread[$#thread]{num},
+		threads=>[{posts=>\@thread}],
+		admin=>$admin,
+		session=>\@session));
+}
+
+# I guessed my way through this
+sub makePage($$){
+	my ($admin,$page)=@_;
+	my ($sth,$row,@threads,$total,$filename);
+	my @session = check_password($admin,PASSWORDS);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	$row=get_decoded_hashref($sth);
+
+	my @threads;
+	my @thread=($row);
+
+	while($row=get_decoded_hashref($sth))
+	{
+		if(!$$row{parent})
+		{
+			push @threads,{posts=>[@thread]};
+			@thread=($row); # start new thread
+		}
+		else
+		{
+			push @thread,$row;
+		}
+	}
+	push @threads,{posts=>[@thread]};
+
+	my $total=get_page_count(scalar @threads);
+	my @pagethreads;
+	
+	@pagethreads=splice @threads,(IMAGES_PER_PAGE * $page),IMAGES_PER_PAGE;
+	
+	foreach my $thread (@pagethreads)
+	{
+		# split off the parent post, and count the replies and images
+		my ($parent,@replies)=@{$$thread{posts}};
+		my $replies=@replies;
+		my $images=grep { $$_{image} } @replies;
+		my $curr_replies=$replies;
+		my $curr_images=$images;
+		my $max_replies=REPLIES_PER_THREAD;
+		my $max_images=(IMAGE_REPLIES_PER_THREAD or $images);
+
+		# drop replies until we have few enough replies and images
+		while($curr_replies>$max_replies or $curr_images>$max_images)
+		{
+			my $post=shift @replies;
+			$curr_images-- if($$post{image});
+			$curr_replies--;
+		}
+
+		# write the shortened list of replies back
+		$$thread{posts}=[$parent,@replies];
+		$$thread{omit}=$replies-$curr_replies;
+		$$thread{omitimages}=$images-$curr_images;
+
+		# abbreviate the remaining posts
+		foreach my $post (@{$$thread{posts}})
+		{
+			my $abbreviation=abbreviate_html($$post{comment},MAX_LINES_SHOWN,APPROX_LINE_LENGTH);
+			if($abbreviation)
+			{
+				$$post{comment}=$abbreviation;
+				$$post{abbrev}=1;
+			}
+		}
+	}
+
+	# make the list of pages
+	my @pages=map +{ page=>$_ },(0..$total-1);
+
+	foreach my $p (@pages)
+	{
+		if($$p{page}==0) { $$p{filename}=get_script_name()."?admin=$admin&task=viewthreads&page=0" } # first page
+		else { $$p{filename}=get_script_name()."?admin=$admin&task=viewthreads&page=".$$p{page} }
+		if($$p{page}==$page) { $$p{current}=1 } # current page, no link
+	}
+
+	my ($prevpage,$nextpage);
+	$prevpage=$pages[$page-1]{filename} if($page!=0);
+	$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
+
+	make_http_header();
+	
+	print encode_string(ADMIN_PAGE_TEMPLATE->(
+		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
+		image_inp=>ALLOW_IMAGES,
+		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),
+		prevpage=>$prevpage,
+		nextpage=>$nextpage,
+		pages=>\@pages,
+		admin=>$admin,
+		session=>\@session,
+		threads=>\@pagethreads
+	));
 }
