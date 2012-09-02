@@ -49,7 +49,6 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
 	<if $session-\>[1] eq 'mod'>
 		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
-		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 	</if>
 	<if $session-\>[1] eq 'admin'>
@@ -58,7 +57,6 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		[<a href="<var $self>?task=spam&amp;admin=<var $admin>"><const S_MANASPAM></a>]
 		[<a href="<var $self>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
 		[<a href="<var $self>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
-		[<a href="<var $self>?task=mpost&amp;admin=<var $admin>"><const S_MANAPOST></a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 		[<a href="<var $self>?task=manageusers&amp;admin=<var $admin>">Manage Users</a>]
 	</if>
@@ -247,7 +245,11 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	</if>
 
 	<td><var $comment></td>
-	<td><a href="<var $self>?admin=<var $admin>&amp;task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a></td>
+	<td>
+	<if $active><a href="<var $self>?task=updateban&amp;num=<var $num>&amp;active=0&amp;ip=<var $ip>&amp;admin=<var $admin>">Deactivate</a></if>
+	<if !$active><a href="<var $self>?task=updateban&amp;num=<var $num>&amp;active=1&amp;ip=<var $ip>&amp;admin=<var $admin>">Activate</a></if>
+	<a href="<var $self>?admin=<var $admin>&amp;task=removeban&amp;num=<var $num>"><const S_BANREMOVE></a>
+	</td>
 	</tr>
 </loop>
 
@@ -507,12 +509,212 @@ use constant VIEW_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 
 use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+
+<div class="logo" style="margin:0; font-size: 14pt;">
+<var dec_to_dot $ip>
+<p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><var $host></p>
+</div>
+
+<fieldset><legend>Ban History</legend>
+	<table align="center" style="white-space: nowrap"><tbody><thead><td class="postBlock">Active</td><td class="postBlock">Reason</td><td class="postBlock">By</td><td class="postBlock">Date</td><td class="postBlock">Options</td></thead>
+	<tbody>
+	<loop $bans>
+	<tr><td><var $active></td>
+	<td><var $comment></td>
+	<td><var $fromuser></td>
+	<td><var make_date($timestamp,tiny)></td>
+	<td>
+		<if !$active><a href="<var $self>?task=updateban&amp;num=<var $num>&amp;active=1&amp;ip=<var $ip>&amp;admin=<var $admin>">[Activate]</a></if>
+		<if $active><a href="<var $self>?task=updateban&amp;num=<var $num>&amp;&amp;active=0&amp;ip=<var $ip>&amp;admin=<var $admin>">[Deactivate]</a></if>
+		<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">[Delete]</a>
+	</td></tr>
+	</loop>
+	<tr><td><br/></td></tr>
+	<tbody></table>
+	<div align="center"><strong>Add Ban</strong>
+		<div class="postarea"><form id="addNote" action="<var $self>" method="post" enctype="multipart/form-data">
+		<table><tbody><input type="hidden" name="task" value="addip" />
+		<input type="hidden" name="type" value="ipban" />
+		<input type="hidden" name="admin" value="<var $admin>" />
+		<input type="hidden" name="ip" value="<var $ip>" />
+		<tr><td class="postBlock">Reason</td><td><textarea name="comment" cols="48" rows="4"></textarea></td></tr>
+		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	</tbody></table></form></div>
+</fieldset>
+
+<fieldset><legend>Notes</legend>
+	<loop $notes>
+		<table>
+		<tbody>
+		<tr><td class="postBlock">From</td><td><var $fromuser> on <var make_date($timestamp,"tiny")></td></tr>
+		<tr><td class="postBlock">Message</td><td><var $message></td></tr>
+		</table>
+		</tbody>
+		<hr/>
+	</loop>
+	<div align="center"><strong>Add Note</strong>
+		<div class="postarea"><form id="addNote" action="<var $self>" method="post" enctype="multipart/form-data">
+		<table><tbody><input type="hidden" name="task" value="sendmsg" />
+		<input type="hidden" name="admin" value="<var $admin>" />
+		<input type="hidden" name="isnote" value="1" />
+		<input type="hidden" name="to" value="<var $ip>" />
+		<tr><td class="postBlock">Message</td><td><textarea name="message" cols="48" rows="4"></textarea></td></tr>
+		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+		</tbody></table></form></div>
+</fieldset>
+
+<fieldset><legend>Posts</legend>
+<div class="thread"><loop $posts>
+		<if !$parent>
+			<div class="parentPost" id="parent<var $num>">
+				<div class="mobileParentPostInfo">
+					<label ><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="filetitle"><var $subject></span>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					</span>&nbsp;
+					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>
+					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
+				</div>
+				<div class="hat"></div>
+				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+					<div style="display:none" class="forJsImgSize">
+						<span><var $width></span>
+						<span><var $height></span>
+					</div>
+					<br />
+					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
+						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
+					<if !$thumbnail>
+						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
+					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
+				<a id="<var $num>"></a>
+				<div class="parentPostInfo">
+					<label><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="filetitle"><var $subject></span>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+					</span>&nbsp;
+					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>				
+						[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
+						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">[D]</a>
+						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=1&amp;admin=<var $admin>">[F]</a>
+						<if $sticky><a href="<var $self>?admin=<var $admin>&amp;task=stickdatshit&amp;num=<var $num>&amp;jimmies=rustled">[-S]</a></if><if !$sticky><a href="<var $self>?admin=<var $admin>&amp;task=stickdatshit&amp;num=<var $num>&amp;jimmies=unrustled">[S]</a></if>
+						<if $locked><a href="<var $self>?admin=<var $admin>&amp;task=lockthread&amp;num=<var $num>&amp;jimmies=rustled">[-L]</a></if><if !$locked><a href="<var $self>?admin=<var $admin>&amp;task=lockthread&amp;num=<var $num>&amp;jimmies=unrustled">[L]</a></if>
+						<if $permasage><a href="<var $self>?admin=<var $admin>&amp;task=permasage&amp;num=<var $num>&amp;jimmies=rustled">[-PS]</a></if><if !$permasage><a href="<var $self>?admin=<var $admin>&amp;task=permasage&amp;num=<var $num>&amp;jimmies=unrustled">[PS]</a></if>		
+					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					<div class="postMenu" id="postMenu<var $num>">
+						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Delete</span>
+							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+							</div>
+						</div>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Filter</span>
+							<div class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+							</div>
+						</div>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a>
+						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+					</div>
+				</div>
+				<blockquote<if $email=~/aa$/i> class="aa"</if>>
+				<var $comment>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+				</blockquote>
+			</div>
+			<if $omit><span class="omittedposts">
+				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
+				<if !$omitimages><var sprintf S_ABBR,$omit></if>
+			</span></if></if>
+		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
+				<div class="doubledash"></div>
+				<div class="reply" id="reply<var $num>">
+					<a id="<var $num>"></a>
+					<label><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="replytitle"><var $subject></span>
+					<if $email><span class="commentpostername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
+					
+						[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
+						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">[D]</a>
+						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=1&amp;admin=<var $admin>">[F]</a>
+					
+					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					<div class="postMenu" id="postMenu<var $num>">
+						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Delete</span>
+							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+							</div>
+						</div>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Filter</span>
+							<div class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+							</div>
+						</div>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a>
+						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+					</div>
+					<if $image>
+						<br />
+						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+						<div style="display:none" class="forJsImgSize"><span><var $width></span><span><var $height></span>
+						</div><br />
+						<if $thumbnail>
+							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
+								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+						</if>
+						<if !$thumbnail>
+							<if DELETED_THUMBNAIL>
+								<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
+								<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb" /></a>
+							</if>
+							<if !DELETED_THUMBNAIL>
+								<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+							</if></if></if>
+					<blockquote<if $email=~/aa$/i> class="aa"</if>>
+						<var $comment>
+						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+					</blockquote>
+				</div>
+			</div></if>
+			<hr />
+		</loop>
+	</div>
+</fieldset>
 }.NORMAL_FOOT_INCLUDE);
 
 
 use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div id="content">
 <if $thread>
+	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_RETURN></a>]
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div>
 </if>
@@ -583,6 +785,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <script type="text/javascript">setPostInputs()</script></if>
 <hr class="postinghr" />
 <form id="delform" action="<var $self>" method="post">
+<input type="hidden" name="admin" value="<var $admin>" />
 <loop $threads>
 	<div class="thread"><loop $posts>
 		<if !$parent>
@@ -627,8 +830,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
 					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>				
-						[<a href=""><var dec_to_dot $ip></a>]
-						<a href="<var $self>?task=addip&amp;num=<var $num>&amp;type=ipban&amp;ip=<var $ip>&amp;ref=<var $thread>&amp;admin=<var $admin>">[B]</a>
+						[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
 						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">[D]</a>
 						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=1&amp;admin=<var $admin>">[F]</a>
 						<if $sticky><a href="<var $self>?admin=<var $admin>&amp;task=stickdatshit&amp;num=<var $num>&amp;jimmies=rustled">[-S]</a></if><if !$sticky><a href="<var $self>?admin=<var $admin>&amp;task=stickdatshit&amp;num=<var $num>&amp;jimmies=unrustled">[S]</a></if>
@@ -655,9 +857,6 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 				</div>
-				
-				
-				
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
@@ -668,7 +867,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				<if !$omitimages><var sprintf S_ABBR,$omit></if>
 			</span></if></if>
 		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
-				<div class="doubledash">&gt;&gt;</div>
+				<div class="doubledash"></div>
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<label><input type="checkbox" name="delete" value="<var $num>" />
@@ -680,8 +879,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
 					
-						[<a href=""><var dec_to_dot $ip></a>]
-						<a href="<var $self>?task=addip&amp;num=<var $num>&amp;type=ipban&amp;ip=<var $ip>&amp;ref=<var $thread>&amp;admin=<var $admin>">[B]</a>
+						[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
 						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">[D]</a>
 						<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=1&amp;admin=<var $admin>">[F]</a>
 					
@@ -736,6 +934,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 
 <if $thread>
+	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_RETURN></a>]
 	[<a href="#">Top</a>]
 	<a name="bottom"></a>
 </if>

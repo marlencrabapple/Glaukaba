@@ -302,7 +302,8 @@ elsif($task eq 'sendmsg'){
 	my $msg=$query->param("message");
 	my $to=$query->param("to");
 	my $parentmsg=$query->param("replyto");
-	sendMessage($admin,$msg,$to,$parentmsg);
+	my $isnote=$query->param("isnote");
+	sendMessage($admin,$msg,$to,$parentmsg,$isnote);
 }
 elsif($task eq 'inbox'){
 	my $admin=$query->param("admin");
@@ -322,6 +323,19 @@ elsif($task eq 'viewthread'){
 	my $admin=$query->param("admin");
 	my $num=$query->param("num");
 	makeThread($admin,$num);
+}
+elsif($task eq 'ippage'){
+	my $admin=$query->param("admin");
+	my $ip=$query->param("ip");
+	makeIPPage($admin,$ip);
+}
+elsif($task eq 'updateban'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	my $ip=$query->param("ip");
+	my $reason=$query->param("comment");
+	my $active=$query->param("active");
+	updateBan($admin,$num,$ip,$reason,$active);
 }
 
 $dbh->disconnect();
@@ -379,6 +393,7 @@ sub report($$$){
 	make_error("ur a faggot1") unless($num=~m/[0-9]*/);
 	make_error("ur a faggot2") unless($board=~m/(glau|meta|test)/); # will replace with global board list soon
 	make_error("ur a faggot3") unless($reason=~m/(vio|illegal|spam)/);
+	
 	# this would be what we did if we allowed free input for the report reason
 	#$reason=clean_string(decode_string($reason,CHARSET));
 	
@@ -786,11 +801,11 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	{
 		if (@session[1] eq "admin"){
 			$name = "<span class='adminName'>".$name."</span>";
-			$trip = "<span class='adminTrip'>".$trip."<span class='adminCap'> ## Admin</span></span><img class='capIcon' title='This user is a Glauchan Administrator' alt='This user is a Glauchan Administrator' src='http://".DOMAIN."/img/adm_opct2.png' />";
+			$trip = "<span class='adminTrip'>".$trip."<span class='adminCap'> ## Admin</span></span><img class='capIcon' title='This user is a ".SITE_NAME." Administrator' alt='This user is a ".SITE_NAME." Administrator' src='http://".DOMAIN."/img/adm_opct2.png' />";
 		}
 		elsif (@session[1] eq "mod"){
 			$name = "<span class='modName'>".$name."</span>";
-			$trip = "<span class='modTrip'>".$trip."<span class='modCap'> ## Mod</span></span><img class='capIcon' title='This user is a Glauchan Moderator' alt='This user is a Glauchan Moderator' src='http://".DOMAIN."/img/mod_opct.png' />";
+			$trip = "<span class='modTrip'>".$trip."<span class='modCap'> ## Mod</span></span><img class='capIcon' title='This user is a ".SITE_NAME." Moderator' alt='This user is a ".SITE_NAME." Moderator' src='http://".DOMAIN."/img/mod_opct.png' />";
 		}
 	}
 	
@@ -853,12 +868,12 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	# forward back to the main page
 	if ($admin) #unless you're an admin, it'll go back to the manager post page
 	{
-		make_http_forward(get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
-		#make_http_forward($noko ? get_reply_link($num,$parent) : "http://glauchan.org/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
+		$parent=$num unless $parent;
+		make_http_forward($noko ? get_script_name()."?admin=$admin&task=viewthread&num=".$parent : get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
 	}
 	else
 	{
-		make_http_forward($noko ? getPrintedReplyLink($num,$parent) : "http://glauchan.org/".BOARD_DIR."/",ALTERNATE_REDIRECT);
+		make_http_forward($noko ? getPrintedReplyLink($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",ALTERNATE_REDIRECT);
 	}
 }
 
@@ -895,33 +910,48 @@ sub is_trusted($)
 sub ban_check($$$$)
 {
 	my ($numip,$name,$subject,$comment)=@_;
-	my ($sth);
+	my ($sth,$row,$banned,@bans);
 
-	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' AND ? & ival2 = ival1 & ival2;") or make_error(S_SQLFAIL);
+	# updated to allow for ban history
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' AND (? & ival2 = ival1 & ival2) AND (active='1') ORDER BY num DESC;") or make_error(S_SQLFAIL);
 	$sth->execute($numip) or make_error(S_SQLFAIL);
+	
+	#my $banned=($sth->fetchrow_array())[0];
 
-	make_error(S_BADHOST) if(($sth->fetchrow_array())[0]);
-
-# fucking mysql...
-#	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_ADMIN_TABLE." WHERE type='wordban' AND ? LIKE '%' || sval1 || '%';") or make_error(S_SQLFAIL);
-#	$sth->execute($comment) or make_error(S_SQLFAIL);
-#
-#	make_error(S_STRREF) if(($sth->fetchrow_array())[0]);
-
-	$sth=$dbh->prepare("SELECT sval1 FROM ".SQL_ADMIN_TABLE." WHERE type='wordban';") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-
-	my $row;
-	while($row=$sth->fetchrow_arrayref())
+	while($row=get_decoded_hashref($sth))
 	{
-		my $regexp=quotemeta $$row[0];
-		make_error(S_STRREF) if($comment=~/$regexp/);
-		make_error(S_STRREF) if($name=~/$regexp/);
-		make_error(S_STRREF) if($subject=~/$regexp/);
+		if ($$row{active}==1)
+		{
+			push @bans,$row;
+			$banned++;
+		}
 	}
 
-	# etc etc etc
+	#make_error(S_BADHOST.$$ban{comment}) if($banned);
+	# new ban page
+	if ($banned){
+		make_http_header();
+		print encode_string(BAN_PAGE_TEMPLATE->(
+			ip=>$numip,
+			bans=>\@bans
+		));
+		
+		exit;
+	}
+	else{
+		$sth=$dbh->prepare("SELECT sval1 FROM ".SQL_ADMIN_TABLE." WHERE type='wordban';") or make_error(S_SQLFAIL);
+		$sth->execute() or make_error(S_SQLFAIL);
 
+		my $row;
+		while($row=$sth->fetchrow_arrayref())
+		{
+			my $regexp=quotemeta $$row[0];
+			make_error(S_STRREF) if($comment=~/$regexp/);
+			make_error(S_STRREF) if($name=~/$regexp/);
+			make_error(S_STRREF) if($subject=~/$regexp/);
+		}
+	}
+	
 	return(0);
 }
 
@@ -1827,8 +1857,19 @@ sub do_rebuild_cache($)
 
 sub add_admin_entry($$$$$$)
 {
+	#num | int(11) | NO | PRI |  | auto_increment
+	#type | text | YES |  |  | 
+	#comment | text | YES |  |  | 
+	#ival1 | text | YES |  |  | 
+	#ival2 | text | YES |  |  | 
+	#sval1 | text | YES |  |  | 
+	#fromuser | text | YES |  |  | 
+	#timestamp | int(11) | YES |  |  | 
+	#active | tinyint(4) | YES |  |  | 
+
 	my ($admin,$type,$comment,$ival1,$ival2,$sval1,$ref)=@_;
 	my ($sth);
+	my $time=time();
 
 	my @session = check_password($admin,PASSWORDS);
 	
@@ -1839,11 +1880,16 @@ sub add_admin_entry($$$$$$)
 
 	$comment=clean_string(decode_string($comment,CHARSET));
 
-	$sth=$dbh->prepare("INSERT INTO ".SQL_ADMIN_TABLE." VALUES(null,?,?,?,?,?);") or make_error(S_SQLFAIL);
-	$sth->execute($type,$comment,$ival1,$ival2,$sval1) or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("INSERT INTO ".SQL_ADMIN_TABLE." VALUES(null,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	$sth->execute($type,$comment,$ival1,$ival2,$sval1,@session[0],$time,1) or make_error(S_SQLFAIL);
 	
-	if($ref){
-		make_http_forward(get_script_name()."?admin=$admin&task=viewthread&num=$ref",ALTERNATE_REDIRECT);
+	#if($ref){
+	#	make_http_forward(get_script_name()."?admin=$admin&task=viewthread&num=$ref",ALTERNATE_REDIRECT);
+	#}
+	
+	# redirects to the ip's info page
+	if($type='ipban'){
+		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ival1,ALTERNATE_REDIRECT);
 	}
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=bans",ALTERNATE_REDIRECT);
@@ -2175,7 +2221,10 @@ sub init_admin_database()
 	"comment TEXT,".			# Comment for the entry
 	"ival1 TEXT,".			# Integer value 1 (usually IP)
 	"ival2 TEXT,".			# Integer value 2 (usually netmask)
-	"sval1 TEXT".				# String value 1
+	"sval1 TEXT,".				# String value 1
+	"fromuser TEXT,".				# 
+	"timestamp INTEGER,".				# 
+	"active TINYINT".				# 
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2635,8 +2684,8 @@ sub makeViewMessage(??){
 	print encode_string(VIEW_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages,num=>$num));
 }
 
-sub sendMessage($$$$){
-	my ($admin,$msg,$to,$parentmsg)=@_;
+sub sendMessage($$$$$){
+	my ($admin,$msg,$to,$parentmsg,$isnote)=@_;
 	my @session = check_password($admin,PASSWORDS);
 	my $from=@session[0];
 	my $time=time();
@@ -2675,6 +2724,10 @@ sub sendMessage($$$$){
 	# Gives the user a new message notification
 	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newmsgs=1 WHERE user=?") or make_error(S_SQLFAIL);
 	$sth->execute($to) or make_error(S_SQLFAIL);
+	
+	if($isnote){
+		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT)
+	}
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=inbox",ALTERNATE_REDIRECT);
 }
@@ -2815,9 +2868,9 @@ sub makePage($$){
 		if($$p{page}==$page) { $$p{current}=1 } # current page, no link
 	}
 
-	my ($prevpage,$nextpage);
-	$prevpage=$pages[$page-1]{filename} if($page!=0);
-	$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
+	#my ($prevpage,$nextpage);
+	#$prevpage=$pages[$page-1]{filename} if($page!=0);
+	#$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
 
 	make_http_header();
 	
@@ -2825,11 +2878,85 @@ sub makePage($$){
 		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
 		image_inp=>ALLOW_IMAGES,
 		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),
-		prevpage=>$prevpage,
-		nextpage=>$nextpage,
+		#prevpage=>$prevpage,
+		#nextpage=>$nextpage,
 		pages=>\@pages,
 		admin=>$admin,
 		session=>\@session,
 		threads=>\@pagethreads
 	));
+}
+
+sub makeIPPage($$){
+	my ($admin,$ip)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	my ($sth,$row,@bans,@posts,@notes,$prevtype,$host);
+	
+	$host = gethostbyaddr inet_aton($ip),AF_INET or $ip;
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+
+	# get bans and other stuff for this ip
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE ival1=? AND (type='ipban' OR type='wordban' OR type='whitelist' OR type='trust') ORDER BY type ASC,num ASC;") or make_error(S_SQLFAIL);
+	$sth->execute($ip) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		$$row{divider}=1 if($prevtype ne $$row{type});
+		$prevtype=$$row{type};
+		$$row{rowtype}=@bans%2+1;
+		push @bans,$row;
+	}
+	
+	# get posts for ip
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE ip=? ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;") or make_error(S_SQLFAIL);
+	$sth->execute($ip) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @posts,$row;
+	}
+	
+	# get notes for ip
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE touser=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute($ip) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @notes,$row;
+	}
+
+	make_http_header();
+	
+	print encode_string(IP_PAGE_TEMPLATE->(
+		admin=>$admin,
+		ip=>$ip,
+		host=>$host,
+		session=>\@session,
+		bans=>\@bans,
+		notes=>\@notes,
+		posts=>\@posts
+	));
+}
+
+sub updateBan($$$$$){
+	my($admin,$num,$ip,$reason,$active)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+	
+	if($active==0 or $active==1){
+		my $sth=$dbh->prepare("UPDATE ".SQL_ADMIN_TABLE." SET active=? WHERE num=?") or make_error(S_SQLFAIL);
+		$sth->execute($active,$num) or make_error(S_SQLFAIL);
+	}
+	if($reason){
+		my $sth=$dbh->prepare("UPDATE ".SQL_ADMIN_TABLE." SET comment=? WHERE num=?") or make_error(S_SQLFAIL);
+		$sth->execute($reason,$num) or make_error(S_SQLFAIL);
+	}
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ip,ALTERNATE_REDIRECT);
 }

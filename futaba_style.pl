@@ -566,6 +566,23 @@ use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 }.NORMAL_FOOT_INCLUDE);
 
+use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
+<div class="logo" style="text-align: center; width:800px;margin-left:auto; margin-right:auto;">
+	<span>You (<var dec_to_dot $ip>) have been banned!</span>
+	<br /><br />
+	<div style="float:left; width: 49.1%">
+	<img src="http://<var DOMAIN>/img/banned.png"/>
+	</div>
+	<div style="float:right; width: 49.1%">
+	<loop $bans>
+	<p style="font-size:10pt; font-weight: normal;">You were banned on <var make_date($timestamp,DATE_STYLE)> for the following reason: "<em><var $comment></em>"</p>
+	</loop>
+	</div>
+</div>
+<div style="clear:both"></div>
+<br /><br />
+}.NORMAL_FOOT_INCLUDE);
+
 #
 # Stylesheet stuff
 #
