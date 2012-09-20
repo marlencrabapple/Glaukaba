@@ -337,6 +337,20 @@ elsif($task eq 'updateban'){
 	my $active=$query->param("active");
 	updateBan($admin,$num,$ip,$reason,$active);
 }
+elsif($task eq 'editpost'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	makeEdit($admin,$num);
+}
+elsif($task eq 'updatepost'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	my $comment=$query->param("field4");
+	my $subject=$query->param("field3");
+	my $name=$query->param("field1");
+	my $link=$query->param("field2");
+	editPost($admin,$num,$comment,$subject,$name,$link);
+}
 
 $dbh->disconnect();
 
@@ -2470,9 +2484,7 @@ sub toggleSticky($$$){
 	my ($sth);
 	my @session = check_password($admin,PASSWORDS);
 	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
+	make_error(S_CLASS) unless @session[1] ne 'janitor';
 
 	if($jimmies eq 'unrustled'){
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET sticky=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
@@ -2491,9 +2503,7 @@ sub togglePermasage($$$){
 	my ($sth);
 	my @session = check_password($admin,PASSWORDS);
 	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
+	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
 	if($jimmies eq 'unrustled'){
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET permasage=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
@@ -2512,9 +2522,7 @@ sub toggleLockThread($$$){
 	my ($sth);
 	my @session = check_password($admin,PASSWORDS);
 	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
+	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
 	if($jimmies eq 'unrustled'){
 		$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET locked=1 WHERE parent=? OR (num=? AND parent=0)") or make_error(S_SQLFAIL);
@@ -2542,7 +2550,7 @@ sub makeManageUsers($){
 	my (@users,$row);
 	my @session = check_password($admin,PASSWORDS);
 	
-	make_error(S_CLASS) unless @session[1] eq "admin"; # lol perl style
+	make_error(S_CLASS) unless @session[1] eq "admin";
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE) or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
@@ -2591,6 +2599,7 @@ sub makeChangePass(??){
 	my ($admin,$user)=@_;
 	my @session = check_password($admin,PASSWORDS);
 	
+	# dat security
 	if (@session[1] ne "admin"){
 		if (@session[0] ne $user){ make_error("ya turkey")};
 	}
@@ -2757,10 +2766,6 @@ sub makeInbox($){
 	print encode_string(INBOX_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages));
 }
 
-sub makePage($$){
-	
-}
-
 sub makeThread($$){
 	my ($admin,$thread)=@_;
 	my ($sth,$row,@thread);
@@ -2894,9 +2899,7 @@ sub makeIPPage($$){
 	
 	$host = gethostbyaddr inet_aton($ip),AF_INET or $ip;
 	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
+	make_error(S_CLASS) unless @session[1] ne 'janitor';
 
 	# get bans and other stuff for this ip
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE ival1=? AND (type='ipban' OR type='wordban' OR type='whitelist' OR type='trust') ORDER BY type ASC,num ASC;") or make_error(S_SQLFAIL);
@@ -2929,7 +2932,6 @@ sub makeIPPage($$){
 	}
 
 	make_http_header();
-	
 	print encode_string(IP_PAGE_TEMPLATE->(
 		admin=>$admin,
 		ip=>$ip,
@@ -2945,9 +2947,7 @@ sub updateBan($$$$$){
 	my($admin,$num,$ip,$reason,$active)=@_;
 	my @session = check_password($admin,PASSWORDS);
 	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
+	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
 	if($active==0 or $active==1){
 		my $sth=$dbh->prepare("UPDATE ".SQL_ADMIN_TABLE." SET active=? WHERE num=?") or make_error(S_SQLFAIL);
@@ -2959,4 +2959,39 @@ sub updateBan($$$$$){
 	}
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ip,ALTERNATE_REDIRECT);
+}
+
+sub makeEdit($$){
+	my ($admin,$num)=@_;
+	my @session = check_password($admin,PASSWORDS);
+	my ($row,@posts);
+	
+	make_error(S_CLASS) unless @session[1] eq 'admin';
+	
+	my $sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth))
+	{
+		push @posts,$row;
+	}
+	
+	make_http_header();
+	print encode_string(EDIT_POST_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		posts=>\@posts
+	));
+}
+
+sub editPost($$$$$$){
+	my ($admin,$num,$comment,$subject,$name,$link)=@_;
+	my @session = check_password($admin,PASSWORDS);
+
+	make_error(S_CLASS) unless @session[1] eq 'admin';
+	
+	my $sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET comment=?,subject=?,name=?,email=? WHERE num=?") or make_error(S_SQLFAIL);
+	$sth->execute($comment,$subject,$name,$link,$num) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
