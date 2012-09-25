@@ -549,7 +549,7 @@ sub build_cache_page($$@)
 sub build_thread_cache($)
 {
 	my ($thread)=@_;
-	my ($sth,$row,@thread);
+	my ($sth,$row,$lastpost,@thread);
 	my ($filename,$tmpname);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
@@ -571,13 +571,13 @@ sub build_thread_cache($)
 	);
 	
 	# now build the json file
+	$lastpost = $thread[length(@thread)+1]{num};
 	$filename=RES_DIR.$thread.".json";
 	
 	print_page($filename,JSON_THREAD_TEMPLATE->(
-		thread=>$thread,
-		dummy=>$thread[$#thread]{num},
-		threads=>[{posts=>\@thread}])
-	);
+		lastpost=>$lastpost,
+		posts=>\@thread
+	));
 }
 
 sub print_page($$)

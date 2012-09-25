@@ -558,15 +558,14 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant JSON_THREAD_TEMPLATE => compile_template(q{
-<loop $threads>
 	{"posts": [
 		<loop $posts>
 			{
 				"no":<var $num>,
 				<if !$parent>
-					"sticky":<var $sticky>,
-					"psage":<var $permasage>,
-					"closed":<var $locked>,
+					<if $sticky>"sticky":<var $sticky>,</if>
+					<if $permasage>"psage":<var $permasage>,</if>
+					<if $locked>"closed":<var $locked>,</if>
 				</if>
 				"time":<var $timestamp>,
 				<if index($date,"ID")==-1>"now":"<var $date>",</if>
@@ -590,10 +589,9 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 					<if $tn_mask>"spoiler":<var $tnmask>,</if>
 				</if>
 				"resto":<var $parent>
-			},
+			}<if $lastpost!=$num>,</if>
 		</loop>
 	]}
-</loop>
 },2);
 
 #
