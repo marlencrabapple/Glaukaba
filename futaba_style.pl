@@ -26,7 +26,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	</loop>
 	<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 	<link href="http://<var DOMAIN>/css/mobile.css" type="text/css" rel="stylesheet" />
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 	<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 	<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
@@ -153,7 +153,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 			</loop>
 			<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
-			<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+			<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 			<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
 			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 			<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
@@ -283,11 +283,11 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">
 				<div class="mobileParentPostInfo">
-					<label><input type="checkbox" name="delete" value="<var $num>" />
+					<input type="checkbox" name="delete" value="<var $num>" />
 					<span class="filetitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-					<var $date></label>
+					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
@@ -310,11 +310,11 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
 				<a id="<var $num>"></a>
 				<span class="parentPostInfo">
-					<label><input type="checkbox" name="delete" value="<var $num>" />
+					<input type="checkbox" name="delete" value="<var $num>" />
 					<span class="filetitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-					<var $date></label>
+					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
@@ -356,11 +356,11 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="doubledash">&gt;&gt;</div>
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
-					<div class="replyPostInfo" style="margin: 0px; padding: 0px; display: inline;"><label><input type="checkbox" name="delete" value="<var $num>" />
+					<div class="replyPostInfo" style="margin: 0px; padding: 0px; display: inline;"><input type="checkbox" name="delete" value="<var $num>" />
 					<span class="replytitle"><var $subject></span>
-					<if $email><span class="commentpostername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-					<var $date></label>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
@@ -556,6 +556,45 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div style="clear:both"></div>
 <br /><br />
 }.NORMAL_FOOT_INCLUDE);
+
+use constant JSON_THREAD_TEMPLATE => compile_template(q{
+<loop $threads>
+	{"posts": [
+		<loop $posts>
+			{
+				"no":<var $num>,
+				<if !$parent>
+					"sticky":<var $sticky>,
+					"psage":<var $permasage>,
+					"closed":<var $locked>,
+				</if>
+				"time":<var $timestamp>,
+				<if index($date,"ID")==-1>"now":"<var $date>",</if>
+				<if index($date,"ID")!=-1>
+					"now":"<var substr($date,0,index($date,"ID:")-1)>",
+					"id":"<var substr($date, index($date,"ID:"))>",
+				</if>
+				"name":"<var $name>",
+				<if $email>"email":"<var $email>",</if>
+				<if $subject>"sub":"<var $subject>",</if>
+				<if $comment>"com":"<var $comment>",</if>
+				<if image>
+					"image":"<var $image>",
+					"fsize":<var $size>,
+					"md5":"<var $md5>",
+					"w":<var $width>,
+					"h":<var $height>,
+					"tn_w":<var $tn_width>,
+					"tn_h":<var $tn_height>,
+					"filename":"<var $filename>",
+					<if $tn_mask>"spoiler":<var $tnmask>,</if>
+				</if>
+				"resto":<var $parent>
+			},
+		</loop>
+	]}
+</loop>
+},2);
 
 #
 # Stylesheet stuff

@@ -569,6 +569,15 @@ sub build_thread_cache($)
 		dummy=>$thread[$#thread]{num},
 		threads=>[{posts=>\@thread}])
 	);
+	
+	# now build the json file
+	$filename=RES_DIR.$thread.".json";
+	
+	print_page($filename,JSON_THREAD_TEMPLATE->(
+		thread=>$thread,
+		dummy=>$thread[$#thread]{num},
+		threads=>[{posts=>\@thread}])
+	);
 }
 
 sub print_page($$)
@@ -854,7 +863,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 
 	# update the individual thread cache
 	my $num;
-	if($parent && !$noko) { build_thread_cache($parent); }
+	if($parent && !$noko) { build_thread_cache($parent);}
 	else # must find out what our new thread number is
 	{
 		if($filename)
@@ -2073,6 +2082,11 @@ sub make_http_header()
 	print "\n";
 }
 
+sub make_json_header(){
+	print "Content-Type: application/json; charset=utf-8 \n";
+	print "\n";
+}
+
 sub make_error($)
 {
 	my ($error)=@_;
@@ -2792,6 +2806,40 @@ sub makeThread($$){
 		threads=>[{posts=>\@thread}],
 		admin=>$admin,
 		session=>\@session));
+}
+
+# this isn't used at all
+sub build_json_cache_all(){
+	my ($sth,$row,@thread);
+
+	$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE parent=0;") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	while($row=$sth->fetchrow_arrayref())
+	{
+		build_json_cache($$row[0]);
+	}
+}
+
+# this isn't used at all
+sub build_json_cache($){
+	my ($thread)=@_;
+	my ($sth,$row,$filename,@thread);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
+	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
+
+	while($row=get_decoded_hashref($sth)) { push(@thread,$row); }
+
+	make_error(S_NOTHREADERR) if($thread[0]{parent});
+
+	$filename=RES_DIR.$thread.".json";
+	
+	print_page($filename,JSON_THREAD_TEMPLATE->(
+		thread=>$thread,
+		dummy=>$thread[$#thread]{num},
+		threads=>[{posts=>\@thread}])
+	);
 }
 
 # I guessed my way through this

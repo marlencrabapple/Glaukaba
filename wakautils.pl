@@ -286,6 +286,10 @@ sub compile_template($;$)
 		# commented out for adsense
 		#$str=~s/\n\s*/ /sg;
 	}
+	
+	if($nostrip==2){
+		$str=~s/\n\s*//sg;
+	}
 
 	while($str=~m!(.*?)(<(/?)(var|const|if|loop)(?:|\s+(.*?[^\\]))>|$)!sg)
 	{
