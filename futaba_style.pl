@@ -356,7 +356,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="doubledash">&gt;&gt;</div>
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
-					<div class="replyPostInfo" style="margin: 0px; padding: 0px; display: inline;"><input type="checkbox" name="delete" value="<var $num>" />
+					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
 					<span class="replytitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
@@ -573,7 +573,8 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 					"now":"<var substr($date,0,index($date,"ID:")-1)>",
 					"id":"<var substr($date, index($date,"ID:"))>",
 				</if>
-				"name":"<var $name>",
+				"name":"<var mahou_inyoufu $name>",
+				<if $trip>"trip":"<var $trip>",</if>
 				<if $email>"email":"<var mahou_inyoufu $email>",</if>
 				<if $subject>"sub":"<var mahou_inyoufu $subject>",</if>
 				<if $comment>"com":"<var mahou_inyoufu $comment>",</if>
@@ -588,7 +589,7 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 					"filename":"<var $filename>",
 					<if $tn_mask>"spoiler":<var $tnmask>,</if>
 				</if>
-				"resto":<var $parent>
+				"parent":<var $parent>
 			}<if $lastpost!=$num>,</if>
 		</loop>
 	]}

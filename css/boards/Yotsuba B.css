@@ -22,7 +22,6 @@ a:hover{
 color: #DD0000 !important;
 }
 
-
 textarea {
 font-family:arial,helvetica,sans-serif;
 font-size:10pt;
@@ -192,7 +191,7 @@ height:0;
 clear: both;
 }
 
-.postBlock {
+.postBlock{
 background:#98E;
 border:1px solid #000;
 color:#000;
@@ -200,10 +199,13 @@ font-size:10pt;
 font-weight: bold;
 line-height:20px;
 padding:0 5px;
-display:table-cell;
-width: 73px;
 vertical-align: middle;
 margin-right: 10px;
+}
+
+div.postBlock {
+width: 73px;
+display:table-cell;
 }
 
 .postField {
@@ -608,4 +610,10 @@ right: 3px;
 .capIcon{
 margin-bottom: -2px;
 margin-left: 4px;
+}
+
+.replyPostInfo{
+margin: 0px;
+padding: 0px;
+display: inline;
 }
