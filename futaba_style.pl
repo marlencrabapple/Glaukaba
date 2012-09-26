@@ -574,10 +574,10 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 					"id":"<var substr($date, index($date,"ID:"))>",
 				</if>
 				"name":"<var $name>",
-				<if $email>"email":"<var $email>",</if>
-				<if $subject>"sub":"<var $subject>",</if>
-				<if $comment>"com":"<var $comment>",</if>
-				<if image>
+				<if $email>"email":"<var mahou_inyoufu $email>",</if>
+				<if $subject>"sub":"<var mahou_inyoufu $subject>",</if>
+				<if $comment>"com":"<var mahou_inyoufu $comment>",</if>
+				<if $image>
 					"image":"<var $image>",
 					"fsize":<var $size>,
 					"md5":"<var $md5>",

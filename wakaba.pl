@@ -571,7 +571,8 @@ sub build_thread_cache($)
 	);
 	
 	# now build the json file
-	$lastpost = $thread[length(@thread)+1]{num};
+	$lastpost = $thread[(scalar @thread) - 1]{num};
+	#make_error(scalar @thread);
 	$filename=RES_DIR.$thread.".json";
 	
 	print_page($filename,JSON_THREAD_TEMPLATE->(

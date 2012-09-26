@@ -427,6 +427,12 @@ sub escamp($)
 	return $str;
 }
 
+sub mahou_inyoufu($){
+	my ($str)=@_;
+	$str=~s/"/\\"/g;
+	return $str;
+}
+
 sub urlenc($)
 {
 	my ($str)=@_;
