@@ -550,42 +550,43 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <br /><br />
 }.NORMAL_FOOT_INCLUDE);
 
+
 use constant JSON_THREAD_TEMPLATE => compile_template(q{
-	{"posts": [
-		<loop $posts>
-			{
-				"no":<var $num>,
-				<if !$parent>
-					<if $sticky>"sticky":<var $sticky>,</if>
-					<if $permasage>"psage":<var $permasage>,</if>
-					<if $locked>"closed":<var $locked>,</if>
-				</if>
-				"time":<var $timestamp>,
-				<if index($date,"ID")==-1>"now":"<var $date>",</if>
-				<if index($date,"ID")!=-1>
-					"now":"<var substr($date,0,index($date,"ID:")-1)>",
-					"id":"<var substr($date, index($date,"ID:"))>",
-				</if>
-				"name":"<var mahou_inyoufu $name>",
-				"trip":"<var $trip>",
-				<if $email>"email":"<var mahou_inyoufu $email>",</if>
-				"sub":"<var mahou_inyoufu $subject>",
-				"com":"<var mahou_inyoufu $comment>",
-				<if $image>
-					"image":"<var $image>",
-					"fsize":<var $size>,
-					"md5":"<var $md5>",
-					"w":<var $width>,
-					"h":<var $height>,
-					"tn_w":<var $tn_width>,
-					"tn_h":<var $tn_height>,
-					"filename":"<var $filename>",
-					<if $tn_mask>"spoiler":<var $tnmask>,</if>
-				</if>
-				"parent":<var $parent>
-			}<if $lastpost!=$num>,</if>
-		</loop>
-	]}
+{"posts": [
+	<loop $posts>
+		{
+			"no":<var $num>,
+			<if !$parent>
+				<if $sticky>"sticky":<var $sticky>,</if>
+				<if $permasage>"psage":<var $permasage>,</if>
+				<if $locked>"closed":<var $locked>,</if>
+			</if>
+			"time":<var $timestamp>,
+			<if index($date,"ID")==-1>"now":"<var $date>",</if>
+			<if index($date,"ID")!=-1>
+				"now":"<var substr($date,0,index($date,"ID:")-1)>",
+				"id":"<var substr($date, index($date,"ID:"))>",
+			</if>
+			"name":"<var mahou_inyoufu $name>",
+			"trip":"<var $trip>",
+			<if $email>"email":"<var mahou_inyoufu $email>",</if>
+			"sub":"<var mahou_inyoufu $subject>",
+			"com":"<var mahou_inyoufu $comment>",
+			<if $image>
+				"image":"<var $image>",
+				"fsize":<var $size>,
+				"md5":"<var $md5>",
+				"w":<var $width>,
+				"h":<var $height>,
+				"tn_w":<var $tn_width>,
+				"tn_h":<var $tn_height>,
+				"filename":"<var $filename>",
+				<if $tn_mask>"spoiler":<var $tnmask>,</if>
+			</if>
+			"parent":<var $parent>
+		}<if $lastpost!=$num>,</if>
+	</loop>
+]}
 },2);
 
 #

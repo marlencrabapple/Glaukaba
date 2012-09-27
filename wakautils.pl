@@ -428,9 +428,14 @@ sub escamp($)
 }
 
 sub mahou_inyoufu($){
-	my ($str)=@_;
-	$str=~s/"/\\"/g;
-	return $str;
+	my ($dengus)=@_;
+	$dengus=~s/\n//g;
+	$dengus=~s/\r//g;
+	$dengus=~s/\\/\Q\\\E/g;
+	$dengus=~s/\//\\\//g;
+	$dengus=~s/(?<!\\)\"/\\"/g;
+	$dengus=~s/\t/    /g; # i don't know what I'm doing
+	return $dengus;
 }
 
 sub urlenc($)
