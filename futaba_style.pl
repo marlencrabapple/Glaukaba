@@ -20,7 +20,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	.replypage .replylink { display: none }
 	.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 	</style>
-
 	<loop $stylesheets>
 	<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
 	</loop>
@@ -187,8 +186,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div> 
 </if>
-<if $postform><div class="postarea" id="postarea">
-	<style type="text/css" scoped="scoped">.recaptchatable{background-color:transparent!important;border:none!important;}.recaptcha_image_cell{background-color:transparent!important;}#recaptcha_response_field{border:1px solid #AAA!important;}#recaptcha_div{height:107px;width:440px;}#recaptcha_challenge_field{width:400px}</style>
+<if $postform>
 	<script type="text/javascript">
 		var RecaptchaOptions = {
 			theme : 'clean'
@@ -203,38 +201,32 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<div id="postForm">
 			<if !FORCED_ANON><div class="postTableContainer">
 					<div class="postBlock">Name</div>
-					<div class="postSpacer"></div>
 					<div class="postField"><input type="text" class="postInput" name="field1" id="field1" /></div>
 				</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Link</div>
-				<div class="postSpacer"></div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" /></div>
 			</div>
 			<div class="postTableContainer">
 				<div class="postBlock">Subject</div>
-				<div class="postSpacer"></div>
 				<div class="postField">
 					<input type="text" name="field3" class="postInput" id="field3" />
 					<input type="submit" id="field3s" value="Submit" />
-					<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if><if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
 				</div>
 			</div>
 			<div class="postTableContainer">
 				<div class="postBlock">Comment</div>
-				<div class="postSpacer"></div>
 				<div class="postField"><textarea name="field4" class="postInput" id="field4"></textarea></div>
 			</div>
 			<if ENABLE_CAPTCHA && ENABLE_CAPTCHA ne 'recaptcha'><div class="postBlock"><const S_CAPTCHA></div>
-				<div class="postSpacer"></div>
 				<div class="postField">
 					<input type="text" name="captcha" class="field6" size="10" />
 					<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>" />
 				</div></if>
 			<if ENABLE_CAPTCHA eq 'recaptcha'><div class="postTableContainer" id="recaptchaContainer">
 					<div class="postBlock" id="captchaPostBlock"><const S_CAPTCHA></div>
-					<div class="postSpacer"></div>
 					<div class="postField">
+					<style type="text/css" scoped="scoped">.recaptchatable{background-color:transparent!important;border:none!important;}.recaptcha_image_cell{background-color:transparent!important;padding:0px!important;padding-bottom:3px!important;}#recaptcha_div{height:107px;width:442px;}#recaptcha_challenge_field{width:400px}@media only screen and (min-width: 481px) {.recaptcha_input_area{padding:0!important;}#recaptcha_table tr:first-child{height:auto!important;}#recaptcha_table tr:first-child>td:not(:first-child){padding:0 7px 0 7px!important;}#recaptcha_table tr:last-child td:last-child{padding-bottom:0!important;}#recaptcha_table tr:last-child td:first-child{padding-left:0!important;}#recaptcha_response_field{width:292px;margin-right:0px!important;font-size:10pt!important;}input:-moz-placeholder{color:gray!important;}#recaptcha_image{border:1px solid #aaa!important;}#recaptcha_table tr>td:last-child{display:none!important;}}</style>
 						<script type="text/javascript" src="http://www.google.com/recaptcha/api/challenge?k=<const RECAPTCHA_PUBLIC_KEY>"></script>
 						<noscript>
 							<iframe src="http://www.google.com/recaptcha/api/noscript?k=<const RECAPTCHA_PUBLIC_KEY>" height="300" width="500"></iframe><br />
@@ -242,20 +234,19 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<input type="hidden" name="recaptcha_response_field" value="manual_challenge" />
 						</noscript>
 					</div>
+					<script type="text/javascript">document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");document.getElementById("recaptcha_response_field").removeAttribute("style");document.getElementById("recaptcha_image").setAttribute("style", "border: 1px solid #aaa!important;");document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");</script>
 				</div></if>
 			<if $image_inp><div class="postTableContainer">
 					<div class="postBlock">File</div>
-					<div class="postSpacer"></div>
 					<div class="postField">
-						<input type="file" name="file" id="file" />
-						<if $textonly_inp>
-							<label><input type="checkbox" name="nofile" value="on" />No File</label>
-						</if>
+						<input type="file" name="file" id="file" /><br />
+						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File]</label></if>
+						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if>
+						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
 					</div>
 				</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Password</div>
-				<div class="postSpacer"></div>
 				<div class="postField"><input type="password" class="postInput" id="password" name="password"/> (for post and file deletion)</div>
 			</div>
 			<div class="postTableContainer">
@@ -265,17 +256,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			</div>
 		</div>
 	</form>
-</div>
 <script type="text/javascript">setPostInputs()</script></if>
-
 <hr class="postinghr" />
-
 <div class="denguses">}.include("include/middlead.html").q{</div>
-
 <div class="announcement">
 }.include("../announcement.html").q{
 </div>
-
 <form id="delform" action="<var $self>" method="post">
 <loop $threads>
 <if $thread><label>[<input type="checkbox" onchange="expandAllImages();" /> Expand Images ]</label></if>
@@ -406,17 +392,13 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 	<hr />
 </loop>
-
 <div class="denguses">}.include("include/bottomad.html").q{</div>
-
 <hr />
-
 <if $thread>
 	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	[<a href="#">Top</a>]
 	<a name="bottom"></a>
 </if>
-
 <div id="deleteForm">
 	<input type="hidden" name="task" value="delete" />
 	Delete Post
@@ -426,35 +408,27 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<script type="text/javascript">setDelPass();</script>
 </div>
 </form>
-
 <div id="forJs" style="display:none"><var BOARD_DIR></div>
-
 <if !$thread>
 	<div id="pageNumber">
-
 	<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
 	<if !$prevpage><const S_FIRSTPG></if>
 	<loop $pages>
 		<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
 		<if $current>[<var $page>]</if>
 	</loop>
-
 	<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
 	<if !$nextpage><const S_LASTPG></if>
-
 	</div><br />
 </if>
-
 </div>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
-
 	<h1 id="errorMessage" style="text-align: center"><var $error><br /><br />
 	<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a><br /><br />
 	</h1>
 	</div>
-	
 }.NORMAL_FOOT_INCLUDE);
 
 use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{

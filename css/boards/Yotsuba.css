@@ -1,6 +1,6 @@
 html, body {
-    background: #EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-x;
-    color: #000;
+    background: #FFFFEE url(http://glauchan.org/img/fade.png) top center repeat-x;
+    color: #800000;
     font-family: arial, helvetica, sans-serif;
     font-size: 10pt;
     margin: 0;
@@ -10,11 +10,14 @@ html, body {
     padding-top: 8px;
 }
 
-a, a:visited { color: #34345C }
+a, a:visited { color: #00E }
 
-a.postlink { color: #DD0000 !important }
+a.postlink { 
+	color: navy!important;
+    text-decoration: underline!important;
+}
 
-a:hover { color: #DD0000 !important }
+a:hover { color: red }
 
 input {
     font-family: arial,helvetica,sans-serif;
@@ -33,7 +36,10 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
 
 .postInput:focus, #recaptcha_response_field:focus { border: 1px solid #98E }
 
-.banner { border: 1px solid #34345C }
+.banner {
+	border: 1px solid #800;
+	font-family: Tahoma,sans-serif;
+}
 
 #announcement {
     text-align: center;
@@ -48,14 +54,13 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
 
 .reply {
     display: table;
-    border: 1px solid #B7C5D9;
+    background-color: #f0e0d6;
+    border: 1px solid #D9BFB7;
     border-left: none;
     border-top: none;
     padding: 2px;
     margin-top: 4px;
     margin-bottom: 4px;
-    background: #D6DAF0;
-    color: #000;
 }
 
 .replyContainer { display: inline }
@@ -93,12 +98,12 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
 }
 
 #topNavContainer {
-    background: #D6DAF0;
-    border-bottom: 1px solid #B7C5D9;
+    background-color: #EDE4DC;
+	overflow: hidden;
+	border-bottom: 1px solid #DCC5B8;
     color: black;
     top: 0;
     left: 0;
-    overflow: hidden;
     position: fixed;
     width: 100%;
     z-index: 9001;
@@ -109,8 +114,7 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
 
 .logo {
     clear: both;
-    color: #AF0A0F;
-    font-family: tahoma;
+	font-family: Tahoma,sans-serif;
     font-size: 28px;
     font-weight: 700;
     text-align: center;
@@ -120,11 +124,11 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
 
 #pageNumber {
     display: table;
-    background: #D6DAF0;
     border: none;
-    border-bottom: 1px solid #B7C5D9;
-    border-right: 1px solid #B7C5D9;
-    color: #89A;
+    background: #F0E0D6;
+	border-right: 1px solid #D9BFB7;
+	border-bottom: 1px solid #D9BFB7;
+    color: #B86;
     padding: 3px;
 }
 
@@ -161,9 +165,10 @@ hr {
 }
 
 .postBlock {
-    background: #98E;
-    border: 1px solid #000;
-    color: #000;
+	background-color: #EA8;
+    color: #800;
+    font-weight: bold;
+    border: 1px solid #800;
     font-size: 10pt;
     font-weight: bold;
     line-height: 20px;
@@ -305,7 +310,7 @@ pre.sqldump {
 }
 
 .doubledash {
-    color: #B7C5D9;
+    color: #e0bfb7;
     float: left;
     margin-left: 2px;
     margin-right: 2px;
@@ -408,7 +413,7 @@ select {
     border: 1px solid rgba(0, 0, 0, .25);
     border-left: none;
     border-top: none;
-    background-color: #D6DAF0;
+    background-color: #F0E0D6;
 }
 
 #navOptionsContent {
@@ -446,7 +451,6 @@ select {
 
 .postMenuButton {
     text-decoration: none;
-    color: #34345C;
 }
 
 .postMenuButton > span {
@@ -465,7 +469,7 @@ select {
     border: 1px solid rgba(0, 0, 0, .25);
     border-bottom: none;
     padding: 0;
-    background-color: #D6DAF0;
+	background-color: #f0e0d6;
     margin: 2px;
     margin-left: 0;
 }

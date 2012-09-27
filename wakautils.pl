@@ -283,8 +283,7 @@ sub compile_template($;$)
 	{
 		$str=~s/^\s+//;
 		$str=~s/\s+$//;
-		# commented out for adsense
-		#$str=~s/\n\s*/ /sg;
+		$str=~s/\n\s*/\n/sg;
 	}
 	
 	if($nostrip==2){
@@ -350,9 +349,7 @@ sub include($)
 
 	$file=~s/^\s+//;
 	$file=~s/\s+$//;
-	# commented out for adsense
-	#$file=~s/\n\s*/ /sg;
-
+	$file=~s/\n\s*/\n/sg;
 	return $file;
 }
 

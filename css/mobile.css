@@ -1,6 +1,6 @@
 @media only screen and (max-width: 480px){
 	body{
-	background:#EEF2FF url(/image/fade-blue.png) top center repeat-x;
+	background:#EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-x;
 	color:#000000;
 	font-family:arial,helvetica,sans-serif;
 	font-size:8pt;
@@ -10,10 +10,6 @@
 	padding-left:0px;
 	padding-right:0px;
 	width:100%;
-	}
-	
-	.denguses{
-	display:none;
 	}
 	
 	.mobiledenguses{
@@ -74,11 +70,12 @@
 	display:none;
 	}
 
-	.postarea{
-	width: 100%;
-	overflow:hidden;
+	#postForm,#qrPostForm{
+	display:table;
+	border-spacing:1px;
 	margin-left: auto;
 	margin-right: auto;
+	overflow:hidden;
 	}
 	
 	#field1,#field2,#qrField1,#qrField2{
@@ -124,5 +121,11 @@
 	
 	#recaptcha_logo, #recaptcha_tagline{
 	display: none!important;
+	}
+}
+
+@media only screen and (max-width: 720px){
+	.denguses{
+	display:none;
 	}
 }
