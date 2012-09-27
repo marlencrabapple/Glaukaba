@@ -236,7 +236,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</div>
 					<script type="text/javascript">document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");document.getElementById("recaptcha_response_field").removeAttribute("style");document.getElementById("recaptcha_image").setAttribute("style", "border: 1px solid #aaa!important;");document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");</script>
 				</div></if>
-			<if $image_inp><div class="postTableContainer">
+			<if $image_inp><div class="postTableContainer" id="uploadField">
 					<div class="postBlock">File</div>
 					<div class="postField">
 						<input type="file" name="file" id="file" /><br />
