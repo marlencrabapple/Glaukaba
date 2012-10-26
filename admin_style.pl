@@ -3,7 +3,6 @@ use POSIX qw/strftime/;
 BEGIN { require "wakautils.pl" }
 
 use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
-
 <if $admin>
 	<div id="reportQueue" style="display: none; height: 100%; position: fixed; right: 0; float: right; padding-top: 30px; width: 360px; background-color:#f1f1f1; border-left: 1px solid grey;">
 		<div style="padding: 10px; clear: both;">
@@ -60,7 +59,7 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 	</if>
 	[<a href="<var $self>?task=changepass&amp;admin=<var $admin>&user=<var $session-\>[0]>">Change Password</a>]
 	[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">Inbox</a>]
-	[<a id="reportQueueButton" href="javascript:void(0)"><const S_REPORTS></a>]
+	[<a id="reportQueueButton" href="<var $self>?task=viewreports&amp;admin=<var $admin>"><const S_REPORTS></a>]
 	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
 </if>
 <div class="passvalid" style="margin-top: 5px; padding: 3px;"><const S_MANAMODE></div><br />
@@ -153,14 +152,12 @@ use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 </div><br />
 
 <var sprintf S_IMGSPACEUSAGE,int($size/1024)>
-
 }.NORMAL_FOOT_INCLUDE);
 
 
 
 
 use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-
 <div class="dellist"><const S_MANABANS></div>
 
 <div class="postarea">
@@ -227,7 +224,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 	<if $type eq 'ipban'>
 		<td>IP</td>
-		<td><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></td>
+		<td><a href="<var $self>?task=ippage&amp;ip=<var $ival1>&amp;admin=<var $admin>"><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></a></td>
 	</if>
 	<if $type eq 'wordban'>
 		<td>Word</td>
@@ -239,7 +236,7 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	</if>
 	<if $type eq 'whitelist'>
 		<td>Whitelist</td>
-		<td><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></td>
+		<td><a href="<var $self>?task=ippage&amp;ip=<var $ival1>&amp;admin=<var $admin>"><var dec_to_dot($ival1)>/<var dec_to_dot($ival2)></a></td>
 	</if>
 
 	<td><var $comment></td>
@@ -383,14 +380,53 @@ use constant SQL_INTERFACE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	</div>
 </div>
 
-
-
 <pre><code><var $results></code></pre>
 
 }.NORMAL_FOOT_INCLUDE);
 
-
-
+use constant REPORTS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<div class="dellist">Report Queue</div>
+<if !$posts>
+There are zero reported posts!
+</if>
+<loop $posts>
+<div class="reportContainer" id="reportContainer<var $num>">
+	<div class="reportHeader"><strong>Board: </strong><a href="http://<var DOMAIN>/<var BOARD_DIR>/" target="_blank">/<var BOARD_DIR>/</a> No. <var $num> <a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<if !$parent><var $num></if><if $parent><var $parent>#<var $num></if>" target="_blank">[View Full]</a> <strong>Total: </strong><var $totalreports> <strong>Illegal: </strong><var $illegal> <strong>Spam: </strong><var $spam> <strong>Rule: </strong><var $vio></div>
+	<div class="reportPostHeader">
+		<div style="float:left">
+		<span class="postername"><var $name></span> <span class="postertrip"><var $trip></span>
+		</div>
+		<div style="float:right">
+			<var make_date $timestamp,tiny>
+			<if !$parent><strong>[OP]</strong></if>
+		</div>
+		<div style="clear:both;"></div>
+	</div>
+	<div class="reportContent">
+		<div>
+			<if $image><a class="thumbLink" target="_blank" href="<var expand_filename($image)>">
+				<img src="<var expand_filename($thumbnail)>" class="thumb replyThumb" alt="<var $size>" data-md5="<var $md5>" style="width:<var $tn_width*.504>px; height:<var $tn_height*.504>px; margin-left:5px;">
+			</a></if>
+			<div class="reportComment">
+				<var $comment>
+			</div>
+		</div>
+		<div class="reportOptions">
+			<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
+			[<a href="<var $self>?task=dismiss&amp;num=<var $num>&amp;admin=<var $admin>">Dismiss</a>]
+			[<a href="javascript:void(0)" onclick="addBan('<var BOARD_DIR>','<var $ip>','<var $admin>')">B</a>]</if>
+			<if $session-\>[1] eq 'janitor'>[<a href="<var $self>?task=requestban&amp;num=<var $num>&amp;admin=<var $admin>">Request Ban</a>]</if>
+			[<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">D</a>]
+			[<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=1&amp;admin=<var $admin>">F</a>]
+			<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?task=editpost&amp;num=<var $num>&amp;admin=<var $admin>">E</a>]
+			<if !$parent><if $sticky>[<a href="<var $self>?admin=<var $admin>&amp;task=stickdatshit&amp;num=<var $num>&amp;jimmies=rustled">-S</a>]</if><if !$sticky>[<a href="<var $self>?admin=<var $admin>&amp;task=stickdatshit&amp;num=<var $num>&amp;jimmies=unrustled">S</a>]</if>
+			<if $locked>[<a href="<var $self>?admin=<var $admin>&amp;task=lockthread&amp;num=<var $num>&amp;jimmies=rustled">-L</a>]</if><if !$locked>[<a href="<var $self>?admin=<var $admin>&amp;task=lockthread&amp;num=<var $num>&amp;jimmies=unrustled">L</a>]</if>
+			<if $permasage>[<a href="<var $self>?admin=<var $admin>&amp;task=permasage&amp;num=<var $num>&amp;jimmies=rustled">-PS</a>]</if><if !$permasage>[<a href="<var $self>?admin=<var $admin>&amp;task=permasage&amp;num=<var $num>&amp;jimmies=unrustled">PS</a>]</if></if></if>
+		</div>
+	</div>
+</div>
+</loop>
+}.NORMAL_FOOT_INCLUDE);
 
 use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
@@ -928,13 +964,11 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					
 						[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
 						[<a href="javascript:void(0)" onclick="addBan('<var BOARD_DIR>','<var $ip>','<var $admin>')">B</a>]
 						[<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">D</a>]
 						[<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;fileonly=1&amp;admin=<var $admin>">F</a>]
 						[<a href="<var $self>?task=editpost&amp;num=<var $num>&amp;admin=<var $admin>">E</a>]
-					
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>

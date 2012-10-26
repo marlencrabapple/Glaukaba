@@ -1,177 +1,181 @@
 use strict;
 use POSIX qw/strftime/;
 BEGIN { require "wakautils.pl" }
-use constant NORMAL_HEAD_INCLUDE => q{
-	<!DOCTYPE html>
-	<html>
-	<head>
-	<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title><if $title><var $title> - </if><const TITLE></title>
-	<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
-	<style type="text/css">
-	body { margin: 0; margin-bottom: auto; }
-	form { margin-bottom: 0px }
-	form .trap { display:none }
-	.postarea table { margin: 0px auto; text-align: left }
-	.reflink a { color: inherit; text-decoration: none }
-	.reply .filesize { margin-left: 20px }
-	.userdelete { float: right; text-align: center; white-space: nowrap }
-	.replypage .replylink { display: none }
-	.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
-	</style>
-	<loop $stylesheets>
-	<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
-	</loop>
-	<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
-	<link href="http://<var DOMAIN>/css/mobile.css" type="text/css" rel="stylesheet" />
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
-	<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-	<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-	<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
-	<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
-	<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
-	<script type="text/javascript">
-	  var _gaq = _gaq || [];
-	  _gaq.push(['_setAccount', 'UA-26348635-1']);
-	  _gaq.push(['_trackPageview']);
 
-	  (function() {
-		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-	  })();
-	</script>
-	<script>
-		$(document).ready(function() {
-			$(".catItem").mouseenter(function () {
-				var catItem = $(this).attr("id");
-				$("#"+catItem+"Hover").fadeTo(250, 0.5, function () {
-					console.log(catItem);
-					$("#"+catItem+"Hover").css("visibility", "visible");
-				});
-			});
-			
-			$(".catItem").mouseleave(function () {
-				var catItem = $(this).attr("id");
-				$("#"+catItem+"Hover").fadeTo(250, 0, function () {
-					console.log(catItem);
-					$("#"+catItem+"Hover").css("visibility", "hidden");
-				});
+use constant NORMAL_HEAD_INCLUDE => q{
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title><if $title><var $title> - </if><const TITLE></title>
+<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
+<style type="text/css">
+body { margin: 0; margin-bottom: auto; }
+form { margin-bottom: 0px }
+form .trap { display:none }
+.postarea table { margin: 0px auto; text-align: left }
+.reflink a { color: inherit; text-decoration: none }
+.reply .filesize { margin-left: 20px }
+.userdelete { float: right; text-align: center; white-space: nowrap }
+.replypage .replylink { display: none }
+.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+</style>
+<loop $stylesheets>
+<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
+</loop>
+<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
+<link href="http://<var DOMAIN>/css/mobile.css" type="text/css" rel="stylesheet" />
+<script>
+var domain = "http://<var DOMAIN>/";
+var boardDir = "<var BOARD_DIR>";
+var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
+</script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
+<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-26348635-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+	var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<script>
+	$(document).ready(function() {
+		$(".catItem").mouseenter(function () {
+			var catItem = $(this).attr("id");
+			$("#"+catItem+"Hover").fadeTo(250, 0.5, function () {
+				console.log(catItem);
+				$("#"+catItem+"Hover").css("visibility", "visible");
 			});
 		});
-	</script>
-	</head>
-	<if $thread><body class="replypage"></if>
-	<if !$thread><body></if>
-	<a name="top"></a>
-		<div id="overlay">
-		<div id="navOptionsMenu">
-			<div id="navOptionsTopBar">
-				Board Options
-			</div>
-			<hr>
-			<div id="navOptionsContent">
-				<strong>These features may have bugs and are constantly changing. Make sure to clear your cache often.</strong>
-				<p>
-					<strong>Style Options</strong><br />
-					<loop $stylesheets>[<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a>] </loop>
-				</p>
-				<p>
-					<strong>General Enhancements</strong><br />
-					<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);" />Comment Expansion</label>: Expands truncated comments<br />
-					<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);" />Thread Expansion</label>: View all replies without changing pages<br />
-				</p>
-				<p>
-					<strong>Filtering</strong><br />
-					<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);" />Reply Hiding</label>: Hide replies<br />
-					<label class="navOptionsListItem"><input id="threadHiding" type=checkbox onchange="toggleFeature('threadHiding',this.checked);" />Thread Hiding</label>: Hide threads<br />
-					<label class="navOptionsListItem"><input id="anonymize" type=checkbox onchange="toggleFeature('anonymize',this.checked);" />Anonymize</label>: Makes everybody anonymous<br />
-				</p>
-				<p>
-					<strong>Image Options</strong><br />
-					<label class="navOptionsListItem"><input id="inlineExpansion" type=checkbox onchange="toggleFeature('inlineExpansion',this.checked);" />Inline Expansion</label>: View fullsize images without opening a new window or tab<br />
-				</p>
-				<p>
-					<strong>Monitoring</strong><br />
-					<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);" />Thread Updater</label>: Get new posts automatically without refreshing the page<br />
-				</p>
-				<p>
-					<strong>Posting</strong><br />
-					<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);" />Quick Reply</label>: Reply without reloading the page<br />
-				</p>
-				<p>
-					<strong>Quoting</strong><br />
-					<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);" />Quote Previews</label>: Show quoted post on hover<br />
-					<label class="navOptionsListItem"><input id="inlineQuote" type=checkbox onchange="toggleFeature('inlineQuote',this.checked);" />Inline Quotes</label>: Show quoted post inline when clicked on<br />
-					<label class="navOptionsListItem"><input id="replyBacklinking" type=checkbox onchange="toggleFeature('replyBacklinking',this.checked);" />Post Backlinks</label>: Shows a post's replies in its header<br />
-				</p>
-			</div>
+		
+		$(".catItem").mouseleave(function () {
+			var catItem = $(this).attr("id");
+			$("#"+catItem+"Hover").fadeTo(250, 0, function () {
+				console.log(catItem);
+				$("#"+catItem+"Hover").css("visibility", "hidden");
+			});
+		});
+	});
+</script>
+</head>
+<if $thread><body class="replypage"></if>
+<if !$thread><body></if>
+<a name="top"></a>
+<div id="overlay">
+	<div id="navOptionsMenu">
+		<div id="navOptionsTopBar">
+			Board Options
+		</div>
+		<hr>
+		<div id="navOptionsContent">
+			<p>
+				<strong>Style Options</strong><br />
+				<loop $stylesheets>[<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a>] </loop>
+			</p>
+			<p>
+				<strong>General Enhancements</strong><br />
+				<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);" />Comment Expansion</label>: Expands truncated comments<br />
+				<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);" />Thread Expansion</label>: View all replies without changing pages<br />
+			</p>
+			<p>
+				<strong>Filtering</strong><br />
+				<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);" />Reply Hiding</label>: Hide replies<br />
+				<label class="navOptionsListItem"><input id="threadHiding" type=checkbox onchange="toggleFeature('threadHiding',this.checked);" />Thread Hiding</label>: Hide threads<br />
+				<label class="navOptionsListItem"><input id="anonymize" type=checkbox onchange="toggleFeature('anonymize',this.checked);" />Anonymize</label>: Makes everybody anonymous<br />
+			</p>
+			<p>
+				<strong>Image Options</strong><br />
+				<label class="navOptionsListItem"><input id="inlineExpansion" type=checkbox onchange="toggleFeature('inlineExpansion',this.checked);" />Inline Expansion</label>: View fullsize images without opening a new window or tab<br />
+			</p>
+			<p>
+				<strong>Monitoring</strong><br />
+				<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);" />Thread Updater</label>: Get new posts automatically without refreshing the page<br />
+			</p>
+			<p>
+				<strong>Posting</strong><br />
+				<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);" />Quick Reply</label>: Reply without reloading the page<br />
+			</p>
+			<p>
+				<strong>Quoting</strong><br />
+				<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);" />Quote Previews</label>: Show quoted post on hover<br />
+				<label class="navOptionsListItem"><input id="inlineQuote" type=checkbox onchange="toggleFeature('inlineQuote',this.checked);" />Inline Quotes</label>: Show quoted post inline when clicked on<br />
+				<label class="navOptionsListItem"><input id="replyBacklinking" type=checkbox onchange="toggleFeature('replyBacklinking',this.checked);" />Post Backlinks</label>: Shows a post's replies in its header<br />
+			</p>
 		</div>
 	</div>
-	<div id="topNavContainer">
-		}.include("include/header.html").q{
-		<div id="topNavRight">
-			<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">[Board Options]</a>
-		</div>
+</div>
+<div id="topNavContainer">
+	}.include("include/header.html").q{
+	<div id="topNavRight">
+		<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">[Board Options]</a>
 	</div>
-	<div class="logo">
-	<div id="image" style="padding: 0; margin: 0;"></div>
-	<const TITLE>
-	<p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><const SUBTITLE></p>
-	</div>
-	
-	<hr class="postinghr" />
-		<if !$admin><div class="denguses">}.include("include/topad.html").q{</div></if>
-	<hr class="postinghr" />
+</div>
+<div class="logo">
+<div id="image" style="padding: 0; margin: 0;"></div>
+<const TITLE>
+<p class="logoSubtitle"><const SUBTITLE></p>
+</div>
+<hr class="postinghr" />
+	<if !$admin><div class="denguses">}.include("include/topad.html").q{</div></if>
+<hr class="postinghr" />
 };
 
 use constant MINIMAL_HEAD_INCLUDE => q{
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
-			<meta name="viewport" content="width=device-width,initial-scale=1" />
-			<title><if $title><var $title> - </if><const TITLE></title>
-			<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
-			<style type="text/css">
-				body { margin: 0; padding: 8px; margin-bottom: auto;}
-				blockquote blockquote { margin-left: 0em;}
-				form { margin-bottom: 0px }
-				form .trap { display:none }
-				.postarea table { margin: 0px auto; text-align: left }
-				.reflink a { color: inherit; text-decoration: none }
-				.reply .filesize { margin-left: 20px }
-				.userdelete { float: right; text-align: center; white-space: nowrap }
-				.replypage .replylink { display: none }
-				.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
-				.admNum{ font-size: 13pt; }
-			</style>
-			<loop $stylesheets>
-			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
-			</loop>
-			<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
-			<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-			<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
-			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-			<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-			<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
-			<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin-test.js?<var int(rand(10000))>"></script>
-			<script src="http://malsup.github.com/jquery.form.js"></script>
-			<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>			
-			<script type="text/javascript">
-			  var _gaq = _gaq || [];
-			  _gaq.push(['_setAccount', 'UA-26348635-1']);
-			  _gaq.push(['_trackPageview']);
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title><if $title><var $title> - </if><const TITLE></title>
+		<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
+		<style type="text/css">
+			body { margin: 0; padding: 8px; margin-bottom: auto;}
+			blockquote blockquote { margin-left: 0em;}
+			form { margin-bottom: 0px }
+			form .trap { display:none }
+			.postarea table { margin: 0px auto; text-align: left }
+			.reflink a { color: inherit; text-decoration: none }
+			.reply .filesize { margin-left: 20px }
+			.userdelete { float: right; text-align: center; white-space: nowrap }
+			.replypage .replylink { display: none }
+			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+			.admNum{ font-size: 13pt; }
+		</style>
+		<loop $stylesheets>
+		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
+		</loop>
+		<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+		 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
+		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js?<var int(rand(10000))>"></script>
+		<script src="http://malsup.github.com/jquery.form.js"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>			
+		<script type="text/javascript">
+		  var _gaq = _gaq || [];
+		  _gaq.push(['_setAccount', 'UA-26348635-1']);
+		  _gaq.push(['_trackPageview']);
 
-			  (function() {
-				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-			  })();
-			</script>
-		</head>
+		  (function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		  })();
+		</script>
+	</head>
 	<body>
 };
 
@@ -271,8 +275,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="mobileParentPostInfo">
 					<input type="checkbox" name="delete" value="<var $num>" />
 					<span class="filetitle"><var $subject></span>
-					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
@@ -294,8 +298,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<span class="parentPostInfo">
 					<input type="checkbox" name="delete" value="<var $num>" />
 					<span class="filetitle"><var $subject></span>
-					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
@@ -341,7 +345,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
 					<span class="replytitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
@@ -439,7 +443,7 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			<div class="catItem" id="catItem<var $num>" style="display: inline-block;">
 				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><div class="catItemHover" id="catItem<var $num>Hover" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;"><div class="catItemHoverText" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px; line-height:<var ($tn_height*.504)>px;">&gt;&gt;<var $num></div></div></if>
 				<if !$thumbnail><div id="catItem<var $num>Hover" class="catItemHoverNoThumb"><div class="catItemHoverTextNoThumb">&gt;&gt;<var $num></div></div></if></a>
-				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><img src="/<var BOARD_DIR>/<var $thumbnail>" class="catImage" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if !$thumbnail><div class="catImageNoThumb"></div></if></a>
+				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><img src="<var expand_filename($thumbnail)>" class="catImage" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if !$thumbnail><div class="catImageNoThumb"></div></if></a>
 			</div>
 		</loop>
 	</div>
@@ -448,59 +452,59 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant REPORT_TEMPLATE => compile_template(q{
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
-			<title>Reporting Post No.<var $num> on /<var $board>/</title>
-			<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
-			<style type="text/css">
-				body { margin: 0; padding: 8px; margin-bottom: auto;}
-				h3 {margin: 0; margin-bottom: 5px;}
-			</style>
-			<loop $stylesheets><link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" /></loop>
-			<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-			<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-			<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
-		</head>
-		<body>
-			<h3>Reporting Post No.<var $num> on /<var $board>/</h3>
-			<form action="<var $self>" method="post" enctype="multipart/form-data">
-				<input type="hidden" name="task" value="report" />
-				<input type="hidden" name="num" value="<var $num>" />
-				<input type="hidden" name="board" value="<var $board>" />
-				<fieldset style="margin-bottom: 5px;"><legend>Report type</legend>
-					<input type="radio" name="reason" id="cat1" value="vio"> <label for="cat1">Rule violation</label><br/>
-					<input type="radio" name="reason" id="cat2" value="illegal"> <label for="cat2">Illegal content</label><br/>
-					<input type="radio" name="reason" id="cat3" value="spam"> <label for="cat3">Spam/advertising/flooding</label>
-				</fieldset>
-				<input type="submit" value="<const S_SUBMIT>" />
-			</form>
-			<p style="font-size: 10px">Note: Submitting frivolous reports will result in a ban. When reporting, make sure that the post in question violates the global/board rules, or contains content illegal in the United States.</p>
-		</body>
-	</html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>" />
+		<title>Reporting Post No.<var $num> on /<var BOARD_DIR>/</title>
+		<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
+		<style type="text/css">
+			body { margin: 0; padding: 8px; margin-bottom: auto;}
+			h3 {margin: 0; margin-bottom: 5px;}
+		</style>
+		<loop $stylesheets><link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" /></loop>
+		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
+	</head>
+	<body>
+		<h3>Reporting Post No.<var $num> on /<var BOARD_DIR>/</h3>
+		<form action="<var $self>" method="post" enctype="multipart/form-data">
+			<input type="hidden" name="task" value="report" />
+			<input type="hidden" name="num" value="<var $num>" />
+			<input type="hidden" name="board" value="<var BOARD_DIR>" />
+			<fieldset style="margin-bottom: 5px;"><legend>Report type</legend>
+				<input type="radio" name="reason" id="cat1" value="vio"> <label for="cat1">Rule violation</label><br/>
+				<input type="radio" name="reason" id="cat2" value="illegal"> <label for="cat2">Illegal content</label><br/>
+				<input type="radio" name="reason" id="cat3" value="spam"> <label for="cat3">Spam/advertising/flooding</label>
+			</fieldset>
+			<input type="submit" value="<const S_SUBMIT>" />
+		</form>
+		<p style="font-size: 10px">Note: Submitting frivolous reports will result in a ban. When reporting, make sure that the post in question violates the global/board rules, or contains content illegal in the United States.</p>
+	</body>
+</html>
 });
 
 use constant LIST_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
-	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
-	<div class="theader">Thread Index</div>
-	<table id="threadList" style="white-space: nowrap;">
-		<thead><tr class="head">
-			<td class="postBlock">Subject</td>
-			<td class="postBlock">Created by</td>
-			<td class="postBlock">Time</td>
-			<td class="postBlock">Post No.</td>
-		</tr></thead>
-		<tbody><loop $threads><tr>
-			<td><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount-1> <if $postcount\>1>replies</if><if $postcount==1>reply</if>]</td>
-			<td><span class="postername"><var $name></span><span class="postertrip"><var $trip></span></td>
-			<td><var make_date($timestamp,"tiny")></td>
-			<td>No.<var $num></td>
-		</tr></loop></tbody>
-	</table>
-	<hr />
-	<div class="denguses">}.include("include/bottomad.html").q{</div>
-	<hr />
+[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
+<div class="theader">Thread Index</div>
+<table id="threadList" style="white-space: nowrap;">
+	<thead><tr class="head">
+		<td class="postBlock">Subject</td>
+		<td class="postBlock">Created by</td>
+		<td class="postBlock">Time</td>
+		<td class="postBlock">Post No.</td>
+	</tr></thead>
+	<tbody><loop $threads><tr>
+		<td><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount-1> <if $postcount\>2 or $postcount==1>replies</if><if $postcount==2>reply</if>]</td>
+		<td><span class="postername"><var $name></span> <span class="postertrip"><var $trip></span></td>
+		<td><var make_date($timestamp,"tiny")></td>
+		<td>No.<var $num></td>
+	</tr></loop></tbody>
+</table>
+<hr />
+<div class="denguses">}.include("include/bottomad.html").q{</div>
+<hr />
 }.NORMAL_FOOT_INCLUDE);
 
 use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
@@ -524,42 +528,41 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <br /><br />
 }.NORMAL_FOOT_INCLUDE);
 
-
 use constant JSON_THREAD_TEMPLATE => compile_template(q{
 {"posts": [
-	<loop $posts>
-		{
-			"no":<var $num>,
-			<if !$parent>
-				<if $sticky>"sticky":<var $sticky>,</if>
-				<if $permasage>"psage":<var $permasage>,</if>
-				<if $locked>"closed":<var $locked>,</if>
-			</if>
-			"time":<var $timestamp>,
-			<if index($date,"ID")==-1>"now":"<var $date>",</if>
-			<if index($date,"ID")!=-1>
-				"now":"<var substr($date,0,index($date,"ID:")-1)>",
-				"id":"<var substr($date, index($date,"ID:"))>",
-			</if>
-			"name":"<var mahou_inyoufu $name>",
-			"trip":"<var $trip>",
-			<if $email>"email":"<var mahou_inyoufu $email>",</if>
-			"sub":"<var mahou_inyoufu $subject>",
-			"com":"<var mahou_inyoufu $comment>",
-			<if $image>
-				"image":"<var $image>",
-				"fsize":<var $size>,
-				"md5":"<var $md5>",
-				"w":<var $width>,
-				"h":<var $height>,
-				"tn_w":<var $tn_width>,
-				"tn_h":<var $tn_height>,
-				"filename":"<var $filename>",
-				<if $tn_mask>"spoiler":<var $tnmask>,</if>
-			</if>
-			"parent":<var $parent>
-		}<if $lastpost!=$num>,</if>
-	</loop>
+<loop $posts>
+	{
+		"no":<var $num>,
+		<if !$parent>
+			<if $sticky>"sticky":<var $sticky>,</if>
+			<if $permasage>"psage":<var $permasage>,</if>
+			<if $locked>"closed":<var $locked>,</if>
+		</if>
+		"time":<var $timestamp>,
+		<if index($date,"ID")==-1>"now":"<var $date>",</if>
+		<if index($date,"ID")!=-1>
+			"now":"<var substr($date,0,index($date,"ID:")-1)>",
+			"id":"<var substr($date, index($date,"ID:"))>",
+		</if>
+		"name":"<var mahou_inyoufu $name>",
+		"trip":"<var $trip>",
+		<if $email>"email":"<var mahou_inyoufu $email>",</if>
+		"sub":"<var mahou_inyoufu $subject>",
+		"com":"<var mahou_inyoufu $comment>",
+		<if $image>
+			"image":"<var $image>",
+			"fsize":<var $size>,
+			"md5":"<var $md5>",
+			"w":<var $width>,
+			"h":<var $height>,
+			"tn_w":<var $tn_width>,
+			"tn_h":<var $tn_height>,
+			"filename":"<var $filename>",
+			<if $tn_mask>"spoiler":<var $tnmask>,</if>
+		</if>
+		"parent":<var $parent>
+	}<if $lastpost!=$num>,</if>
+</loop>
 ]}
 },2);
 

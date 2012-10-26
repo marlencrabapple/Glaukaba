@@ -220,16 +220,6 @@ sub do_wakabamark($;$$)
 		}
 		$simplify=0;
 	}
-
-	# old spoiler code
-	#if($res=~/.*\[spoiler\].*/){
-	#	$res=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
-	#	$res=~s/\[\/spoiler\]*/\<\/span\>/g;
-	#	$res=~s/\<p\>/ /g;
-	#	$res=~s/\<\/p\>/\<br \/\>\<br \/\>/g;
-	#	$res=~s/\<br \/\>$/ /;
-	#	$res=~s/\<\/span\>\<br \/\>\<br \/\>/\<\/span\>/g;
-	#}
 	
 	return $res;
 }
@@ -349,7 +339,8 @@ sub include($)
 
 	$file=~s/^\s+//;
 	$file=~s/\s+$//;
-	$file=~s/\n\s*/\n/sg;
+	#$file=~s/\n\s*/\n\n\n\n\n/sg if $filename=~m/(top|middle|bottom)ad/;
+	#$file=~s/\s+$//;
 	return $file;
 }
 
@@ -1245,17 +1236,15 @@ sub make_thumbnail($$$$$$;$)
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 
 	$convert="convert" unless($convert);
+	
+	# not using imagemagick by default because it seems to break on any and all images
+	# djpeg, pngtopnm, giftopnm, etc., are all 100x faster too
 	if($nsfw==1){
 		`$convert -background white -flatten -scale 1% -scale 1000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
 		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
+		
+		return 1 unless($?);
 	}
-	else{
-		`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
-	}
-
-	return 1 unless($?);
-
-	# if that fails, try pnmtools instead
 
 	if($filename=~/\.jpg$/)
 	{

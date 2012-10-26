@@ -122,6 +122,14 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
     margin-top: 30px;
 }
 
+.logoSubtitle {
+	font-size: x-small;
+	font-family: arial,helvetica,sans-serif;
+	font-weight: normal;
+	margin: 0;
+	padding: 0;
+}
+
 #pageNumber {
     display: table;
     border: none;

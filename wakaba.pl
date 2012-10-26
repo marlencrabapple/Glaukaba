@@ -7,21 +7,19 @@ use strict;
 use CGI;
 use DBI;
 
-
 #
 # Import settings
 #
 
 use lib '.';
 BEGIN { require "config.pl"; }
+BEGIN { require "../globalconfig.pl"; } # path to your global config file
 BEGIN { require "config_defaults.pl"; }
 BEGIN { require "strings_en.pl"; }		# edit this line to change the language
 BEGIN { require "futaba_style.pl"; }	# edit this line to change the board style
 BEGIN { require "admin_style.pl"; } # awwwwwwwwwwww shit
 BEGIN { require "captcha.pl"; }
 BEGIN { require "wakautils.pl"; }
-
-
 
 #
 # Optional modules
@@ -34,7 +32,6 @@ if(CONVERT_CHARSETS)
 	eval 'use Encode qw(decode encode)';
 	$has_encode=1 unless($@);
 }
-
 
 #
 # Global init
@@ -51,8 +48,14 @@ my $task=($query->param("task") or $query->param("action"));
 
 # check for admin tables
 init_admin_database() if(!table_exists(SQL_ADMIN_TABLE));
-initUserDatabase() if(!table_exists(SQL_USER_TABLE));
 initMessageDatabase() if(!table_exists(SQL_MESSAGE_TABLE));
+initReportDatabase() if(!table_exists(SQL_REPORT_TABLE));
+
+if(!table_exists(SQL_USER_TABLE)){
+	initUserDatabase();
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+	$sth->execute('admin','admin','admin@admin.com','admin') or make_error(S_SQLFAIL);
+}
 
 # check for proxy table
 init_proxy_database() if(!table_exists(SQL_PROXY_TABLE));
@@ -255,7 +258,7 @@ elsif($task eq "report"){
 	my $board=$query->param("board");
 	my $reason=$query->param("reason");
 	report($num,$board,$reason) if(length $reason>1); # lol perl style
-	makeReport($num, $board);
+	makeReportForm($num, $board);
 }
 elsif($task eq "register"){
 	my $admin=$query->param("admin");
@@ -325,9 +328,9 @@ elsif($task eq 'viewthread'){
 	makeThread($admin,$num);
 }
 elsif($task eq 'ippage'){
-	my $admin=$query->param("admin");
+	my $admincookie=$query->cookie("wakaadmin"); # needed for ban requests
 	my $ip=$query->param("ip");
-	makeIPPage($admin,$ip);
+	makeIPPage($ip,$admincookie);
 }
 elsif($task eq 'updateban'){
 	my $admin=$query->param("admin");
@@ -351,6 +354,24 @@ elsif($task eq 'updatepost'){
 	my $link=$query->param("field2");
 	editPost($admin,$num,$comment,$subject,$name,$link);
 }
+elsif($task eq 'viewreports'){
+	my $admin=$query->param("admin");
+	makeReportsList($admin);
+}
+elsif($task eq 'viewreport'){
+	my $admin=$query->param("admin");
+	make_error("Not yet implemented");
+}
+elsif($task eq 'requestban'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	requestBan($admin,$num);
+}
+elsif($task eq 'dismiss'){
+	my $admin=$query->param("admin");
+	my $num=$query->param("num");
+	dismissReport($admin,$num);
+}
 
 $dbh->disconnect();
 
@@ -363,13 +384,9 @@ sub makeList(){
 	while($row=get_decoded_hashref($sth)){
 		my ($posts,$size)=count_posts($$row{num});
 		$$row{'postcount'}=$posts; # add post count field to hash
-		#push @postcount,$posts;
-		#push @threadsize,$size;
+		#$$row{'threadsize'}=$size;
 		push @threads,$row;
-		#make_error($row);
 	}
-	
-	#make_error(scalar('@postcount: '.@postcount.' @threadsize: '.@threadsize));
 	
 	make_http_header();
 	print encode_string(LIST_TEMPLATE->(threads=>\@threads));
@@ -390,7 +407,7 @@ sub makeCatalog(){
 	print encode_string(CATALOG_TEMPLATE->(threads=>\@threads));
 }
 
-sub makeReport($$){
+sub makeReportForm($$){
 	my ($num,$board)=@_;
 	
 	make_http_header();
@@ -399,26 +416,130 @@ sub makeReport($$){
 
 sub report($$$){
 	my ($num,$board,$reason)=@_;
+	my ($sth,$index,$row,$vio,$spam,$illegal);
 	
-	my %reasons = ("vio","Rule violation",
-					"illegal","Illegal content",
-					"spam","Spam/advertising/flooding");
-					
-	make_error("ur a faggot1") unless($num=~m/[0-9]*/);
-	make_error("ur a faggot2") unless($board=~m/(glau|meta|test)/); # will replace with global board list soon
-	make_error("ur a faggot3") unless($reason=~m/(vio|illegal|spam)/);
+	my %reasons = ("vio","Rule violation","illegal","Illegal content","spam","Spam/advertising/flooding");
+
+	make_error("Invalid Post No.") unless($num=~m/[0-9]*/);
+	make_error("Invalid Board") unless($board eq BOARD_DIR); # will replace with global board list soon
+	make_error("Invalid Reason") unless($reason=~m/(vio|illegal|spam)/);
 	
-	# this would be what we did if we allowed free input for the report reason
-	#$reason=clean_string(decode_string($reason,CHARSET));
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=?;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR,$num) or make_error(S_SQLFAIL);
+	$index=0;
 	
-	open (LOG, ">>reports.html");
-	print LOG '<pre style="font-size: 12px; border-bottom: 1px LightGrey solid; width: 340px; padding: 10px; padding-bottom: 5px;"><code>'.make_date(time(),DATE_STYLE);
-	print LOG "<br />Submitted By. $ENV{HTTP_CF_CONNECTING_IP}<br />"; # HTTP_CF_CONNECTING_IP gets IPs properly with cloudflare
-	print LOG "No. $num<br />";
-	print LOG "<span style='word-wrap: break-word; display: block; width: 340px;'>Reason: $reasons{$reason}</span><br /></code></pre>";
-	close (LOG);
+	while($row=get_decoded_hashref($sth)){
+		$index++;
+		$vio=$$row{vio};
+		$spam=$$row{spam};
+		$illegal=$$row{illegal};
+	}
+	
+	$vio++ if $reason eq 'vio';
+	$spam++ if $reason eq 'spam';
+	$illegal++ if $reason eq 'illegal';
+	
+	if($index==0){
+		$sth=$dbh->prepare("INSERT INTO ".SQL_REPORT_TABLE." VALUES(null,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+		$sth->execute($num,BOARD_DIR,IP_VAR,$vio,$spam,$illegal) or make_error(S_SQLFAIL);
+	}
+	else{
+		$sth=$dbh->prepare("UPDATE ".SQL_REPORT_TABLE." SET vio=?,spam=?,illegal=?,fromip=? WHERE postnum=?;") or make_error($dbh->errstr);
+		$sth->execute($vio,$spam,$illegal,IP_VAR,$num) or make_error("2");
+	}
 	
 	make_http_forward('javascript:window.close();',ALTERNATE_REDIRECT);
+}
+
+sub dismissReport($$){
+	my ($admin,$num)=@_;
+	my $sth;
+	my @session = check_password($admin);
+	
+	$sth=$dbh->prepare("DELETE FROM ".SQL_REPORT_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
+}
+
+sub requestBan($$){
+	my ($admin,$num)=@_;
+	my ($sth,$text,$row,$ipurl,$posturl,@reports);
+	my @session = check_password($admin);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @reports,$row;
+		$ipurl="[<a href=\"".get_script_name()."?ip=".$$row{ip}."&task=ippage"."\">".dec_to_dot($$row{ip})."</a>]";
+		
+		if($$row{parent}){
+			$posturl="";
+		}
+		else{
+			$posturl="";
+		}
+		
+		$text="User '".@session[0]."' requested a ban for ".$ipurl." because of post No. ".$$row{num}.".";
+	}
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE class<>'janitor';") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		sendMessage($admin,$text,$$row{user},undef,2,1);
+	}
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
+}
+
+sub makeReportsList($){
+	my ($admin)=@_;
+	my @session = check_password($admin);
+	my ($sth,$row,$lastnum,$lastrow,$index,$statement,@reportedposts,@reports,@posts);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @reports,$row;
+		push @reportedposts,$$row{postnum};
+		$$row{vio}=0 unless $$row{vio};
+		$$row{spam}=0 unless $$row{spam};
+		$$row{illegal}=0 unless $$row{illegal};
+		$$row{totalreports}=$$row{vio}+$$row{spam}+$$row{illegal};
+	}
+	
+	# fucking magic
+	$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC";
+	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
+	$sth->execute(@reportedposts) or make_error($dbh->errstr);
+	
+	$index = 0;
+	
+	while($row=get_decoded_hashref($sth)){
+		# add report data to posts
+		$$row{fromip}=$reports[$index]{fromip};
+		$$row{totalreports}=$reports[$index]{totalreports};
+		$$row{vio}=$reports[$index]{vio};
+		$$row{illegal}=$reports[$index]{illegal};
+		$$row{spam}=$reports[$index]{spam};
+		
+		push @posts,$row;
+		$index++;
+	}
+	
+	make_http_header();
+	print encode_string(REPORTS_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		posts=>\@posts
+	));
+}
+
+sub makeReportPage(){
+	
 }
 
 #
@@ -642,7 +763,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 			$parent_res=get_parent_post($parent) or make_error(S_NOTHREADERR);
 		}
 		
-		@session = check_password($admin,PASSWORDS);
+		@session = check_password($admin);
 	}
 	else
 	{
@@ -696,7 +817,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	my $size=get_file_size($file) if($file);
 
 	# find IP
-	my $ip=$ENV{HTTP_CF_CONNECTING_IP};
+	my $ip=IP_VAR;
 
 	#$host = gethostbyaddr($ip);
 	my $numip=dot_to_dec($ip);
@@ -1055,7 +1176,7 @@ sub add_proxy_entry($$$$$)
 	my ($admin,$type,$ip,$timestamp,$date)=@_;
 	my ($sth);
 
-	check_password($admin,PASSWORDS);
+	check_password($admin);
 
 	# Verifies IP range is sane. The price for a human-readable db...
 	unless ($ip =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255 && $4 <= 255) {
@@ -1076,8 +1197,8 @@ sub add_proxy_entry($$$$$)
 	# Add requested entry
 	$sth=$dbh->prepare("INSERT INTO ".SQL_PROXY_TABLE." VALUES(null,?,?,?,?);") or make_error(S_SQLFAIL);
 	$sth->execute($type,$ip,$timestamp,$date) or make_error(S_SQLFAIL);
-
-        make_http_forward(get_script_name()."?admin=$admin&task=proxy",ALTERNATE_REDIRECT);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=proxy",ALTERNATE_REDIRECT);
 }
 
 sub proxy_clean()
@@ -1107,7 +1228,7 @@ sub remove_proxy_entry($$)
 	my ($admin,$num)=@_;
 	my ($sth);
 
-	check_password($admin,PASSWORDS);
+	check_password($admin);
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_PROXY_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -1249,14 +1370,14 @@ sub make_id_code($$$)
 	return EMAIL_ID if($link and DISPLAY_ID=~/link/i);
 	return EMAIL_ID if($link=~/sage/i and DISPLAY_ID=~/sage/i);
 
-	return resolve_host($ENV{HTTP_CF_CONNECTING_IP}) if(DISPLAY_ID=~/host/i);
-	return $ENV{HTTP_CF_CONNECTING_IP} if(DISPLAY_ID=~/ip/i);
+	return resolve_host(IP_VAR) if(DISPLAY_ID=~/host/i);
+	return IP_VAR if(DISPLAY_ID=~/ip/i);
 
 	my $string="";
 	$string.=",".int($time/86400) if(DISPLAY_ID=~/day/i);
 	$string.=",".$ENV{SCRIPT_NAME} if(DISPLAY_ID=~/board/i);
 
-	return mask_ip($ENV{HTTP_CF_CONNECTING_IP},make_key("mask",SECRET,32).$string) if(DISPLAY_ID=~/mask/i);
+	return mask_ip(IP_VAR,make_key("mask",SECRET,32).$string) if(DISPLAY_ID=~/mask/i);
 
 	return hide_data($ip.$string,6,"id",SECRET,1);
 }
@@ -1467,7 +1588,7 @@ sub delete_stuff($$$$@)
 	my ($password,$fileonly,$archive,$admin,@posts)=@_;
 	my ($post);
 
-	check_password($admin,PASSWORDS) if($admin);
+	check_password($admin) if($admin);
 	
 	make_error(S_BADDELPASS) unless($password or $admin); # refuse empty password immediately
 
@@ -1624,7 +1745,7 @@ sub make_admin_post_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@posts,$size,$rowtype);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -1651,7 +1772,7 @@ sub make_admin_ban_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@bans,$prevtype);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] eq "janitor"){
@@ -1677,7 +1798,7 @@ sub make_admin_proxy_panel($)
 	my ($admin)=@_;
 	my ($sth,$row,@scanned,$prevtype);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] ne "admin"){
@@ -1706,7 +1827,7 @@ sub make_admin_spam_panel($)
 	my @spam_files=SPAM_FILES;
 	my @spam=read_array($spam_files[0]);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] ne "admin"){
@@ -1724,7 +1845,7 @@ sub make_sql_dump($)
 	my ($admin)=@_;
 	my ($sth,$row,@database);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] ne "admin"){
@@ -1750,7 +1871,7 @@ sub make_sql_interface($$$)
 	my ($admin,$nuke,$sql)=@_;
 	my ($sth,$row,@results);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	if (@session[1] eq 'admin'){
 		if($sql)
@@ -1787,7 +1908,7 @@ sub make_admin_post($)
 {
 	my ($admin)=@_;
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	if ((@session[1] eq 'admin')||(@session[1] eq 'mod')){
 		make_http_header();
@@ -1804,7 +1925,7 @@ sub do_login($$$$$)
 	my $crypt;
 	my $dengus;
 	my $time=time();
-	my $lastip = $ENV{HTTP_CF_CONNECTING_IP};
+	my $lastip = IP_VAR;
 	
 	if($password and $user){
 		my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
@@ -1829,16 +1950,6 @@ sub do_login($$$$$)
 	}
 	
 	if($crypt){
-		# did it differently sendMessage()
-			# check for new messages
-			#my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE touser=? ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
-			#$sth->execute($user) or make_error($sth->errstr);
-			#my $dongus = get_decoded_hashref($sth);
-			
-			#if($$dengus{lasthit}<$$dongus{lasthit}){
-			#	# new messages
-			#}
-		
 		if($savelogin and $nexttask ne "nuke"){
 			make_cookies(wakaadmin=>$user.":".$crypt,
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>time+365*24*3600);
@@ -1862,7 +1973,7 @@ sub do_rebuild_cache($)
 {
 	my ($admin)=@_;
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] eq "janitor"){
@@ -1895,7 +2006,7 @@ sub add_admin_entry($$$$$$)
 	my ($sth);
 	my $time=time();
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] eq "janitor"){
@@ -1924,7 +2035,7 @@ sub remove_admin_entry($$)
 	my ($admin,$num)=@_;
 	my ($sth);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] eq "janitor"){
@@ -1943,7 +2054,7 @@ sub delete_all($$$)
 	my ($admin,$ip,$mask)=@_;
 	my ($sth,$row,@posts);
 
-	check_password($admin,PASSWORDS);
+	check_password($admin);
 
 	$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE ip & ? = ? & ?;") or make_error(S_SQLFAIL);
 	$sth->execute($mask,$ip,$mask) or make_error(S_SQLFAIL);
@@ -1956,7 +2067,7 @@ sub update_spam_file($$)
 {
 	my ($admin,$spam)=@_;
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# testing permissions system
 	if (@session[1] ne "admin"){
@@ -1991,44 +2102,12 @@ sub do_nuke_database($)
 	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
 }
 
-sub check_password($$)
+sub check_password($)
 {
-	my ($admin,$password)=@_; # $password is useless now
+	my ($admin)=@_; # $password is useless now
 	my $dengus;
 	
-	# new multi user support
-	# deferences reference. its a perl quirk or something
-	# 8-26-2012 - Apparently everything I did here is better done with hashes. Oh well.
-	# 8-28-2012 - CHANGED EVERYTHING. DEAL WITH IT
 	my @session;
-	
-	#my $passwords_ref = PASSWORDS;
-	#my @passwords = @$passwords_ref;
-	
-	#my $users_ref = USERS;
-	#my @users = @$users_ref;
-	
-	#my $classes_ref = CLASSES;
-	#my @classes = @$classes_ref;
-	
-	#my $currentuser = 0;
-	
-	# Maybe a map would speed this up. Hashes too. Its kinda stupid (and a little insecure [maybe]) to loop through every password until you find a user that matches
-	# Maybe if I use hashes, I could implement a username system as well. Oh well, who cares. This is good enough as of today (See above). 
-	#foreach my $dengus (@passwords){
-	#	if($admin eq $dengus){
-	#		@session[0] = @users[$currentuser];
-	#		@session[1] = @classes[$currentuser];
-	#		return @session;
-	#	}
-	#	if($admin eq crypt_password($dengus)){
-	#		@session[0] = @users[$currentuser];
-	#		@session[1] = @classes[$currentuser];
-	#		return @session;
-	#	}
-	#	
-	#	$currentuser++;
-	#}
 	
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2064,7 +2143,7 @@ sub checkNukePassword($$){
 
 sub crypt_password($)
 {
-	my $crypt=hide_data((shift).$ENV{HTTP_CF_CONNECTING_IP},9,"admin",SECRET,1);
+	my $crypt=hide_data((shift).IP_VAR,9,"admin",SECRET,1);
 	$crypt=~tr/+/./; # for web shit
 	return $crypt;
 }
@@ -2296,6 +2375,24 @@ sub initMessageDatabase(){
 	$sth->execute() or make_error($sth->errstr);
 }
 
+sub initReportDatabase(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_REPORT_TABLE.";") if(table_exists(SQL_REPORT_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_REPORT_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".
+	"postnum INTEGER,".
+	"board TEXT,".
+	"fromip TEXT,".
+	"vio TINYINT,".
+	"spam TINYINT,".
+	"illegal TINYINT".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
+}
+
 sub init_proxy_database()
 {
 	my ($sth);
@@ -2497,7 +2594,7 @@ sub movePost($$$){
 sub toggleSticky($$$){
 	my ($admin,$num,$jimmies)=@_;
 	my ($sth);
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 
@@ -2516,7 +2613,7 @@ sub toggleSticky($$$){
 sub togglePermasage($$$){
 	my ($admin,$num,$jimmies)=@_;
 	my ($sth);
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
@@ -2535,7 +2632,7 @@ sub togglePermasage($$$){
 sub toggleLockThread($$$){
 	my ($admin,$num,$jimmies)=@_;
 	my ($sth);
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
@@ -2553,7 +2650,7 @@ sub toggleLockThread($$$){
 
 sub makeRegister($){
 	my ($admin)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] eq "admin"; # lol perl style
 	make_http_header();
@@ -2563,7 +2660,7 @@ sub makeRegister($){
 sub makeManageUsers($){
 	my ($admin)=@_;
 	my (@users,$row);
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE) or make_error(S_SQLFAIL);
@@ -2580,7 +2677,7 @@ sub makeManageUsers($){
 
 sub addUser($$$$$){
 	my ($admin,$user,$pass,$email,$class)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
@@ -2599,7 +2696,7 @@ sub addUser($$$$$){
 
 sub removeUser($$){
 	my ($user,$admin)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	$user=clean_string(decode_string($user,CHARSET));
@@ -2612,7 +2709,7 @@ sub removeUser($$){
 
 sub makeChangePass(??){
 	my ($admin,$user)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	# dat security
 	if (@session[1] ne "admin"){
@@ -2626,7 +2723,7 @@ sub makeChangePass(??){
 
 sub setNewPass(????){
 	my ($user,$oldpass,$newpass,$admin)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	my ($sth);
 	
 	$oldpass=clean_string(decode_string($oldpass,CHARSET));
@@ -2669,7 +2766,7 @@ sub setNewPass(????){
 
 sub makeComposeMessage(??){
 	my ($admin,$parentmsg)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_http_header();
 	print encode_string(COMPOSE_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,parentmsg=>$parentmsg));
@@ -2677,7 +2774,7 @@ sub makeComposeMessage(??){
 
 sub makeViewMessage(??){
 	my ($admin,$num)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	my (@messages,$row);
 	
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE num=? OR parent=? ORDER BY timestamp ASC;") or make_error(S_SQLFAIL);
@@ -2708,14 +2805,14 @@ sub makeViewMessage(??){
 	print encode_string(VIEW_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages,num=>$num));
 }
 
-sub sendMessage($$$$$){
-	my ($admin,$msg,$to,$parentmsg,$isnote)=@_;
-	my @session = check_password($admin,PASSWORDS);
+sub sendMessage($$$$$$){
+	my ($admin,$msg,$to,$parentmsg,$isnote,$noformat)=@_;
+	my @session = check_password($admin);
 	my $from=@session[0];
 	my $time=time();
 	
 	#$msg=clean_string(decode_string($msg,CHARSET));
-	$msg=format_comment(clean_string(decode_string($msg,CHARSET)));
+	$msg=format_comment(clean_string(decode_string($msg,CHARSET))) unless $noformat;
 	$to=clean_string(decode_string($to,CHARSET));
 	
 	if ($parentmsg>0){
@@ -2750,16 +2847,17 @@ sub sendMessage($$$$$){
 	$sth->execute($to) or make_error(S_SQLFAIL);
 	
 	if($isnote){
-		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT)
+		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT) unless $isnote==2;
 	}
-	
-	make_http_forward(get_script_name()."?admin=$admin&task=inbox",ALTERNATE_REDIRECT);
+	else{
+		make_http_forward(get_script_name()."?admin=$admin&task=inbox",ALTERNATE_REDIRECT);
+	}
 }
 
 sub makeInbox($){
 	my ($admin)=@_;
 	my (@messages,$row);
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_MESSAGE_TABLE." WHERE (touser=? OR fromuser=?) AND (parent IS NULL) ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
 	$sth->execute(@session[0],@session[0]) or make_error($sth->errstr);
@@ -2786,7 +2884,7 @@ sub makeThread($$){
 	my ($sth,$row,@thread);
 	#my ($filename,$tmpname);
 
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
@@ -2809,45 +2907,11 @@ sub makeThread($$){
 		session=>\@session));
 }
 
-# this isn't used at all
-sub build_json_cache_all(){
-	my ($sth,$row,@thread);
-
-	$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE parent=0;") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-
-	while($row=$sth->fetchrow_arrayref())
-	{
-		build_json_cache($$row[0]);
-	}
-}
-
-# this isn't used at all
-sub build_json_cache($){
-	my ($thread)=@_;
-	my ($sth,$row,$filename,@thread);
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
-	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
-
-	while($row=get_decoded_hashref($sth)) { push(@thread,$row); }
-
-	make_error(S_NOTHREADERR) if($thread[0]{parent});
-
-	$filename=RES_DIR.$thread.".json";
-	
-	print_page($filename,JSON_THREAD_TEMPLATE->(
-		thread=>$thread,
-		dummy=>$thread[$#thread]{num},
-		threads=>[{posts=>\@thread}])
-	);
-}
-
 # I guessed my way through this
 sub makePage($$){
 	my ($admin,$page)=@_;
 	my ($sth,$row,@threads,$total,$filename);
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2942,9 +3006,26 @@ sub makePage($$){
 }
 
 sub makeIPPage($$){
-	my ($admin,$ip)=@_;
-	my @session = check_password($admin,PASSWORDS);
-	my ($sth,$row,@bans,@posts,@notes,$prevtype,$host);
+	my ($ip,$admincookie)=@_;
+	my ($crypt,$user,$sth,$dengus,@pass);
+	my ($row,@bans,@posts,@notes,$prevtype,$host);
+	
+	make_http_forward(get_script_name()."?task=admin",ALTERNATE_REDIRECT) unless $admincookie;
+	
+	$user=substr($admincookie,0,index($admincookie,":"));
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+	$sth->execute($user) or make_error($sth->errstr);
+	$dengus=get_decoded_hashref($sth);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @pass,$$row{pass};
+	}
+
+	if ($admincookie eq $user.":".crypt_password($$dengus{pass})){
+		$crypt = crypt_password($$dengus{pass});
+	}
+	
+	my @session = check_password($crypt);
 	
 	$host = gethostbyaddr inet_aton($ip),AF_INET or $ip;
 	
@@ -2982,7 +3063,7 @@ sub makeIPPage($$){
 
 	make_http_header();
 	print encode_string(IP_PAGE_TEMPLATE->(
-		admin=>$admin,
+		admin=>$crypt,
 		ip=>$ip,
 		host=>$host,
 		session=>\@session,
@@ -2994,7 +3075,7 @@ sub makeIPPage($$){
 
 sub updateBan($$$$$){
 	my($admin,$num,$ip,$reason,$active)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
@@ -3012,7 +3093,7 @@ sub updateBan($$$$$){
 
 sub makeEdit($$){
 	my ($admin,$num)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 	my ($row,@posts);
 	
 	make_error(S_CLASS) unless @session[1] eq 'admin';
@@ -3035,7 +3116,7 @@ sub makeEdit($$){
 
 sub editPost($$$$$$){
 	my ($admin,$num,$comment,$subject,$name,$link)=@_;
-	my @session = check_password($admin,PASSWORDS);
+	my @session = check_password($admin);
 
 	make_error(S_CLASS) unless @session[1] eq 'admin';
 	
