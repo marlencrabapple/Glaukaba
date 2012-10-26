@@ -7,7 +7,7 @@ Glaukaba
 Glaukaba is a Wakaba fork with additional features in use on Glauchan. As of this commit, it may be suitable for seamless enough usage on other sites. Try it out for yourself and let me know.
 
 ## Abridged Setup Guide ##
-	1. Create a directory for each board You plan on using, and copy every file in Glaukaba's root except for globalconfig.pl and spam.txt into each directory.
+	1. Create a directory for each board You plan on using, and copy every file (no directories except /include) in Glaukaba's root except for globalconfig.pl and spam.txt into each directory.
 	2. Download Glaukaba-JS and move glaukaba-main.js and glaukaba-extra.js into your /js directory.
 	3. Create three directories (/src, /res, and /thumb) in each board's directory
 	4. Setup URL rewriting in an .htaccess file or your HTTP server's configuration files so each board's pages and threads inside of /res are accesible without their extensions.
