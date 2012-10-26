@@ -228,10 +228,12 @@ elsif($task eq "nuke")
 	do_nuke_database($admin);
 }
 elsif($task eq "list"){
-	makeList();
+	make_error("Disabled");
+	#makeList();
 }
 elsif($task eq "cat"){
-	makeCatalog();
+	make_error("Disabled");
+	#makeCatalog();
 }
 elsif($task eq "stickdatshit"){
 	my $admin=$query->param("admin");
@@ -376,35 +378,39 @@ elsif($task eq 'dismiss'){
 $dbh->disconnect();
 
 sub makeList(){
-	my ($sth,$row,@threads,@postcount,@threadsize,$index);
+	my ($sth,$row,@threads,@postcount,@threadsize,$index,$filename);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
 		my ($posts,$size)=count_posts($$row{num});
-		$$row{'postcount'}=$posts; # add post count field to hash
-		#$$row{'threadsize'}=$size;
+		$$row{'postcount'}=$posts; # add post count to hash
+		#$$row{'imagecount'}=$images; # add image count to hash
+		#$$row{'threadsize'}=$size; # guess
 		push @threads,$row;
 	}
 	
-	make_http_header();
-	print encode_string(LIST_TEMPLATE->(threads=>\@threads));
+	$filename = "subback.html";
+	print_page($filename,LIST_TEMPLATE->(threads=>\@threads));
 }
 
 sub makeCatalog(){
-	my ($sth,$row,@threads);
+	my ($sth,$row,$filename,@threads);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth))
 	{
+		my ($posts,$size,$images)=count_posts($$row{num},1);
+		$$row{'postcount'}=$posts; # add post count to hash
+		$$row{'imagecount'}=$images; # add image count to hash
 		push @threads,$row;
 	}
 	
-	make_http_header();
-	print encode_string(CATALOG_TEMPLATE->(threads=>\@threads));
+	$filename = "catalog.html";
+	print_page($filename,CATALOG_TEMPLATE->(threads=>\@threads));
 }
 
 sub makeReportForm($$){
@@ -588,6 +594,9 @@ sub build_cache()
 			build_cache_page($page,$total,@pagethreads);
 			$page++;
 		}
+		
+		makeList();
+		makeCatalog();
 	}
 
 	# check for and remove old pages
@@ -601,7 +610,7 @@ sub build_cache()
 sub build_cache_page($$@)
 {
 	my ($page,$total,@threads)=@_;
-	my ($filename,$tmpname);
+	my ($filename,$tmpname,$threadindex);
 
 	if($page==0) { $filename=HTML_SELF; }
 	else { $filename=$page.PAGE_EXT; }
@@ -617,6 +626,16 @@ sub build_cache_page($$@)
 		my $curr_images=$images;
 		my $max_replies=REPLIES_PER_THREAD;
 		my $max_images=(IMAGE_REPLIES_PER_THREAD or $images);
+		
+		# get staff posts
+		#if(SHOW_STAFF_POSTS){
+		#	while($curr_replies){
+		#		# not yet implemented
+		#		# need to change capcode generation method first
+		#		shift @replies;
+		#		$curr_replies--;
+		#	}
+		#}
 
 		# drop replies until we have few enough replies and images
 		while($curr_replies>$max_replies or $curr_images>$max_images)
@@ -630,6 +649,11 @@ sub build_cache_page($$@)
 		$$thread{posts}=[$parent,@replies];
 		$$thread{omit}=$replies-$curr_replies;
 		$$thread{omitimages}=$images-$curr_images;
+		
+		# json stuff
+		my $lastpost = $$thread{posts}[(scalar @replies)];
+		$$lastpost{lastpost} = 1;
+
 
 		# abbreviate the remaining posts
 		foreach my $post (@{$$thread{posts}})
@@ -642,6 +666,10 @@ sub build_cache_page($$@)
 			}
 		}
 	}
+	
+	# json stuff
+	my $lastthread = @threads[(scalar @threads)-1];
+	$$lastthread{lastthread} = 1;
 
 	# make the list of pages
 	my @pages=map +{ page=>$_ },(0..$total-1);
@@ -663,8 +691,21 @@ sub build_cache_page($$@)
 		prevpage=>$prevpage,
 		nextpage=>$nextpage,
 		pages=>\@pages,
-		threads=>\@threads # i don't even think this is a thing anymore.
+		threads=>\@threads
 	));
+	
+	if($filename eq 'wakaba.html'){
+		print_page("0.json",JSON_INDEX_TEMPLATE->(
+			threads=>\@threads,
+			isindex=>1
+		));
+	}
+	else{
+		print_page(substr($filename,0,-4)."json",JSON_INDEX_TEMPLATE->(
+			threads=>\@threads,
+			isindex=>1
+		));
+	}
 }
 
 sub build_thread_cache($)
@@ -1060,8 +1101,6 @@ sub ban_check($$$$)
 	# updated to allow for ban history
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' AND (? & ival2 = ival1 & ival2) AND (active='1') ORDER BY num DESC;") or make_error(S_SQLFAIL);
 	$sth->execute($numip) or make_error(S_SQLFAIL);
-	
-	#my $banned=($sth->fetchrow_array())[0];
 
 	while($row=get_decoded_hashref($sth))
 	{
@@ -1072,7 +1111,6 @@ sub ban_check($$$$)
 		}
 	}
 
-	#make_error(S_BADHOST.$$ban{comment}) if($banned);
 	# new ban page
 	if ($banned){
 		make_http_header();
@@ -1259,53 +1297,40 @@ sub format_comment($)
 	if(ENABLE_WAKABAMARK) { $comment=do_wakabamark($comment,$handler) }
 	else { $comment="<p>".simple_format($comment,$handler)."</p>" }
 
-	# fix <blockquote> styles for old stylesheets
-	$comment=~s/<blockquote>/<blockquote class="unkfunc">/g;
-
 	# restore >>1 references hidden in code blocks
 	$comment=~s/&gtgt;/&gt;&gt;/g;
 	
 	my $blocktag=0;
 	
-	# new spoiler code (can't put it in 'do_wakabamark' because of 'do_spans' messing with the order of tags
-	if($comment=~/.*\[spoiler\].*/){
-		$comment=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
-		$comment=~s/\[\/spoiler\]*/\<\/span\>/g;
-		$comment=~s/\<span class\=\'spoiler\'\>\<br \/\>/\<span class\=\'spoiler\'\>/g;
-		#$comment=~s/\<\/span\>\<br \/\>/\<\/span\>/g;
-		$blocktag=1;
-	}
-	
-	# code tags
-	if($comment=~/.*\[code\].*/){
-		$comment=~s/\[code\]*/\<pre class\=\'prettyprint\'\>/g;
-		$comment=~s/\[\/code\]*/\<\/pre\>/g;
-		$comment=~s/\<pre class\=\'prettyprint\'\>\<br \/\>/\<pre class\=\'prettyprint\'\>/g;
-		$comment=~s/\<\/pre\>\<br \/\>/\<\/pre\>/g;
-		$blocktag=1;
-	}
-	
-	# s-jis
-	if($comment=~/.*\[sjis\].*/){
-		$comment=~s/\[sjis\]*/\<span class\=\'aa\'\>/g;
-		$comment=~s/\[\/sjis\]*/\<\/span\>/g;
-		$comment=~s/\<span class\=\'aa\'\>\<br \/\>/\<span class\=\'aa\'\>/g;
-		$comment=~s/\<\/span\>\<br \/\>/\<\/span\>/g;
-		$blocktag=1;
-	}
-	
-	# fix formatting for above functions
-	if($blocktag==1){
-		$comment=~s/\<p\>/ /g;
-		$comment=~s/\<\/p\>/\<br \/\>\<br \/\>/g;
-		$comment=~s/\<br \/\>\<br \/\>$/\<br \/\>/;
-		$comment=~s/\<\/span\>\<br \/\>\<br \/\>$/\<\/span\>/;
-		$comment=~s/\<\/pre\>\<br \/\>\<br \/\>$/\<\/pre\>/;
-		$comment=~s/\<br \/\>\<\/span\>/\<\/span\>/g;
-		$comment=~s/\<br \/\>\<\/pre\>/\<\/pre\>/g;
-		#$comment=~s/\<br \/\>\<\/blockquote\>/\<\/blockquote\>/g;
-		#$comment=~s/\<br\>\<\/blockquote\>/\<\/blockquote\>/g;
-		$blocktag=0;
+	if(ENABLE_WAKABAMARK){
+		# new spoiler code (can't put it in 'do_wakabamark' because of 'do_spans' messing with the order of tags
+		if($comment=~/.*\[spoiler\].*/){
+			$comment=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
+			$comment=~s/\[\/spoiler\]*/\<\/span\>/g;
+			$comment=~s/\<span class\=\'spoiler\'\>\<br \/\>/\<span class\=\'spoiler\'\>/g;
+			$blocktag=1;
+		}
+		
+		# code tags
+		if($comment=~/.*\[code\].*/){
+			$comment=~s/\[code\]*/\<pre class\=\'prettyprint\'\>/g;
+			$comment=~s/\[\/code\]*/\<\/pre\>/g;
+			$comment=~s/\<pre class\=\'prettyprint\'\>\<br \/\>/\<pre class\=\'prettyprint\'\>/g;
+			$blocktag=1;
+		}
+		
+		# s-jis
+		if($comment=~/.*\[sjis\].*/){
+			$comment=~s/\[sjis\]*/\<span class\=\'aa\'\>/g;
+			$comment=~s/\[\/sjis\]*/\<\/span\>/g;
+			$comment=~s/\<span class\=\'aa\'\>\<br \/\>/\<span class\=\'aa\'\>/g;
+			$blocktag=1;
+		}
+		
+		# fix formatting for above functions
+		if($blocktag==1){
+			$comment=~s/\<br \/\>\<\/span\>/\<\/span\>/g;
+		}
 	}
 
 	return $comment;
@@ -2503,13 +2528,14 @@ sub count_threads()
 	return ($sth->fetchrow_array())[0];
 }
 
-sub count_posts(;$)
+sub count_posts(;$$)
 {
-	my ($parent)=@_;
+	my ($parent,$countimages)=@_;
 	my ($sth,$where);
 
 	$where="WHERE parent=$parent or num=$parent" if($parent);
-	$sth=$dbh->prepare("SELECT count(*),sum(size) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT count(*),sum(size) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL) unless ($countimages);
+	$sth=$dbh->prepare("SELECT count(*),sum(size),count(image) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL) if ($countimages);
 	$sth->execute() or make_error(S_SQLFAIL);
 
 	return $sth->fetchrow_array();

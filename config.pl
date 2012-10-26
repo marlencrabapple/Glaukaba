@@ -12,10 +12,17 @@
 #use constant BOARD_DIR => '';					# This board's directory. Leaving this blank enables single board mode
 #use constant NUKE_PASS => '';					# Password to nuke a board. Change this too, NOW!
 #use constant SECRET => '';						# Cryptographic secret. CHANGE THIS to something totally random, and long.
-#use constant SQL_TABLE => 'comments';			# Table (NOT DATABASE) used by image board
+#use constant SQL_TABLE => 'comments';			# Table (NOT DATABASE) used by image board. Please change the value for each board
+
+# None of the options in this block need changing. Just uncomment them. I'll figure out a more elagant way to handle this stuff another day.
+#
 #use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
 #use constant SQL_USER_TABLE => 'users';		# Table used for admin user information
 #use constant SQL_PROXY_TABLE => 'proxy';		# Table used for proxy information
+#use constant SQL_REPORT_TABLE => 'reports';	# Table used for proxy information
+#
+#
+
 #use constant USE_TEMPFILES => 1;				# Set this to 1 under Unix and 0 under Windows! (Use tempfiles when creating pages)
 
 # Page look

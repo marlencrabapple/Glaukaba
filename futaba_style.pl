@@ -53,16 +53,14 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 	$(document).ready(function() {
 		$(".catItem").mouseenter(function () {
 			var catItem = $(this).attr("id");
-			$("#"+catItem+"Hover").fadeTo(250, 0.5, function () {
-				console.log(catItem);
+			$("#"+catItem+"Hover").fadeTo(200, 0.6, function () {
 				$("#"+catItem+"Hover").css("visibility", "visible");
 			});
 		});
 		
 		$(".catItem").mouseleave(function () {
 			var catItem = $(this).attr("id");
-			$("#"+catItem+"Hover").fadeTo(250, 0, function () {
-				console.log(catItem);
+			$("#"+catItem+"Hover").fadeTo(200, 0, function () {
 				$("#"+catItem+"Hover").css("visibility", "hidden");
 			});
 		});
@@ -127,7 +125,7 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 <p class="logoSubtitle"><const SUBTITLE></p>
 </div>
 <hr class="postinghr" />
-	<if !$admin><div class="denguses">}.include("include/topad.html").q{</div></if>
+	<if !$admin><div class="denguses"><var include("include/topad.html",1)></div></if>
 <hr class="postinghr" />
 };
 
@@ -244,7 +242,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<div class="postBlock">File</div>
 					<div class="postField">
 						<input type="file" name="file" id="file" /><br />
-						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File]</label></if>
+						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File ]</label></if>
 						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if>
 						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
 					</div>
@@ -262,7 +260,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</form>
 <script type="text/javascript">setPostInputs()</script></if>
 <hr class="postinghr" />
-<div class="denguses">}.include("include/middlead.html").q{</div>
+<div class="denguses"><var include("include/middlead.html",1)></div>
 <div class="announcement">
 }.include("../announcement.html").q{
 </div>
@@ -396,7 +394,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 	<hr />
 </loop>
-<div class="denguses">}.include("include/bottomad.html").q{</div>
+<div class="denguses"><var include("include/bottomad.html",1)></div>
 <hr />
 <if $thread>
 	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
@@ -435,22 +433,6 @@ use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 }.NORMAL_FOOT_INCLUDE);
 
-use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
-	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
-	<div class="theader">Catalog Mode</div>
-	<div id="catalog">
-		<loop $threads>
-			<div class="catItem" id="catItem<var $num>" style="display: inline-block;">
-				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><div class="catItemHover" id="catItem<var $num>Hover" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;"><div class="catItemHoverText" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px; line-height:<var ($tn_height*.504)>px;">&gt;&gt;<var $num></div></div></if>
-				<if !$thumbnail><div id="catItem<var $num>Hover" class="catItemHoverNoThumb"><div class="catItemHoverTextNoThumb">&gt;&gt;<var $num></div></div></if></a>
-				<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><img src="<var expand_filename($thumbnail)>" class="catImage" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if !$thumbnail><div class="catImageNoThumb"></div></if></a>
-			</div>
-		</loop>
-	</div>
-	<hr />
-	<div class="denguses">}.include("include/bottomad.html").q{</div>
-}.NORMAL_FOOT_INCLUDE);
-
 use constant REPORT_TEMPLATE => compile_template(q{
 <!DOCTYPE html>
 <html>
@@ -487,24 +469,44 @@ use constant REPORT_TEMPLATE => compile_template(q{
 
 use constant LIST_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 [<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
-<div class="theader">Thread Index</div>
+<div class="listPageHeader">Thread Index</div>
 <table id="threadList" style="white-space: nowrap;">
 	<thead><tr class="head">
-		<td class="postBlock">Subject</td>
-		<td class="postBlock">Created by</td>
-		<td class="postBlock">Time</td>
-		<td class="postBlock">Post No.</td>
+		<td class="listHead">Subject</td>
+		<td class="listHead" style="width:1%">Created by</td>
+		<td class="listHead" style="width:1%">Time</td>
+		<td class="listHead" style="width:1%">Post No.</td>
 	</tr></thead>
-	<tbody><loop $threads><tr>
-		<td><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount-1> <if $postcount\>2 or $postcount==1>replies</if><if $postcount==2>reply</if>]</td>
-		<td><span class="postername"><var $name></span> <span class="postertrip"><var $trip></span></td>
-		<td><var make_date($timestamp,"tiny")></td>
-		<td>No.<var $num></td>
+	<tbody><loop $threads><tr class="listRow">
+		<td class="listCol"><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount-1> <if $postcount\>2 or $postcount==1>replies</if><if $postcount==2>reply</if>]</td>
+		<td class="listCol"><span class="postername"><var $name></span> <span class="postertrip"><var $trip></span></td>
+		<td class="listCol"><var make_date($timestamp,"tiny")></td>
+		<td class="listCol">No.<var $num></td>
 	</tr></loop></tbody>
 </table>
 <hr />
-<div class="denguses">}.include("include/bottomad.html").q{</div>
+<div class="denguses"><var include("include/bottomad.html",1)></div>
 <hr />
+}.NORMAL_FOOT_INCLUDE);
+
+use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
+[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
+<div class="listHead" style="margin-top: 5px;">Catalog Mode</div>
+<div id="catalog">
+	<loop $threads>
+		<div class="catItem" id="catItem<var $num>">
+			<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><div class="catItemHover" id="catItem<var $num>Hover" style="width: <var $tn_width*.6>px; height: <var $tn_height*.6>px;"><div class="catItemHoverText" style="width: <var $tn_width*.6>px; height: <var $tn_height*.6>px; line-height:<var ($tn_height*.6)>px;">&gt;&gt;<var $num></div></div></if>
+			<if !$thumbnail><div id="catItem<var $num>Hover" class="catItemHoverNoThumb"><div class="catItemHoverTextNoThumb">&gt;&gt;<var $num></div></div></if></a>
+			<a href="/<var BOARD_DIR>/res/<var $num>"><if $thumbnail><img src="<var expand_filename($thumbnail)>" class="catImage" style="width: <var $tn_width*.6>px; height: <var $tn_height*.6>px;" /></if><if !$thumbnail><div class="catImageNoThumb"></div></if></a>
+			<div class="catComment" id="catItem<var $num>Comment">
+				<span class="catCounts">R:<var $postcount><if $imagecount> / I:<var $imagecount></if></span><br />
+				<span><if $subject><var $subject></if><if !$subject><var truncateComment($comment,200)></if></span>
+			</div>
+		</div>
+	</loop>
+</div>
+<hr />
+<div class="denguses"><var include("include/bottompad.html",1)></div>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
@@ -529,6 +531,7 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant JSON_THREAD_TEMPLATE => compile_template(q{
+<if $isindex>{"threads": [<loop $threads></if>
 {"posts": [
 <loop $posts>
 	{
@@ -564,6 +567,53 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 	}<if $lastpost!=$num>,</if>
 </loop>
 ]}
+<if $isindex></loop>]}</if>
+},2);
+
+use constant JSON_INDEX_TEMPLATE => compile_template(q{
+{
+	"threads": [
+	<loop $threads>
+		{
+		"posts": [
+			<loop $posts>
+				{
+					"no":<var $num>,
+					<if !$parent>
+						<if $sticky>"sticky":<var $sticky>,</if>
+						<if $permasage>"psage":<var $permasage>,</if>
+						<if $locked>"closed":<var $locked>,</if>
+					</if>
+					"time":<var $timestamp>,
+					<if index($date,"ID")==-1>"now":"<var $date>",</if>
+					<if index($date,"ID")!=-1>
+						"now":"<var substr($date,0,index($date,"ID:")-1)>",
+						"id":"<var substr($date, index($date,"ID:"))>",
+					</if>
+					"name":"<var mahou_inyoufu $name>",
+					"trip":"<var $trip>",
+					<if $email>"email":"<var mahou_inyoufu $email>",</if>
+					"sub":"<var mahou_inyoufu $subject>",
+					"com":"<var mahou_inyoufu $comment>",
+					<if $image>
+						"image":"<var $image>",
+						"fsize":<var $size>,
+						"md5":"<var $md5>",
+						"w":<var $width>,
+						"h":<var $height>,
+						"tn_w":<var $tn_width>,
+						"tn_h":<var $tn_height>,
+						"filename":"<var $filename>",
+						<if $tn_mask>"spoiler":<var $tnmask>,</if>
+					</if>
+					"parent":<var $parent>
+				}<if !$lastpost>,</if>
+			</loop>
+			]
+		}<if !$lastthread>,</if>
+	</loop>
+	]
+}
 },2);
 
 #

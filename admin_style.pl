@@ -19,15 +19,12 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 			<div id="topNavLeft">
 				<strong>Navigation:&nbsp;&nbsp;</strong>
 				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&admin=<var $admin>'">
-					<option value="glau">/glau/</option>
-					<option value="meta">/meta/</option>
-					<option value="test">/test/</option>
+					<loop BOARDS>
+						<if $public><option value="<var $dir>">/<var $dir>/</option></if>
+					</loop>
 					<option value="#">Boards</option>
 				</select>
 			</div>
-			<script>
-				document.getElementById("managerBoardList").selectedIndex = 3;
-			</script>
 		</if>
 		<div id="topNavRight">
 			<if $session-\>[2]>[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">New Messages</a>]</if>
@@ -412,8 +409,8 @@ There are zero reported posts!
 			</div>
 		</div>
 		<div class="reportOptions">
-			<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
 			[<a href="<var $self>?task=dismiss&amp;num=<var $num>&amp;admin=<var $admin>">Dismiss</a>]
+			<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>]
 			[<a href="javascript:void(0)" onclick="addBan('<var BOARD_DIR>','<var $ip>','<var $admin>')">B</a>]</if>
 			<if $session-\>[1] eq 'janitor'>[<a href="<var $self>?task=requestban&amp;num=<var $num>&amp;admin=<var $admin>">Request Ban</a>]</if>
 			[<a href="<var $self>?task=delete&amp;delete=<var $num>&amp;admin=<var $admin>">D</a>]
@@ -468,20 +465,19 @@ use constant REGISTER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<option value="janitor">Janitor</option>
 			<option value="mod">Moderator</option>
 			<option value="admin">Administrator</option>
-			<option value="vip">VIPPER</option>
 		</select></td></tr>
 		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
 	</tbody></table></form></div>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant MANAGE_USERS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-	<table align="center" style="white-space: nowrap"><tbody><thead><td class="postBlock">Username</td><td class="postBlock">Email</td><td class="postBlock">Class</td><td class="postBlock">Last Session</td><td class="postBlock">Options</td></thead>
+	<table align="center" id="threadList" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">Username</td><td class="listHead">Email</td><td class="listHead">Class</td><td class="listHead">Last Session</td><td class="listHead">Options</td></thead>
 	<tbody>
 	<loop $users>
-	<tr><td><var $user></td><td><var $email></td><td><var $class></td><td><var $lastip> on <var make_date($lastdate,tiny)></td><td>
+	<tr class="listRow"><td class="listCol"><var $user></td><td class="listCol"><var $email></td><td><var $class></td><td class="listCol"><var $lastip> on <var make_date($lastdate,tiny)></td><td class="listCol">
 	<a href="<var $self>?admin=<var $admin>&amp;task=removeuser&amp;user=<var $user>">[Remove]</a> 
 	<a href="<var $self>?admin=<var $admin>&amp;task=changepass&amp;user=<var $user>">[Change Password]</a> 
-	<a href="#">[Disable]</a></td></tr>
+	<a href="#">[Change Class]</a></td></tr>
 	</loop>
 	<tr><td><br/></td></tr>
 	<tr><td colspan="5">[<a href="<var $self>?task=register&amp;admin=<var $admin>">Add User</a>]</td></tr>
@@ -513,15 +509,15 @@ use constant COMPOSE_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q
 }.NORMAL_FOOT_INCLUDE);
 
 use constant INBOX_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-<table align="center" style="white-space: nowrap"><tbody><thead><td class="postBlock">No.</td><td class="postBlock">Message</td><td class="postBlock">From</td><td class="postBlock">Date</td><td class="postBlock">Options</td></thead>
+<table align="center" id="threadList" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">No.</td><td class="listHead">Message</td><td class="listHead">From</td><td class="listHead">Date</td><td class="listHead">Options</td></thead>
 <tbody>
 <loop $messages>
-<tr><td><var $num></td>
-<if !$wasread><td><strong><a href="<var $self>?task=viewmsg&amp;num=<var $num>&amp;admin=<var $admin>"><var truncateComment $message></a></strong></td></if>
+<tr class="listRow"><td class="listCol"><var $num></td>
+<if !$wasread><td class="listCol"><strong><a href="<var $self>?task=viewmsg&amp;num=<var $num>&amp;admin=<var $admin>"><var truncateComment $message></a></strong></td></if>
 <if $wasread><td><a href="<var $self>?task=viewmsg&amp;num=<var $num>&amp;admin=<var $admin>"><var truncateComment $message></a></td></if>
-<td><var $fromuser></td
-><td><var make_date($timestamp,tiny)></td>
-<td><a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">[Reply]</a></td></tr>
+<td class="listCol"><var $fromuser></td>
+<td class="listCol"><var make_date($timestamp,tiny)></td>
+<td class="listCol"><a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">[Reply]</a></td></tr>
 </loop>
 <tr><td><br/></td></tr>
 <tr><td colspan="5">[<a href="<var $self>?task=composemsg&amp;admin=<var $admin>">Compose Message</a>]</td></tr>
@@ -596,17 +592,18 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 </div>
 
 <fieldset><legend>Ban History</legend>
-	<table align="center" style="white-space: nowrap"><tbody><thead><td class="postBlock">Active</td><td class="postBlock">Reason</td><td class="postBlock">By</td><td class="postBlock">Date</td><td class="postBlock">Options</td></thead>
+	<table id="threadList" align="center" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">Active</td><td class="listHead">Reason</td><td class="listHead">By</td><td class="listHead">Date</td><td class="listHead">Options</td></thead>
 	<tbody>
 	<loop $bans>
-	<tr><td><var $active></td>
-	<td><var $comment></td>
-	<td><var $fromuser></td>
-	<td><var make_date($timestamp,tiny)></td>
-	<td>
+	<tr class="listRow">
+	<td class="listCol"><var $active></td>
+	<td class="listCol"><var $comment></td>
+	<td class="listCol"><var $fromuser></td>
+	<td class="listCol"><var make_date($timestamp,tiny)></td>
+	<td class="listCol">
 		<if !$active><a href="<var $self>?task=updateban&amp;num=<var $num>&amp;active=1&amp;ip=<var $ip>&amp;admin=<var $admin>">[Activate]</a></if>
 		<if $active><a href="<var $self>?task=updateban&amp;num=<var $num>&amp;&amp;active=0&amp;ip=<var $ip>&amp;admin=<var $admin>">[Deactivate]</a></if>
-		<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">[Delete]</a>
+		<a href="<var $self>?task=removeban&amp;num=<var $num>&amp;admin=<var $admin>">[Delete]</a>
 	</td></tr>
 	</loop>
 	<tr><td><br/></td></tr>

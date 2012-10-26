@@ -1,4 +1,4 @@
-# wakautils.pl v8.12
+# wakautils.pl v9
 
 use strict;
 
@@ -181,7 +181,11 @@ sub do_wakabamark($;$$)
 
 	while(defined($_=$lines[0]))
 	{
-		if(/^\s*$/) { shift @lines; } # skip empty lines
+		# convert empty lines to line breaks
+		if(/^\s*$/){ 
+			$res.="<br />";
+			shift @lines;
+		}
 		elsif(/^(1\.|[\*\+\-]) /) # lists
 		{
 			my ($tag,$re,$skip,$html);
@@ -206,17 +210,14 @@ sub do_wakabamark($;$$)
 		{
 			my @quote;
 			while($lines[0]=~/^(&gt;.*)/) { push @quote,$1; shift @lines; }
-			$res.="<blockquote>".do_spans($handler,@quote)."</blockquote>";
-
-			#while($lines[0]=~/^&gt;(.*)/) { push @quote,$1; shift @lines; }
-			#$res.="<blockquote>".do_blocks($handler,@quote)."</blockquote>";
+			$res.="<span class=\"quote\">".do_spans($handler,@quote)."</span><br />";
 		}
-		else # normal paragraph
+		else # normal text
 		{
 			my @text;
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;)/) { push @text,shift @lines; }
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
-			else { $res.="<p>".do_spans($handler,@text)."</p>" }
+			else{ $res.=do_spans($handler,@text)."<br />"; }
 		}
 		$simplify=0;
 	}
@@ -233,7 +234,7 @@ sub do_spans($@)
 		my @hidden;
 
 		# hide <code> sections
-		$line=~s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @hidden,"<code>$2</code>"; "<!--$#hidden-->"}sgex;
+		#$line=~s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @hidden,"<code>$2</code>"; "<!--$#hidden-->"}sgex;
 
 		# make URLs into links and hide them
 		$line=~s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
@@ -245,15 +246,15 @@ sub do_spans($@)
 		$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*|_) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<em>$2</em>}gx;
 
 		# do <span class="spoiler">
-		$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
+		#$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
 
 		# do ^H
-		#if($]>5.007)
-		#{
-		#	my $regexp;
-		#	$regexp=qr/(?:&#?[0-9a-zA-Z]+;|[^&<>])(?<!\^H)(??{$regexp})?\^H/;
-		#	$line=~s{($regexp)}{"<del>".(substr $1,0,(length $1)/3)."</del>"}gex;
-		#}
+		if($]>5.007)
+		{
+			my $regexp;
+			$regexp=qr/(?:&#?[0-9a-zA-Z]+;|[^&<>])(?<!\^H)(??{$regexp})?\^H/;
+			$line=~s{($regexp)}{"<del>".(substr $1,0,(length $1)/3)."</del>"}gex;
+		}
 
 		$line=$handler->($line) if($handler);
 
@@ -273,7 +274,7 @@ sub compile_template($;$)
 	{
 		$str=~s/^\s+//;
 		$str=~s/\s+$//;
-		$str=~s/\n\s*/\n/sg;
+		$str=~s/\n\s*/ /sg;
 	}
 	
 	if($nostrip==2){
@@ -330,17 +331,19 @@ sub template_for($$$)
 	return [map +{$var=>$_},($start..$end)];
 }
 
-sub include($)
+sub include($;$)
 {
-	my ($filename)=@_;
+	my ($filename,$nostrip)=@_;
 
 	open FILE,$filename or return '';
 	my $file=do { local $/; <FILE> };
 
-	$file=~s/^\s+//;
-	$file=~s/\s+$//;
-	#$file=~s/\n\s*/\n\n\n\n\n/sg if $filename=~m/(top|middle|bottom)ad/;
-	#$file=~s/\s+$//;
+	unless($nostrip){
+		$file=~s/^\s+//;
+		$file=~s/\s+$//;
+		$file=~s/\n\s*/ /sg;
+	}
+	
 	return $file;
 }
 
@@ -1238,8 +1241,9 @@ sub make_thumbnail($$$$$$;$)
 	$convert="convert" unless($convert);
 	
 	# not using imagemagick by default because it seems to break on any and all images
-	# djpeg, pngtopnm, giftopnm, etc., are all 100x faster too
-	if($nsfw==1){
+	# djpeg, pngtopnm, giftopnm, etc., are all 100x (made up stat) faster too
+	
+	if($nsfw){
 		`$convert -background white -flatten -scale 1% -scale 1000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
 		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
 		
@@ -1445,23 +1449,20 @@ sub decrypt_xtea($)
 {
 }
 
-sub truncateComment($){
-	my ($comment)=@_;
-	$comment =~ s/\<[^\>]*\>/ /g;
-	#$comment =~ s/\<\/.\>/ /g;
-	#$comment =~ s/\<br \/\>/ /g;
+sub truncateComment($;$){
+	my ($comment,$length)=@_;
+	$length = 60 unless $length;
+	
+	$comment =~ s/\<[^\>]*\>//g;
 	$comment = clean_string($comment,"");
-	if(length($comment)>=60){
-		$comment = substr($comment,0,60);
-		$comment = $comment."(...)"
+	
+	if(length($comment)>=$length){
+		$comment = substr($comment,0,$length);
+		$comment = $comment." (...)"
 	}
-	# disabled for performance reasons (even if there weren't any)
-	# get rid of trailing white space
-	#if(index($comment," ")==length($comment)){
-	#	$comment = substr($comment,0,length($comment)-1);
-	#}
-	#make_error($comment);
-	return $comment;
+	
+	return $comment unless !$comment;
+	return "No text";
 }
 
 sub truncateLine($){
@@ -1471,6 +1472,7 @@ sub truncateLine($){
 		my $lastindex = rindex($line, '.');
 		my $filename = substr($line,0,$lastindex);
 		my $fileext = substr($line,$lastindex);
+		
 		$line = substr($filename,0,25);
 		$line = $line."(...)".$fileext;
 	}
