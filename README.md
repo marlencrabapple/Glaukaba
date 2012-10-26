@@ -18,7 +18,7 @@ Glaukaba is a Wakaba fork with additional features in use on Glauchan. As of thi
 	
 ## Example Installation ##
 
-A semi-current version of this software is in use on http://www.glauchan.org and a live demo with a public moderator account is available at http://sandbox.onlinebargainshrimptoyourdoor.com.
+A semi-current version of this software is in use on http://www.glauchan.org and a live demo with a public moderator account is available at http://sandbox.onlinebargainshrimptoyourdoor.com (currently down).
 
 ## Issues ##
 
