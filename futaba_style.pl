@@ -531,7 +531,6 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant JSON_THREAD_TEMPLATE => compile_template(q{
-<if $isindex>{"threads": [<loop $threads></if>
 {"posts": [
 <loop $posts>
 	{
@@ -567,7 +566,6 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 	}<if $lastpost!=$num>,</if>
 </loop>
 ]}
-<if $isindex></loop>]}</if>
 },2);
 
 use constant JSON_INDEX_TEMPLATE => compile_template(q{
