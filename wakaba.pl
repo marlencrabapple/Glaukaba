@@ -454,7 +454,7 @@ sub report($$$){
 		$sth->execute($vio,$spam,$illegal,IP_VAR,$num) or make_error("2");
 	}
 	
-	make_http_forward('javascript:window.close();',ALTERNATE_REDIRECT);
+	make_http_forward('javascript:window.close();',1);
 }
 
 sub dismissReport($$){

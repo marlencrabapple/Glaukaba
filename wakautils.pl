@@ -176,11 +176,31 @@ sub do_wakabamark($;$$)
 {
 	my ($text,$handler,$simplify)=@_;
 	my $res;
-
+	
+	#$text = map "$_\n", split_len(100,$text);
+	#make_error(map "$_&shy;", split_len(100,$text));
+	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
 
 	while(defined($_=$lines[0]))
 	{
+		# glaukaba's SUPERIOR adaptation of wordwrap2
+		if(m/[^\s]{100,}/){
+			my $i=0;
+			
+			for(split(/(.{100})/,$lines[0])){
+				if($i==1){
+					$lines[0]="$_<br />" if $_;
+				}
+				else{
+					$lines[0].="$_<br />" if $_;
+				}
+				$i++;
+			}
+			
+			$lines[0]=~s/<br \/>$//;
+		}
+		
 		# convert empty lines to line breaks
 		if(/^\s*$/){ 
 			$res.="<br />";
@@ -215,7 +235,9 @@ sub do_wakabamark($;$$)
 		else # normal text
 		{
 			my @text;
-			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;)/) { push @text,shift @lines; }
+			my $i = 0;
+			
+			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;)/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
 			else{ $res.=do_spans($handler,@text)."<br />"; }
 		}
@@ -234,7 +256,7 @@ sub do_spans($@)
 		my @hidden;
 
 		# hide <code> sections
-		#$line=~s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @hidden,"<code>$2</code>"; "<!--$#hidden-->"}sgex;
+		$line=~s{ (?<![\x80-\x9f\xe0-\xfc]) (`+) ([^<>]+?) (?<![\x80-\x9f\xe0-\xfc]) \1}{push @hidden,"<code>$2</code>"; "<!--$#hidden-->"}sgex;
 
 		# make URLs into links and hide them
 		$line=~s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
@@ -1239,16 +1261,17 @@ sub make_thumbnail($$$$$$;$)
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 
 	$convert="convert" unless($convert);
-	
-	# not using imagemagick by default because it seems to break on any and all images
-	# djpeg, pngtopnm, giftopnm, etc., are all 100x (made up stat) faster too
-	
-	if($nsfw){
-		`$convert -background white -flatten -scale 1% -scale 1000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
+	if($nsfw==1){
+		`$convert -background white -flatten -scale 1% -scale 2000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
 		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
-		
-		return 1 unless($?);
 	}
+	else{
+		`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+	}
+
+	return 1 unless($?);
+	
+	# if that fails, try pnmtools instead
 
 	if($filename=~/\.jpg$/)
 	{

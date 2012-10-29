@@ -475,9 +475,9 @@ use constant MANAGE_USERS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<tbody>
 	<loop $users>
 	<tr class="listRow"><td class="listCol"><var $user></td><td class="listCol"><var $email></td><td><var $class></td><td class="listCol"><var $lastip> on <var make_date($lastdate,tiny)></td><td class="listCol">
-	<a href="<var $self>?admin=<var $admin>&amp;task=removeuser&amp;user=<var $user>">[Remove]</a> 
-	<a href="<var $self>?admin=<var $admin>&amp;task=changepass&amp;user=<var $user>">[Change Password]</a> 
-	<a href="#">[Change Class]</a></td></tr>
+	<a href="<var $self>?admin=<var $admin>&amp;task=changepass&amp;user=<var $user>">[Edit]</a> 
+	<a href="#">[Disable]</a>
+	<a href="<var $self>?admin=<var $admin>&amp;task=removeuser&amp;user=<var $user>">[Remove]</a></td></tr>
 	</loop>
 	<tr><td><br/></td></tr>
 	<tr><td colspan="5">[<a href="<var $self>?task=register&amp;admin=<var $admin>">Add User</a>]</td></tr>
