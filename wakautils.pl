@@ -177,9 +177,6 @@ sub do_wakabamark($;$$)
 	my ($text,$handler,$simplify)=@_;
 	my $res;
 	
-	#$text = map "$_\n", split_len(100,$text);
-	#make_error(map "$_&shy;", split_len(100,$text));
-	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
 
 	while(defined($_=$lines[0]))

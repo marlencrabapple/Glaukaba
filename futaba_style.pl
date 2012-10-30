@@ -173,8 +173,58 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 		  })();
 		</script>
+		<script>
+			var domain = "http://<var DOMAIN>/";
+			var boardDir = "<var BOARD_DIR>";
+			var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
+		</script>
 	</head>
-	<body>
+	<if $thread><body class="replypage"></if>
+	<if !$thread><body></if>
+	<a name="top"></a>
+	<div id="overlay">
+		<div id="navOptionsMenu">
+			<div id="navOptionsTopBar">
+				Board Options
+			</div>
+			<hr>
+			<div id="navOptionsContent">
+				<p>
+					<strong>Style Options</strong><br />
+					<loop $stylesheets>[<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a>] </loop>
+				</p>
+				<p>
+					<strong>General Enhancements</strong><br />
+					<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);" />Comment Expansion</label>: Expands truncated comments<br />
+					<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);" />Thread Expansion</label>: View all replies without changing pages<br />
+				</p>
+				<p>
+					<strong>Filtering</strong><br />
+					<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);" />Reply Hiding</label>: Hide replies<br />
+					<label class="navOptionsListItem"><input id="threadHiding" type=checkbox onchange="toggleFeature('threadHiding',this.checked);" />Thread Hiding</label>: Hide threads<br />
+					<label class="navOptionsListItem"><input id="anonymize" type=checkbox onchange="toggleFeature('anonymize',this.checked);" />Anonymize</label>: Makes everybody anonymous<br />
+				</p>
+				<p>
+					<strong>Image Options</strong><br />
+					<label class="navOptionsListItem"><input id="inlineExpansion" type=checkbox onchange="toggleFeature('inlineExpansion',this.checked);" />Inline Expansion</label>: View fullsize images without opening a new window or tab<br />
+				</p>
+				<p>
+					<strong>Monitoring</strong><br />
+					<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);" />Thread Updater</label>: Get new posts automatically without refreshing the page<br />
+				</p>
+				<p>
+					<strong>Posting</strong><br />
+					<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);" />Quick Reply</label>: Reply without reloading the page<br />
+				</p>
+				<p>
+					<strong>Quoting</strong><br />
+					<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);" />Quote Previews</label>: Show quoted post on hover<br />
+					<label class="navOptionsListItem"><input id="inlineQuote" type=checkbox onchange="toggleFeature('inlineQuote',this.checked);" />Inline Quotes</label>: Show quoted post inline when clicked on<br />
+					<label class="navOptionsListItem"><input id="replyBacklinking" type=checkbox onchange="toggleFeature('replyBacklinking',this.checked);" />Post Backlinks</label>: Shows a post's replies in its header<br />
+				</p>
+			</div>
+		</div>
+	</div>
 };
 
 use constant NORMAL_FOOT_INCLUDE => include("include/footer.html").q{
@@ -246,7 +296,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if>
 						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
 					</div>
-				</div></if>
+			</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Password</div>
 				<div class="postField"><input type="password" class="postInput" id="password" name="password"/> (for post and file deletion)</div>

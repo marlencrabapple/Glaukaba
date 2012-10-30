@@ -354,7 +354,8 @@ elsif($task eq 'updatepost'){
 	my $subject=$query->param("field3");
 	my $name=$query->param("field1");
 	my $link=$query->param("field2");
-	editPost($admin,$num,$comment,$subject,$name,$link);
+	my $trip=$query->param("field1andahalf");
+	editPost($admin,$num,$comment,$subject,$name,$link,$trip);
 }
 elsif($task eq 'viewreports'){
 	my $admin=$query->param("admin");
@@ -3141,13 +3142,16 @@ sub makeEdit($$){
 }
 
 sub editPost($$$$$$){
-	my ($admin,$num,$comment,$subject,$name,$link)=@_;
+	my ($admin,$num,$comment,$subject,$name,$link,$trip)=@_;
 	my @session = check_password($admin);
-
 	make_error(S_CLASS) unless @session[1] eq 'admin';
 	
-	my $sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET comment=?,subject=?,name=?,email=? WHERE num=?") or make_error(S_SQLFAIL);
-	$sth->execute($comment,$subject,$name,$link,$num) or make_error(S_SQLFAIL);
+	$comment=~s/^\s+//;
+	$comment=~s/\s+$//;
+	$comment=~s/\n\s*/ /sg;
+	
+	my $sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET comment=?,subject=?,name=?,email=?,trip=? WHERE num=?") or make_error(S_SQLFAIL);
+	$sth->execute($comment,$subject,$name,$link,$trip,$num) or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
