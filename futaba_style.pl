@@ -11,15 +11,15 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <title><if $title><var $title> - </if><const TITLE></title>
 <link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 <style type="text/css">
-body { margin: 0; margin-bottom: auto; }
-form { margin-bottom: 0px }
-form .trap { display:none }
-.postarea table { margin: 0px auto; text-align: left }
-.reflink a { color: inherit; text-decoration: none }
-.reply .filesize { margin-left: 20px }
-.userdelete { float: right; text-align: center; white-space: nowrap }
-.replypage .replylink { display: none }
-.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+	body { margin: 0; margin-bottom: auto; }
+	form { margin-bottom: 0px }
+	form .trap { display:none }
+	.postarea table { margin: 0px auto; text-align: left }
+	.reflink a { color: inherit; text-decoration: none }
+	.reply .filesize { margin-left: 20px }
+	.userdelete { float: right; text-align: center; white-space: nowrap }
+	.replypage .replylink { display: none }
+	.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 </style>
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
@@ -36,6 +36,7 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js?<var int(rand(10000))>"></script>
 <script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
 <script type="text/javascript">
@@ -116,13 +117,14 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 <div id="topNavContainer">
 	}.include("include/header.html").q{
 	<div id="topNavRight">
-		<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">[Board Options]</a>
+		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
 	</div>
 </div>
 <div class="logo">
-<div id="image" style="padding: 0; margin: 0;"></div>
-<const TITLE>
-<p class="logoSubtitle"><const SUBTITLE></p>
+	<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const TITLE>" /></div></if>
+	<span class="title"><const TITLE></span>
+	<p class="logoSubtitle"><const SUBTITLE></p>
+	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
 <hr class="postinghr" />
 	<if !$admin><div class="denguses"><var include("include/topad.html",1)></div></if>
@@ -138,8 +140,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<title><if $title><var $title> - </if><const TITLE></title>
 		<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 		<style type="text/css">
-			body { margin: 0; padding: 8px; margin-bottom: auto;}
-			blockquote blockquote { margin-left: 0em;}
+			body { margin: 0; margin-bottom: auto; }
 			form { margin-bottom: 0px }
 			form .trap { display:none }
 			.postarea table { margin: 0px auto; text-align: left }
@@ -148,7 +149,6 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			.userdelete { float: right; text-align: center; white-space: nowrap }
 			.replypage .replylink { display: none }
 			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
-			.admNum{ font-size: 13pt; }
 		</style>
 		<loop $stylesheets>
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
@@ -228,7 +228,9 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 };
 
 use constant NORMAL_FOOT_INCLUDE => include("include/footer.html").q{
-</body></html>
+<script>//birthday(0,0);</script>
+</body>
+</html>
 };
 
 use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
@@ -285,21 +287,25 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
 							<input type="hidden" name="recaptcha_response_field" value="manual_challenge" />
 						</noscript>
+						<div class="passNotice">Glauchan Pass users can bypass this CAPTCHA. [<a href="http://<var DOMAIN>/pass/">Learn More</a>]</div>
 					</div>
 					<script type="text/javascript">document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");document.getElementById("recaptcha_response_field").removeAttribute("style");document.getElementById("recaptcha_image").setAttribute("style", "border: 1px solid #aaa!important;");document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");</script>
-				</div></if>
+					</div></if>
 			<if $image_inp><div class="postTableContainer" id="uploadField">
 					<div class="postBlock">File</div>
 					<div class="postField">
 						<input type="file" name="file" id="file" /><br />
-						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File ]</label></if>
-						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if>
-						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
+						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File]</label></if>
+						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" />Spoiler]</label></if>
+						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" />NSFW]</label></if>
 					</div>
 			</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Password</div>
-				<div class="postField"><input type="password" class="postInput" id="password" name="password"/> (for post and file deletion)</div>
+				<div class="postField">
+					<input type="password" class="postInput" id="password" name="password"/>
+					<span class="passDesc">(for post and file deletion)</span>
+				</div>
 			</div>
 			<div class="postTableContainer">
 				<div class="rules">
@@ -320,21 +326,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<div class="thread"><loop $posts>
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">
-				<div class="mobileParentPostInfo">
-					<input type="checkbox" name="delete" value="<var $num>" />
-					<span class="filetitle"><var $subject></span>
-					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
-					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
-					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-					</span>&nbsp;
-					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
-					<a href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="reportButton" id="rep<var $num>">[ ! ]</a>
-				</div>
 				<div class="hat"></div>
-				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
 					<br />
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
@@ -420,7 +413,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 					<if $image><br />
-						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
 						<if $thumbnail>
 							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
@@ -457,7 +450,14 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<label>[<input type="checkbox" name="fileonly" value="on" /> <const S_DELPICONLY>]</label>
 	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput"/>
 	<input value="<const S_DELETE>" type="submit" class="formButtom" />
+	<input value="Report" type="submit" class="formButtom" />
 	<script type="text/javascript">setDelPass();</script>
+	<div class="styleChanger">
+		Style
+		<select id="styleSelector">
+		<loop $stylesheets><option><var $title></option></loop>
+		</select>
+	</div>
 </div>
 </form>
 <div id="forJs" style="display:none"><var BOARD_DIR></div>
@@ -471,8 +471,15 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</loop>
 	<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
 	<if !$nextpage><const S_LASTPG></if>
-	</div><br />
+	</div>
 </if>
+<div id="bottomNavStatic">
+	[<loop BOARDS><a href="http://<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
+	<div style="float:right">
+		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
+		[<a href="http://<const DOMAIN>">Home</a>]
+	</div>
+</div>
 </div>
 }.NORMAL_FOOT_INCLUDE);
 

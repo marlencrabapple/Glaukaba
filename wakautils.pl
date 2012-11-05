@@ -182,20 +182,16 @@ sub do_wakabamark($;$$)
 	while(defined($_=$lines[0]))
 	{
 		# glaukaba's SUPERIOR adaptation of wordwrap2
-		if(m/[^\s]{100,}/){
-			my $i=0;
-			
-			for(split(/(.{100})/,$lines[0])){
-				if($i==1){
-					$lines[0]="$_<br />" if $_;
-				}
-				else{
-					$lines[0].="$_<br />" if $_;
-				}
-				$i++;
+		if(ADD_BREAKS==1){
+			if(m/[^\s]{100,}/){
+				my $i=0;
+				for(split(/(.{100})/,$lines[0])){
+					if($i==1){ $lines[0]="$_<br />" if $_; }
+					else{ $lines[0].="$_<br />" if $_; }
+					$i++;
+				}	
+				$lines[0]=~s/<br \/>$//;
 			}
-			
-			$lines[0]=~s/<br \/>$//;
 		}
 		
 		# convert empty lines to line breaks
@@ -1252,39 +1248,36 @@ sub make_thumbnail($$$$$$;$)
 {
 	my ($filename,$thumbnail,$nsfw,$width,$height,$quality,$convert)=@_;
 
-	# first try ImageMagick
+	# Imagemagick is only used for NSFW images because of openmp incompatibilities with low resource debian installations
 
 	my $magickname=$filename;
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 
 	$convert="convert" unless($convert);
+	
 	if($nsfw==1){
 		`$convert -background white -flatten -scale 1% -scale 2000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
 		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
+		return 1 unless($?);
 	}
 	else{
-		`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
-	}
-
-	return 1 unless($?);
-	
-	# if that fails, try pnmtools instead
-
-	if($filename=~/\.jpg$/)
-	{
-		`djpeg $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
-		# could use -scale 1/n
-		return 1 unless($?);
-	}
-	elsif($filename=~/\.png$/)
-	{
-		`pngtopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
-		return 1 unless($?);
-	}
-	elsif($filename=~/\.gif$/)
-	{
-		`giftopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
-		return 1 unless($?);
+		#`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+		if($filename=~/\.jpg$/)
+		{
+			`djpeg $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
+			# could use -scale 1/n
+			return 1 unless($?);
+		}
+		elsif($filename=~/\.png$/)
+		{
+			`pngtopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
+			return 1 unless($?);
+		}
+		elsif($filename=~/\.gif$/)
+		{
+			`giftopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
+			return 1 unless($?);
+		}
 	}
 
 	# try Mac OS X's sips

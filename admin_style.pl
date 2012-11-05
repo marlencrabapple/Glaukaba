@@ -4,16 +4,6 @@ BEGIN { require "wakautils.pl" }
 
 use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 <if $admin>
-	<div id="reportQueue" style="display: none; height: 100%; position: fixed; right: 0; float: right; padding-top: 30px; width: 360px; background-color:#f1f1f1; border-left: 1px solid grey;">
-		<div style="padding: 10px; clear: both;">
-			<div style="float:right;"><a id="closeReportQueue" href="javascript:void(0)">[ x ]</a></div>
-			<h3 style="margin: 0">Report Queue</h3>
-			[<a id="refreshReportsButton" href="javascript:void(0)">Refresh Reports</a>]
-		</div>
-		<div style="clear:both;"></div>
-		<div id="reportsContainer" style="clear:both; overflow-y:auto; overflow-x: hidden; height: 100%">
-		</div>
-	</div>
 	<div id="topNavContainer">
 		<if ($session-\>[1] eq 'mod')||($session-\>[1] eq 'admin')>
 			<div id="topNavLeft">
@@ -31,8 +21,8 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 			<strong>Logged in as:</strong> <var $session-\>[0]>
 		</div>
 	</div>
-	<div class="logo" style="margin-top: 25px; clear: both;">
-		<const TITLE>
+	<div class="logo">
+		<span class="title"><const TITLE></span>
 	</div>
 	<hr style="margin-top: 10px; margin-bottom: 20px;" />
 </if>
@@ -813,23 +803,32 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<div class="postBlock">File</div>
 					<div class="postField">
 						<input type="file" name="file" id="file" /><br />
-						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File ]</label></if>
-						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" /> Spoiler ]</label></if>
-						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" /> NSFW ]</label></if>
+						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File]</label></if>
+						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" />Spoiler]</label></if>
+						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" />NSFW]</label></if>
 					</div>
 			</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Password</div>
-				<div class="postField"><input type="password" class="postInput" id="password" name="password"/> (for post and file deletion)</div>
+				<div class="postField">
+					<input type="password" class="postInput" id="password" name="password"/>
+					<span class="passDesc">(for post and file deletion)</span>
+				</div>
 			</div>
 			<div class="postTableContainer">
 				<div class="postBlock">Options</div>
-				<div class="postField"><label>HTML<input type="checkbox" name="no_format" value="1" /></label> <label> Capcode<input type="checkbox" name="capcode" value="1" /></label></div>
+				<div class="postField">
+					<label>[<input type="checkbox" name="no_format" value="1" />HTML]</label>
+					<label>[<input type="checkbox" name="capcode" value="1" />Capcode]</label>
+				</div>
 			</div>
 			<if !$thread>
 				<div class="postTableContainer">
 				<div class="postBlock">Flags</div>
-				<div class="postField"><label>Sticky<input type="checkbox" name="sticky" value="1" /></label> <label> Lock<input type="checkbox" name="locked" value="1" /></label></div>
+				<div class="postField">
+				<label>[<input type="checkbox" name="sticky" value="1" />Sticky]</label>
+				<label>[<input type="checkbox" name="locked" value="1" />Lock]</label>
+				</div>
 			</div>
 			</if>
 		</div>
@@ -839,7 +838,6 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <hr class="postinghr" />
 <form id="delform" action="<var $self>" method="post">
 <input type="hidden" name="admin" value="<var $admin>" />
-
 <loop $threads>
 <if $thread><label>[<input type="checkbox" onchange="expandAllImages();" /> Expand Images ]</label></if>
 	<div class="thread"><loop $posts>
