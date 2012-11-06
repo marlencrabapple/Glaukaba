@@ -100,6 +100,7 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 			<p>
 				<strong>Monitoring</strong><br />
 				<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);" />Thread Updater</label>: Get new posts automatically without refreshing the page<br />
+				<label class="navOptionsListItem"><input id="expandFilename" type=checkbox onchange="toggleFeature('expandFilename',this.checked);" />Expand Filenames</label>: Expands an image's filename on mouseover<br />
 			</p>
 			<p>
 				<strong>Posting</strong><br />
@@ -127,8 +128,7 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
 <hr class="postinghr" />
-	<if !$admin><div class="denguses"><var include("include/topad.html",1)></div></if>
-<hr class="postinghr" />
+<if !$admin><div class="denguses"><var include("include/topad.html",1)></div></if>
 };
 
 use constant MINIMAL_HEAD_INCLUDE => q{
@@ -315,7 +315,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		</div>
 	</form>
 <script type="text/javascript">setPostInputs()</script></if>
-<hr class="postinghr" />
 <div class="denguses"><var include("include/middlead.html",1)></div>
 <div class="announcement">
 }.include("../announcement.html").q{
@@ -438,7 +437,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<hr />
 </loop>
 <div class="denguses"><var include("include/bottomad.html",1)></div>
-<hr />
 <if $thread>
 	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	[<a href="#">Top</a>]

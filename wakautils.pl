@@ -189,7 +189,7 @@ sub do_wakabamark($;$$)
 					if($i==1){ $lines[0]="$_<br />" if $_; }
 					else{ $lines[0].="$_<br />" if $_; }
 					$i++;
-				}	
+				}
 				$lines[0]=~s/<br \/>$//;
 			}
 		}
