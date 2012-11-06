@@ -1,15 +1,13 @@
-html,
 body {
     background: #EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-x;
-    color: #000;
-    font-family: arial, helvetica, sans-serif;
-    font-size: 10pt;
-    margin: 0;
-    padding: 0;
-    padding-left: 3px;
-    padding-right: 3px;
-    padding-top: 8px;
-    margin-bottom: 8px;
+    color: black;
+	font-family: arial,helvetica,sans-serif;
+	font-size: 10pt;
+	margin-left: 0;
+	margin-right: 0;
+	margin-top: 5px;
+	padding-left: 5px;
+	padding-right: 5px;
 }
 a,
 a:visited { color: #34345C }
@@ -80,16 +78,16 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
     background: inherit;
     margin-right: 2px;
 }
-#topNavRight {
+.topNavRight {
     float: right;
     padding: 5px;
     vertical-align: middle;
 }
-#topNavLeft {
+.topNavLeft {
     float: left;
     padding: 5px;
 }
-#topNavContainer {
+.topNavContainer {
     background: #D6DAF0;
     border-bottom: 1px solid #B7C5D9;
     color: black;
@@ -100,14 +98,17 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
     width: 100%;
     z-index: 9001;
     vertical-align: middle;
+	display:none;
 }
-#topNavContainer a { font-weight: normal }
+.topNavContainer a { font-weight: normal }
+#adminNav{
+display:block;
+}
 .logo {
     clear: both;
     color: #AF0A0F;
     text-align: center;
     width: 100%;
-    margin-top: 25px;
 }
 .title {
     font-family: Tahoma,sans-serif;
@@ -121,6 +122,9 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
     font-weight: normal;
     margin: 0;
     padding: 0;
+}
+.adminLogo{
+margin-top: 40px;
 }
 #pageNumber {
     background: #D6DAF0;
@@ -502,7 +506,7 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     display: block;
     width: 150px;
     height: 150px;
-    line-height: 126px;
+    line-height: 150px;
     opacity: .5;
     font-size: 15pt;
     font-weight: bold;
@@ -516,7 +520,6 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     display: inline-block;
     width: 150px;
     height: 150px;
-    margin: 10px;
     border: 2px solid #555555;
     border-radius: 3px 3px 3px 3px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
@@ -626,17 +629,26 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     margin-left: auto;
     margin-right: auto;
 }
+    
 #bottomNavStatic {
-    font-size: 9pt;
-    color: #89A;
-    clear: both;
     padding-top: 10px;
     padding-bottom: 3px;
 }
-#bottomNavStatic a {
-    font-weight: normal;
+
+.staticNav{
+	font-size: 9pt;
+    color: #89A;
+    clear: both;
+}
+
+.staticNav a {
+	font-weight: normal;
     padding: 1px;
     text-decoration: none;
     color: #34345C;
 }
 .styleChanger { margin-top: 5px }
+
+iframe[src="about:blank"] {
+	display: none;
+}
