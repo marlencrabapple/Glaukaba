@@ -4,9 +4,9 @@ BEGIN { require "wakautils.pl" }
 
 use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 <if $admin>
-	<div id="topNavContainer">
+	<div class="topNavContainer" id="adminNav">
 		<if ($session-\>[1] eq 'mod')||($session-\>[1] eq 'admin')>
-			<div id="topNavLeft">
+			<div class="topNavLeft">
 				<strong>Navigation:&nbsp;&nbsp;</strong>
 				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&admin=<var $admin>'">
 					<loop BOARDS>
@@ -16,12 +16,12 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 				</select>
 			</div>
 		</if>
-		<div id="topNavRight">
+		<div class="topNavRight">
 			<if $session-\>[2]>[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">New Messages</a>]</if>
 			<strong>Logged in as:</strong> <var $session-\>[0]>
 		</div>
 	</div>
-	<div class="logo">
+	<div class="logo adminLogo">
 		<span class="title"><const TITLE></span>
 	</div>
 	<hr style="margin-top: 10px; margin-bottom: 20px;" />

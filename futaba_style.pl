@@ -11,10 +11,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <title><if $title><var $title> - </if><const TITLE></title>
 <link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 <style type="text/css">
-	body { margin: 0; margin-bottom: auto; }
 	form { margin-bottom: 0px }
 	form .trap { display:none }
-	.postarea table { margin: 0px auto; text-align: left }
 	.reflink a { color: inherit; text-decoration: none }
 	.reply .filesize { margin-left: 20px }
 	.userdelete { float: right; text-align: center; white-space: nowrap }
@@ -31,12 +29,12 @@ var domain = "http://<var DOMAIN>/";
 var boardDir = "<var BOARD_DIR>";
 var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 </script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
-<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js?<var int(rand(10000))>"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
 <script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
 <script type="text/javascript">
@@ -49,23 +47,6 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
 	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
-</script>
-<script>
-	$(document).ready(function() {
-		$(".catItem").mouseenter(function () {
-			var catItem = $(this).attr("id");
-			$("#"+catItem+"Hover").fadeTo(200, 0.6, function () {
-				$("#"+catItem+"Hover").css("visibility", "visible");
-			});
-		});
-		
-		$(".catItem").mouseleave(function () {
-			var catItem = $(this).attr("id");
-			$("#"+catItem+"Hover").fadeTo(200, 0, function () {
-				$("#"+catItem+"Hover").css("visibility", "hidden");
-			});
-		});
-	});
 </script>
 </head>
 <if $thread><body class="replypage"></if>
@@ -86,6 +67,7 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 				<strong>General Enhancements</strong><br />
 				<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);" />Comment Expansion</label>: Expands truncated comments<br />
 				<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);" />Thread Expansion</label>: View all replies without changing pages<br />
+				<label class="navOptionsListItem"><input id="fixedNav" type=checkbox onchange="toggleFeature('fixedNav',this.checked);" />Fixed Navigation</label>: Pins navigation to the top of the page even when scrolling<br />
 			</p>
 			<p>
 				<strong>Filtering</strong><br />
@@ -115,9 +97,16 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 		</div>
 	</div>
 </div>
-<div id="topNavContainer">
+<div id="topNavStatic" class="staticNav">
+	[<loop BOARDS><a href="http://<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
+	<div style="float:right">
+		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
+		[<a href="http://<const DOMAIN>">Home</a>]
+	</div>
+</div>
+<div class="topNavContainer">
 	}.include("include/header.html").q{
-	<div id="topNavRight">
+	<div class="topNavRight">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
 	</div>
 </div>
@@ -364,8 +353,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 							</div>
 						</div>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a>
+						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 				</span>
@@ -407,8 +396,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 							</div>
 						</div>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a>
+						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 					<if $image><br />
@@ -471,7 +460,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<if !$nextpage><const S_LASTPG></if>
 	</div>
 </if>
-<div id="bottomNavStatic">
+<div id="bottomNavStatic" class="staticNav">
 	[<loop BOARDS><a href="http://<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
 	<div style="float:right">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
@@ -562,6 +551,23 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </div>
 <hr />
 <div class="denguses"><var include("include/bottompad.html",1)></div>
+<script>
+	$(document).ready(function() {
+		$(".catItem").mouseenter(function () {
+			var catItem = $(this).attr("id");
+			$("#"+catItem+"Hover").fadeTo(200, 0.6, function () {
+				$("#"+catItem+"Hover").css("visibility", "visible");
+			});
+		});
+		
+		$(".catItem").mouseleave(function () {
+			var catItem = $(this).attr("id");
+			$("#"+catItem+"Hover").fadeTo(200, 0, function () {
+				$("#"+catItem+"Hover").css("visibility", "hidden");
+			});
+		});
+	});
+</script>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
