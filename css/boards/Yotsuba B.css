@@ -6,8 +6,8 @@ body {
 	margin-left: 0;
 	margin-right: 0;
 	margin-top: 5px;
-	padding-left: 5px;
-	padding-right: 5px;
+	margin-left: 8px;
+	margin-right: 8px;
 }
 a,
 a:visited { color: #34345C }
@@ -67,6 +67,17 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
     overflow: hidden;
 }
 .mobileParentPostInfo { display: none }
+.reportedReply{
+	background: #FBB;
+    color: #000;
+	border: 3px dashed red;
+}
+.reportedParent{
+	background: #FBB;
+    color: #000;
+	border: 3px dashed red;
+	display: inline-block;
+}
 #quickReply {
     top: 0;
     right: 0;
@@ -219,6 +230,7 @@ div.postBlock {
     padding-bottom: 10px;
     padding-top: 4px;
     color: black;
+	clear:both;
 }
 .passvalid {
     background: #E04000;

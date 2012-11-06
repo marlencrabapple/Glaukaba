@@ -2908,8 +2908,7 @@ sub makeInbox($){
 
 sub makeThread($$){
 	my ($admin,$thread)=@_;
-	my ($sth,$row,@thread);
-	#my ($filename,$tmpname);
+	my ($sth,$row,@thread,@postnumbers,@reportedposts);
 
 	my @session = check_password($admin);
 	
@@ -2917,12 +2916,31 @@ sub makeThread($$){
 	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
 
 	while($row=get_decoded_hashref($sth)) { push(@thread,$row); }
+	
+	# incredibly inefficient report stuff
+	foreach my $post (@thread){
+		push @postnumbers, $$post{num};
+	}
+	
+	my $statement = "SELECT * FROM ".SQL_REPORT_TABLE." WHERE postnum IN (" . join( ',', map { "?" } @postnumbers ) . ") ORDER BY num DESC";
+	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
+	$sth->execute(@postnumbers) or make_error($dbh->errstr);
+	
+	while($row=get_decoded_hashref($sth)){
+		push(@reportedposts,$row);
+	}
+	
+	foreach my $post (@thread){
+		foreach my $reportedpost (@reportedposts){
+			if($$reportedpost{postnum}==$$post{num}){
+				$$post{reported}=1;
+			}
+		}
+	}
 
 	make_error(S_NOTHREADERR) if($thread[0]{parent});
-
-	#$filename=RES_DIR.$thread.PAGE_EXT;
-	
 	make_http_header();
+	
 	print encode_string(ADMIN_PAGE_TEMPLATE->(
 		thread=>$thread,
 		postform=>(ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES),
@@ -2934,10 +2952,9 @@ sub makeThread($$){
 		session=>\@session));
 }
 
-# I guessed my way through this
 sub makePage($$){
 	my ($admin,$page)=@_;
-	my ($sth,$row,@threads,$total,$filename);
+	my ($sth,$row,@threads,$total,$filename,@postnumbers);
 	my @session = check_password($admin);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." ORDER BY sticky DESC,lasthit DESC,CASE parent WHEN 0 THEN num ELSE parent END ASC,num ASC") or make_error(S_SQLFAIL);
@@ -2959,9 +2976,22 @@ sub makePage($$){
 		{
 			push @thread,$row;
 		}
+		
+		push @postnumbers,$$row{num};
 	}
 	push @threads,{posts=>[@thread]};
+	
+	# grabs reported posts
+	my $statement = "SELECT * FROM ".SQL_REPORT_TABLE." WHERE postnum IN (" . join( ',', map { "?" } @postnumbers ) . ") ORDER BY num DESC";
+	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
+	$sth->execute(@postnumbers) or make_error($dbh->errstr);
+	
+	my @reportedposts;
 
+	while($row=get_decoded_hashref($sth)){
+		push @reportedposts, $row;
+	}
+	
 	my $total=get_page_count(scalar @threads);
 	my @pagethreads;
 	
@@ -2991,12 +3021,15 @@ sub makePage($$){
 		$$thread{omit}=$replies-$curr_replies;
 		$$thread{omitimages}=$images-$curr_images;
 
-		# abbreviate the remaining posts
-		foreach my $post (@{$$thread{posts}})
-		{
+		# abbreviate the remaining posts and append report status
+		foreach my $post (@{$$thread{posts}}){
+			foreach my $reportedpost (@reportedposts){
+				if($$reportedpost{postnum}==$$post{num}){
+					$$post{reported}=1;
+				}
+			}
 			my $abbreviation=abbreviate_html($$post{comment},MAX_LINES_SHOWN,APPROX_LINE_LENGTH);
-			if($abbreviation)
-			{
+			if($abbreviation){
 				$$post{comment}=$abbreviation;
 				$$post{abbrev}=1;
 			}
@@ -3013,18 +3046,12 @@ sub makePage($$){
 		if($$p{page}==$page) { $$p{current}=1 } # current page, no link
 	}
 
-	#my ($prevpage,$nextpage);
-	#$prevpage=$pages[$page-1]{filename} if($page!=0);
-	#$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
-
 	make_http_header();
 	
 	print encode_string(ADMIN_PAGE_TEMPLATE->(
 		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
 		image_inp=>ALLOW_IMAGES,
 		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),
-		#prevpage=>$prevpage,
-		#nextpage=>$nextpage,
 		pages=>\@pages,
 		admin=>$admin,
 		session=>\@session,

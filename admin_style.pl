@@ -842,7 +842,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <if $thread><label>[<input type="checkbox" onchange="expandAllImages();" /> Expand Images ]</label></if>
 	<div class="thread"><loop $posts>
 		<if !$parent>
-			<div class="parentPost" id="parent<var $num>">
+			<div class="parentPost<if $reported> reportedParent</if>" id="parent<var $num>">
 				<div class="hat"></div>
 				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
@@ -866,7 +866,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
 					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
-					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
+					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
@@ -899,7 +899,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			</span></if></if>
 		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
 				<div class="doubledash">&gt;&gt;</div>
-				<div class="reply" id="reply<var $num>">
+				<div class="reply<if $reported> reportedReply</if>" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
 					<span class="replytitle"><var $subject></span>
