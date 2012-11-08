@@ -64,26 +64,23 @@ use constant ADMIN_POST_BUTTONS_TEMPLATE => q{
 	<if $permasage>[<a href="<var $self>?admin=<var $admin>&amp;task=permasage&amp;num=<var $num>&amp;jimmies=rustled" title="Toggle Permasage">-PS</a>]</if>
 	<if !$permasage>[<a href="<var $self>?admin=<var $admin>&amp;task=permasage&amp;num=<var $num>&amp;jimmies=unrustled" title="Toggle Permasage">PS</a>]</if>
 </if>
+<if $reported>[<a href="<var $self>?admin=<var $admin>&amp;task=viewreport&amp;num=<var $num>" title="View detailed report information for this post">View Report</a>]</if>
 };
 
 use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-
 <div align="center"><form id="login" action="<var $self>" method="post">
 <input type="hidden" name="task" value="admin" />
 <input type="hidden" name="nexttask" value="mpanel" />
-Username
-<input type="text" name="user" size="8" value="" /><br />
-Password
-<input type="password" name="berra" size="8" value="" /><br />
-<label><input type="checkbox" name="savelogin" /> <const S_MANASAVE></label>
-<br />
-<input type="submit" value="<const S_MANASUB>" />
-</form></div>
+<table style="border-spacing: 2px"><tbody>
+<tr><td><strong>Username </strong></td><td style="text-align: right"><input type="text" name="user" size="9" value="" /></td></tr>
+<tr><td><strong>Password </strong></td><td style="text-align: right"><input type="password" name="berra" size="9" value="" /></td></tr>
+<tr><td colspan=2><label><input type="checkbox" name="savelogin" /> Remember me</label></td></tr>
+<tr><td colspan=2><input type="submit" value="Login" /></td></tr>
+</table></tbody>
+</form><br /></div>
 }.NORMAL_FOOT_INCLUDE);
 
-
 use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-
 <form action="<var $self>" method="post">
 <input type="hidden" name="task" value="delete" />
 <input type="hidden" name="admin" value="<var $admin>" />

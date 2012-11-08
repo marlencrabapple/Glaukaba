@@ -299,7 +299,6 @@ elsif($task eq 'setnewpass'){
 elsif($task eq 'composemsg'){
 	my $admin=$query->param("admin");
 	my $parentmsg=$query->param("replyto");
-	
 	makeComposeMessage($admin,$parentmsg);
 }
 elsif($task eq 'sendmsg'){
@@ -626,6 +625,12 @@ sub build_cache_page($$@)
 		my $curr_replies=$replies;
 		my $curr_images=$images;
 		my $max_replies=REPLIES_PER_THREAD;
+		
+		# only display one reply if the thread is stickied
+		if($$parent{sticky}==1){
+			$max_replies=1;
+		}
+		
 		my $max_images=(IMAGE_REPLIES_PER_THREAD or $images);
 		
 		# get staff posts
@@ -1280,18 +1285,33 @@ sub format_comment($)
 	my ($comment)=@_;
 
 	# hide >>1 references from the quoting code
-	$comment=~s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
+	#$comment=~s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
+	$comment=~s/&gt;&gt;(?:&(gt);(\/[A-Za-z0-9-]+\/))?([0-9\-]+)?/&gtgt$1;$2$3/g; # fixed for cross-board linking
 
 	my $handler=sub # fix up >>1 references
 	{
 		my $line=shift;
+		
+		# Cross-board post citation
+		$line=~s!&gtgtgt;/([A-Za-z0-9-]+)/([0-9]+)!
+			my $res=get_cb_post($1,$2);
+			if($res) { '<a href="'.get_cb_reply_link($1,$$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;&gt;/'.$1.'/'.$2.'</a>' }
+			else { "<span class=\"quote\">&gt;&gt;&gt;/$1/$2</span>"; }
+		!ge;
+		
+		# Cross-board link
+		$line=~s!&gtgtgt;/([A-Za-z0-9-]+)/!
+			if(table_exists($1."_comments")) { '<a href="http://'.DOMAIN.'/'.$1.'/" class="postlink">&gt;&gt;&gt;/'.$1.'/</a>' }
+			else { "<span class=\"quote\">&gt;&gt;&gt;/$1/</span>"; }
+		!ge;
 
+		# Normal post citation
 		$line=~s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
 			if($res) { '<a href="'.getPrintedReplyLink($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
-			else { "&gt;&gt;$1"; }
+			else { "<span class=\"quote\">&gt;&gt;$1</span>"; }
 		!ge;
-
+		
 		return $line;
 	};
 
@@ -1299,7 +1319,7 @@ sub format_comment($)
 	else { $comment="<p>".simple_format($comment,$handler)."</p>" }
 
 	# restore >>1 references hidden in code blocks
-	$comment=~s/&gtgt;/&gt;&gt;/g;
+	$comment=~s/&gtgt(gt)?;/'&gt;&gt;'.($1?'&gt;':'')/ge;
 	
 	my $blocktag=0;
 	
@@ -1415,6 +1435,19 @@ sub get_post($)
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($thread) or make_error(S_SQLFAIL);
+
+	return $sth->fetchrow_hashref();
+}
+
+sub get_cb_post($$)
+{
+	my ($board,$thread)=@_;
+	my ($sth);
+
+	return if $board=~/[^A-Za-z0-9-]/;
+
+	$sth=$dbh->prepare("SELECT num, parent FROM ? WHERE num=?;") or return;
+	$sth->execute($board,$thread) or return;
 
 	return $sth->fetchrow_hashref();
 }
@@ -1620,7 +1653,7 @@ sub delete_stuff($$$$@)
 
 	# no password means delete always
 	$password="" if($admin);
-	$archive = 0 unless($admin); # security fix (august 2012)
+	$archive = 0 unless($admin); # security fix
 
 	foreach $post (@posts)
 	{
@@ -1749,8 +1782,6 @@ sub delete_post($$$$)
 			}
 		}
 	}
-	# Trying to figure out how this function isn't a gigantic security hole.
-	# GOOD NEWS! I figured it out! Apparently prepared statements are a magical thing that no one but WAHA knows about.
 	#make_error($post);
 }
 
@@ -2001,7 +2032,6 @@ sub do_rebuild_cache($)
 
 	my @session = check_password($admin);
 	
-	# testing permissions system
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
 	}
@@ -2034,7 +2064,6 @@ sub add_admin_entry($$$$$$)
 
 	my @session = check_password($admin);
 	
-	# testing permissions system
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
 	}
@@ -2067,7 +2096,6 @@ sub remove_admin_entry($$)
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
 	}
-	
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_ADMIN_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -2258,6 +2286,15 @@ sub getPrintedReplyLink($$){
 
 	return expand_filename(RES_DIR.$parent).'#'.$reply if($parent);
 	return expand_filename(RES_DIR.$reply);
+}
+
+sub get_cb_reply_link($$$)
+{
+	my ($board,$reply,$parent)=@_;
+
+	return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
+	return expand_filename("../$board/".RES_DIR.$parent).'#'.$reply if($parent);
+	return expand_filename("../$board/".RES_DIR.$reply);
 }
 
 sub get_page_count(;$)
@@ -2874,7 +2911,7 @@ sub sendMessage($$$$$$){
 	$sth->execute($to) or make_error(S_SQLFAIL);
 	
 	if($isnote){
-		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT) unless $isnote==2;
+		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT) unless $isnote==2; # if it equals two its probably a ban request
 	}
 	else{
 		make_http_forward(get_script_name()."?admin=$admin&task=inbox",ALTERNATE_REDIRECT);
@@ -2891,7 +2928,7 @@ sub makeInbox($){
 	
 	while($row=get_decoded_hashref($sth))
 	{
-		if (($$row{fromuser} eq @session[0])&&($$row{lasthit}>$$row{timestamp})){
+		if(($$row{fromuser} eq @session[0])&&($$row{lasthit}>$$row{timestamp})){
 			push @messages,$row;
 		}
 		elsif($$row{touser} eq @session[0]){
@@ -3006,6 +3043,12 @@ sub makePage($$){
 		my $curr_replies=$replies;
 		my $curr_images=$images;
 		my $max_replies=REPLIES_PER_THREAD;
+		
+		# only display one reply if the thread is stickied
+		if($$parent{sticky}==1){
+			$max_replies=1;
+		}
+		
 		my $max_images=(IMAGE_REPLIES_PER_THREAD or $images);
 
 		# drop replies until we have few enough replies and images
