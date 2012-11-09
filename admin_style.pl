@@ -380,7 +380,7 @@ use constant SQL_INTERFACE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 }.NORMAL_FOOT_INCLUDE);
 
-use constant REPORTS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+use constant REPORTS_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div class="dellist">Report Queue</div>
 <if !$posts>
 There are zero reported posts!
@@ -408,6 +408,7 @@ There are zero reported posts!
 			</div>
 		</div>
 		<div class="reportOptions">
+			[<a href="<var $self>?task=viewreport&amp;num=<var $num>&amp;admin=<var $admin>">More info</a>]
 			[<a href="<var $self>?task=dismiss&amp;num=<var $num>&amp;admin=<var $admin>">Dismiss</a>]
 			<if $session-\>[1] eq 'janitor'>[<a href="<var $self>?task=requestban&amp;num=<var $num>&amp;admin=<var $admin>">Request Ban</a>]</if>
 			}.ADMIN_POST_BUTTONS_TEMPLATE.q{
@@ -417,8 +418,85 @@ There are zero reported posts!
 </loop>
 }.NORMAL_FOOT_INCLUDE);
 
-use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+use constant REPORT_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<strong>
+	Displaying report details for <a href="">/<const BOARD_DIR>/<var $num></a>.<br />
+	[<a href="">Return</a>]<br/ >
+	<br/ >
+	Report Statistics:
+</strong>
+<table class="reportstats">
+	<tbody>
+		<tr>
+			<td class="reportblock">Total Reports</td>
+			<td class="reportright"><var $total></td>
+		</tr>
+		<tr>
+			<td class="reportblock">Reported 'spam'</td>
+			<td class="reportright"><var $$reports[0]{spam}></td>
+		</tr>
+		<tr>
+			<td class="reportblock">Reported 'illegal'</td>
+			<td class="reportright"><var $$reports[0]{illegal}></td>
+		</tr>
+		<tr>
+			<td class="reportblock">Reported 'rule vio.'</td>
+			<td class="reportright"><var $$reports[0]{vio}></td>
+		</tr>
+		<tr>
+			<td class="reportblock">Last reported</td>
+			<td class="reportright"><var make_date $last,DATE_STYLE></td>
+		</tr>
+		<tr>
+			<td class="reportblock">First reported</td>
+			<td class="reportright"><var make_date $first,DATE_STYLE></td>
+		</tr>
+	</tbody>
+</table>
+<br/ >
+<strong>Actions:</strong><br />
+[<a href="">Escalate</a>] [<a href="">Request Ban</a>] [<a href="">Dismiss Reports</a>]
+<br /><br />
+<strong>Post:</strong>
+<loop $post>
+<div class="replyContainer" id="replyContainer<var $num>">
+	<div class="reply<if $reported> reportedReply</if>" id="reply<var $num>">
+		<a id="<var $num>"></a>
+		<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
+			<span class="replytitle"><var $subject></span>
+			<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+			<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+			<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+			<span class="reflink">
+			<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
+			<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
+			}.ADMIN_POST_BUTTONS_TEMPLATE.q{
+		</div>
+		<if $image><br />
+			<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+			-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
+			<if $thumbnail>
+				<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
+					<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+			</if>
+			<if !$thumbnail>
+				<if DELETED_THUMBNAIL>
+					<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
+					<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb" /></a>
+				</if>
+				<if !DELETED_THUMBNAIL>
+					<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+				</if></if></if>
+		<blockquote<if $email=~/aa$/i> class="aa"</if>>
+			<var $comment>
+		</blockquote>
+	</div>
+</div>
+</loop>
+<br /><br />
+}.NORMAL_FOOT_INCLUDE);
 
+use constant ADMIN_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div align="center"><em><const S_NOTAGS></em><br /></div>
 
 <div class="postarea">
@@ -629,7 +707,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		</tbody></table></form></div>
 </fieldset>
 
-<fieldset><legend>Posts</legend>
+<fieldset><legend>Posts [<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>">Delete All</a>]</legend>
 <div class="thread"><loop $posts>
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">

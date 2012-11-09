@@ -362,7 +362,8 @@ elsif($task eq 'viewreports'){
 }
 elsif($task eq 'viewreport'){
 	my $admin=$query->param("admin");
-	make_error("Not yet implemented");
+	my $num=$query->param("num");
+	makeReportPage($num,$admin);
 }
 elsif($task eq 'requestban'){
 	my $admin=$query->param("admin");
@@ -422,7 +423,9 @@ sub makeReportForm($$){
 
 sub report($$$){
 	my ($num,$board,$reason)=@_;
-	my ($sth,$index,$row,$vio,$spam,$illegal);
+	my ($sth,$index,$row,$vio,$spam,$illegal,$parent,$post,$time);
+	
+	$time=time();
 	
 	my %reasons = ("vio","Rule violation","illegal","Illegal content","spam","Spam/advertising/flooding");
 
@@ -430,11 +433,17 @@ sub report($$$){
 	make_error("Invalid Board") unless($board eq BOARD_DIR); # will replace with global board list soon
 	make_error("Invalid Reason") unless($reason=~m/(vio|illegal|spam)/);
 	
+	# check if post exists and if its reportable
+	$post = get_post($num);
+	make_error("Could not find post.") unless $post;
+	make_error("You can't report a sticky.") if $$post{sticky} and !$$post{parent};
+	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=?;") or make_error(S_SQLFAIL);
 	$sth->execute(BOARD_DIR,$num) or make_error(S_SQLFAIL);
 	$index=0;
 	
 	while($row=get_decoded_hashref($sth)){
+		if($index==0) { $parent=$$row{num} }
 		$index++;
 		$vio=$$row{vio};
 		$spam=$$row{spam};
@@ -445,13 +454,28 @@ sub report($$$){
 	$spam++ if $reason eq 'spam';
 	$illegal++ if $reason eq 'illegal';
 	
+	#"num ".get_sql_autoincrement().",".
+	#"postnum INTEGER,".
+	#"parent TINYINT,".
+	#"board TEXT,".
+	#"fromip TEXT,".
+	#"timestamp INTEGER,".
+	#"vio TINYINT,".
+	#"spam TINYINT,".
+	#"illegal TINYINT".
+	
 	if($index==0){
-		$sth=$dbh->prepare("INSERT INTO ".SQL_REPORT_TABLE." VALUES(null,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
-		$sth->execute($num,BOARD_DIR,IP_VAR,$vio,$spam,$illegal) or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("INSERT INTO ".SQL_REPORT_TABLE." VALUES(null,?,null,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+		$sth->execute($num,BOARD_DIR,IP_VAR,$time,$vio,$spam,$illegal) or make_error(S_SQLFAIL);
 	}
 	else{
-		$sth=$dbh->prepare("UPDATE ".SQL_REPORT_TABLE." SET vio=?,spam=?,illegal=?,fromip=? WHERE postnum=?;") or make_error($dbh->errstr);
-		$sth->execute($vio,$spam,$illegal,IP_VAR,$num) or make_error("2");
+		# update original/parent report
+		$sth=$dbh->prepare("UPDATE ".SQL_REPORT_TABLE." SET vio=?,spam=?,illegal=? WHERE postnum=?;") or make_error($dbh->errstr);
+		$sth->execute($vio,$spam,$illegal,$num) or make_error(S_SQLFAIL);
+		
+		# add a child report with the "unique" data
+		$sth=$dbh->prepare("INSERT INTO ".SQL_REPORT_TABLE." VALUES(null,?,?,?,?,?,null,null,null);") or make_error(S_SQLFAIL);
+		$sth->execute($num,$parent,BOARD_DIR,IP_VAR,$time) or make_error(S_SQLFAIL);
 	}
 	
 	make_http_forward('javascript:window.close();',1);
@@ -505,7 +529,7 @@ sub makeReportsList($){
 	my @session = check_password($admin);
 	my ($sth,$row,$lastnum,$lastrow,$index,$statement,@reportedposts,@reports,@posts);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND (parent IS NULL) ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
 	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
@@ -537,15 +561,52 @@ sub makeReportsList($){
 	}
 	
 	make_http_header();
-	print encode_string(REPORTS_TEMPLATE->(
+	print encode_string(REPORTS_PAGE_TEMPLATE->(
 		admin=>$admin,
 		session=>\@session,
 		posts=>\@posts
 	));
 }
 
-sub makeReportPage(){
+sub makeReportPage($$){
+	my ($num,$admin)=@_;
+	my @session = check_password($admin);
+	my ($sth,$row,@post,@reports,$first,$last,$iplist,$total);
 	
+	# grab all reports for the post and prepare some data
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=? ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR,$num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @reports, $row;
+		$$row{vio}=0 unless $$row{vio};
+		$$row{spam}=0 unless $$row{spam};
+		$$row{illegal}=0 unless $$row{illegal};
+		$iplist.=$$row{fromip}.', ';
+	}
+	
+	$first = $reports[0]{timestamp};
+	if((scalar @reports)==1) { $last=$first } else { $last = $reports[((scalar @reports) - 1)]{timestamp} }
+	$total = $reports[0]{vio} + $reports[0]{illegal} + $reports[0]{spam};
+	
+	# grab the post without get_post() to make modifying the template easier
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)) { push @post, $row }
+	
+	make_http_header();
+	print encode_string(REPORT_PAGE_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		post=>\@post,
+		first=>$first,
+		last=>$last,
+		iplist=>$iplist,
+		total=>$total,
+		reports=>\@reports,
+		num=>$num
+	));
 }
 
 #
@@ -1713,6 +1774,10 @@ sub delete_post($$$$)
 			# remove post and possible replies
 			$sth=$dbh->prepare("DELETE FROM ".SQL_TABLE." WHERE num=? OR parent=?;") or make_error(S_SQLFAIL);
 			$sth->execute($post,$post) or make_error(S_SQLFAIL);
+			
+			# remove reports associated with the post
+			$sth=$dbh->prepare("DELETE FROM ".SQL_REPORT_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
+			$sth->execute($post,BOARD_DIR) or make_error(S_SQLFAIL);
 		}
 		else # remove just the image and update the database
 		{
@@ -2446,8 +2511,10 @@ sub initReportDatabase(){
 
 	"num ".get_sql_autoincrement().",".
 	"postnum INTEGER,".
+	"parent TINYINT,".
 	"board TEXT,".
 	"fromip TEXT,".
+	"timestamp INTEGER,".
 	"vio TINYINT,".
 	"spam TINYINT,".
 	"illegal TINYINT".
@@ -3019,7 +3086,7 @@ sub makePage($$){
 	push @threads,{posts=>[@thread]};
 	
 	# grabs reported posts
-	my $statement = "SELECT * FROM ".SQL_REPORT_TABLE." WHERE postnum IN (" . join( ',', map { "?" } @postnumbers ) . ") ORDER BY num DESC";
+	my $statement = "SELECT * FROM ".SQL_REPORT_TABLE." WHERE (parent IS NULL) AND postnum IN (" . join( ',', map { "?" } @postnumbers ) . ") ORDER BY num DESC";
 	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
 	$sth->execute(@postnumbers) or make_error($dbh->errstr);
 	
