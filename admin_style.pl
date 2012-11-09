@@ -40,8 +40,8 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		[<a href="<var $self>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
 		[<a href="<var $self>?task=sql&amp;admin=<var $admin>"><const S_MANASQLINT></a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
-		[<a href="<var $self>?task=manageusers&amp;admin=<var $admin>">Manage Users</a>]
 	</if>
+	[<a href="<var $self>?task=manageusers&amp;admin=<var $admin>"><if $session-\>[1] eq 'admin'>Manage Users</if><if $session-\>[1] ne 'admin'>User List</if></a>]
 	[<a href="<var $self>?task=changepass&amp;admin=<var $admin>&user=<var $session-\>[0]>">Change Password</a>]
 	[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">Inbox</a>]
 	[<a id="reportQueueButton" href="<var $self>?task=viewreports&amp;admin=<var $admin>"><const S_REPORTS></a>]
@@ -544,25 +544,33 @@ use constant MANAGE_USERS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<table align="center" id="threadList" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">Username</td><td class="listHead">Email</td><td class="listHead">Class</td><td class="listHead">Last Session</td><td class="listHead">Options</td></thead>
 	<tbody>
 	<loop $users>
-		<tr class="listRow"><td class="listCol"><var $user></td><td class="listCol"><var $email></td><td><var $class></td><td class="listCol"><var $lastip> on <var make_date($lastdate,tiny)></td><td class="listCol">
-		<a href="<var $self>?admin=<var $admin>&amp;task=changepass&amp;user=<var $user>">[Edit]</a>
-		<a href="<var $self>?admin=<var $admin>&amp;task=removeuser&amp;user=<var $user>">[Remove]</a></td></tr>
+		<tr class="listRow"><td class="listCol"><var $user></td><td class="listCol"><var $email></td><td><var $class></td><td class="listCol"><if $session-\>[1] eq 'admin'><var $lastip> on </if><var make_date($lastdate,tiny)></td><td class="listCol">
+		<if $session-\>[1] eq 'admin'>[<a href="<var $self>?admin=<var $admin>&amp;task=edituser&amp;user=<var $user>">Edit</a>]
+		[<a href="<var $self>?admin=<var $admin>&amp;task=removeuser&amp;user=<var $user>">Remove</a>]</if>
+		[<a href="<var $self>?admin=<var $admin>&amp;task=composemsg&amp;to=<var $user>">Send Message</a>]
+		</td></tr>
 	</loop>
 	<tr><td><br/></td></tr>
-	<tr><td colspan="5">[<a href="<var $self>?task=register&amp;admin=<var $admin>">Add User</a>]</td></tr>
+	<if $session-\>[1] eq 'admin'><tr><td colspan="5">[<a href="<var $self>?task=register&amp;admin=<var $admin>">Add User</a>]</td></tr></if>
 	<tbody></table>
 }.NORMAL_FOOT_INCLUDE);
 
-use constant CHANGE_PASS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-<div align="center"><em>Changing password for <if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if></em></div>
-	<div class="postarea"><form id="changePass" action="<var $self>" method="post" enctype="multipart/form-data">
-		<table><tbody><input type="hidden" name="task" value="setnewpass" />
-		<input type="hidden" name="admin" value="<var $admin>" />
-		<input type="hidden" name="user" value="<if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if>" />
-		<tr><td class="postBlock">Old Pass</td><td><input type="password" name="oldpass" size="28" /></td></tr>
-		<tr><td class="postBlock">New Pass</td><td><input type="password" name="newpass" size="28" /></td></tr>
-		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
-	</tbody></table></form></div>
+use constant EDIT_USER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<div align="center"><em>Editing details for <if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if></em></div>
+<div class="postarea"><form id="changePass" action="<var $self>" method="post" enctype="multipart/form-data">
+	<table><tbody><input type="hidden" name="task" value="setnewpass" />
+	<input type="hidden" name="admin" value="<var $admin>" />
+	<input type="hidden" name="user" value="<if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if>" />
+	<tr><td class="postBlock">Email</td><td><input name="email" value="<var $$userinfo{email}>" size="28" /></td></tr>
+	<if $session-\>[1] eq 'admin'><tr><td class="postBlock">Class</td><td><select name="class">
+		<option value="janitor">Janitor</option>
+		<option value="mod">Moderator</option>
+		<option value="admin">Administrator</option>
+	</select></td></tr></if>
+	<tr><td class="postBlock">Old Pass</td><td><input <if (($session-\>[1] eq 'admin') and ($session-\>[1] ne $user))>disabled="disabled"</if> type="password" name="oldpass" size="28" /></td></tr>
+	<tr><td class="postBlock">New Pass</td><td><input type="password" name="newpass" size="28" /></td></tr>
+	<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+</tbody></table></form></div>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant COMPOSE_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
@@ -571,7 +579,7 @@ use constant COMPOSE_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q
 		<table><tbody><input type="hidden" name="task" value="sendmsg" />
 		<input type="hidden" name="admin" value="<var $admin>" />
 		<if $parentmsg><input type="hidden" name="replyto" value="<var $parentmsg>" /><tr><td class="postBlock">Reply To</td><td><input type="text" name="replyto" disabled="true" value="<var $parentmsg>" /></td></tr></if>
-		<if !$parentmsg><tr><td class="postBlock">To</td><td><input type="text" name="to" size="28" /></td></tr></if>
+		<if !$parentmsg><tr><td class="postBlock">To</td><td><input type="text" name="to" value="<var $to>" size="28" /></td></tr></if>
 		<tr><td class="postBlock">Message</td><td><textarea name="message" cols="48" rows="4"></textarea></td></tr>
 		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
 	</tbody></table></form></div>

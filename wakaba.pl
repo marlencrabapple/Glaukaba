@@ -284,22 +284,25 @@ elsif($task eq 'removeuser'){
 	my $user=$query->param("user");
 	removeUser($user,$admin);
 }
-elsif($task eq 'changepass'){
+elsif($task eq 'edituser'){
 	my $admin=$query->param("admin");
 	my $user=$query->param("user");
-	makeChangePass($admin,$user);
+	makeEditUser($admin,$user);
 }
 elsif($task eq 'setnewpass'){
 	my $admin=$query->param("admin");
 	my $user=$query->param("user");
 	my $oldpass=$query->param("oldpass");
 	my $newpass=$query->param("newpass");
-	setNewPass($user,$oldpass,$newpass,$admin);
+	my $email=$query->param("email");
+	my $class=$query->param("class");
+	updateUserDetails($user,$oldpass,$newpass,$email,$class,$admin);
 }
 elsif($task eq 'composemsg'){
 	my $admin=$query->param("admin");
 	my $parentmsg=$query->param("replyto");
-	makeComposeMessage($admin,$parentmsg);
+	my $to=$query->param("to");
+	makeComposeMessage($admin,$parentmsg,$to);
 }
 elsif($task eq 'sendmsg'){
 	my $admin=$query->param("admin");
@@ -2891,7 +2894,7 @@ sub removeUser($$){
 	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
 }
 
-sub makeChangePass(??){
+sub makeEditUser(??){
 	my ($admin,$user)=@_;
 	my @session = check_password($admin);
 	
@@ -2900,60 +2903,57 @@ sub makeChangePass(??){
 		if (@session[0] ne $user){ make_error("ya turkey")};
 	}
 	
+	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+	$sth->execute($user) or make_error(S_SQLFAIL);
+	my $dengus=get_decoded_hashref($sth);
+	
 	make_http_header();
-	if($user){print encode_string(CHANGE_PASS_TEMPLATE->(admin=>$admin,user=>$user,session=>\@session));}
-	else {print encode_string(CHANGE_PASS_TEMPLATE->(admin=>$admin,user=>@session[0],session=>\@session));}
+	if($user) { print encode_string(EDIT_USER_TEMPLATE->(admin=>$admin,user=>$user,session=>\@session,userinfo=>$dengus)) }
+	else { print encode_string(EDIT_USER_TEMPLATE->(admin=>$admin,user=>@session[0],session=>\@session,userinfo=>$dengus)) }
 }
 
-sub setNewPass(????){
-	my ($user,$oldpass,$newpass,$admin)=@_;
+sub updateUserDetails(??????){
+	my ($user,$oldpass,$newpass,$email,$class,$admin)=@_;
 	my @session = check_password($admin);
 	my ($sth);
 	
 	$oldpass=clean_string(decode_string($oldpass,CHARSET));
 	$newpass=clean_string(decode_string($newpass,CHARSET));
 	$user=clean_string(decode_string($user,CHARSET));
+	$email=clean_string(decode_string($email,CHARSET));
+	$class=clean_string(decode_string($class,CHARSET));
 	
-	if (@session[1] ne "admin"){
-		if (@session[0] ne $user){ make_error("ya turkey")};
-		
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
-		$sth->execute($user) or make_error(S_SQLFAIL);
-		my $dengus=get_decoded_hashref($sth);
-		
-		if ($$dengus{pass} ne $oldpass){make_error("ya turkey");}
-		
-		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=? WHERE user=?") or make_error(S_SQLFAIL);
-		$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
-		
-		make_http_forward(get_script_name()."?admin=$admin&task=logout",ALTERNATE_REDIRECT);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+	$sth->execute($user) or make_error(S_SQLFAIL);
+	my $dengus=get_decoded_hashref($sth);
+	
+	if(@session[1] eq "admin"){
+		# protect admins from other admins (if there are other admins for whatever reason)
+		if(($$dengus{class} eq "admin") and ($$dengus{user} ne @session[0])) { make_error("ya turkey") }
+		elsif(($newpass ne $$dengus{pass}) and ($$dengus{user} eq @session[0])) { make_error("ya turkey") } # don't let admins change own password without entering their old pass
+	}
+	else{
+		if($$dengus{user} ne @session[0]) { make_error("ya turkey") }
+		if($$dengus{pass} ne $oldpass) { make_error("ya turkey") }
 	}
 	
-	if(@session[0] eq $user){
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
-		$sth->execute($user) or make_error(S_SQLFAIL);
-		my $dengus=get_decoded_hashref($sth);
+	# keep original values if user input is null
+	$newpass=$$dengus{pass} unless $newpass;
+	$email=$$dengus{email} unless $email;
+	$class=$$dengus{class} unless $class;
 		
-		if ($$dengus{pass} ne $oldpass){make_error("ya turkey");}
-		
-		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=? WHERE user=?") or make_error(S_SQLFAIL);
-		$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
-		
-		make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
-	}
-	
-	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=? WHERE user=?") or make_error(S_SQLFAIL);
-	$sth->execute($newpass,$user) or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=?,class=?,email=? WHERE user=?") or make_error(S_SQLFAIL);
+	$sth->execute($newpass,$class,$email,$user) or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=logout",ALTERNATE_REDIRECT);
 }
 
-sub makeComposeMessage(??){
-	my ($admin,$parentmsg)=@_;
+sub makeComposeMessage(???){
+	my ($admin,$parentmsg,$to)=@_;
 	my @session = check_password($admin);
 	
 	make_http_header();
-	print encode_string(COMPOSE_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,parentmsg=>$parentmsg));
+	print encode_string(COMPOSE_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,parentmsg=>$parentmsg,to=>$to));
 }
 
 sub makeViewMessage(??){
