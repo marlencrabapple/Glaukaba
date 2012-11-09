@@ -438,16 +438,18 @@ sub report($$$){
 	make_error("Could not find post.") unless $post;
 	make_error("You can't report a sticky.") if $$post{sticky} and !$$post{parent};
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=?;") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute(BOARD_DIR,$num) or make_error(S_SQLFAIL);
 	$index=0;
 	
 	while($row=get_decoded_hashref($sth)){
 		if($index==0) { $parent=$$row{num} }
 		$index++;
-		$vio=$$row{vio};
-		$spam=$$row{spam};
-		$illegal=$$row{illegal};
+		unless($$row{parent}){
+			$vio=$$row{vio};
+			$spam=$$row{spam};
+			$illegal=$$row{illegal};
+		}
 	}
 	
 	$vio++ if $reason eq 'vio';
@@ -470,8 +472,8 @@ sub report($$$){
 	}
 	else{
 		# update original/parent report
-		$sth=$dbh->prepare("UPDATE ".SQL_REPORT_TABLE." SET vio=?,spam=?,illegal=? WHERE postnum=?;") or make_error($dbh->errstr);
-		$sth->execute($vio,$spam,$illegal,$num) or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_REPORT_TABLE." SET vio=?,spam=?,illegal=? WHERE postnum=? AND num=?;") or make_error($dbh->errstr);
+		$sth->execute($vio,$spam,$illegal,$num,$parent) or make_error(S_SQLFAIL);
 		
 		# add a child report with the "unique" data
 		$sth=$dbh->prepare("INSERT INTO ".SQL_REPORT_TABLE." VALUES(null,?,?,?,?,?,null,null,null);") or make_error(S_SQLFAIL);
@@ -3065,6 +3067,7 @@ sub makePage($$){
 	$sth->execute() or make_error(S_SQLFAIL);
 	
 	$row=get_decoded_hashref($sth);
+	push @postnumbers,$$row{num};
 
 	my @threads;
 	my @thread=($row);
@@ -3073,15 +3076,15 @@ sub makePage($$){
 	{
 		if(!$$row{parent})
 		{
+			push @postnumbers,$$row{num};
 			push @threads,{posts=>[@thread]};
 			@thread=($row); # start new thread
 		}
 		else
 		{
+			push @postnumbers,$$row{num};
 			push @thread,$row;
 		}
-		
-		push @postnumbers,$$row{num};
 	}
 	push @threads,{posts=>[@thread]};
 	
