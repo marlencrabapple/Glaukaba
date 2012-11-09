@@ -652,10 +652,9 @@ use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-
-<div class="logo" style="margin:0; font-size: 14pt;">
-<var dec_to_dot $ip>
-<p style="margin:0; padding:1px; font-size: x-small; font-weight: normal; font-family: arial,helvetica,sans-serif;"><var $host></p>
+<div class="logo">
+<span class="title" style="font-size: 14pt;"><var dec_to_dot $ip></span>
+<p class="logoSubtitle"><var $host></p>
 </div>
 
 <fieldset><legend>Ban History</legend>

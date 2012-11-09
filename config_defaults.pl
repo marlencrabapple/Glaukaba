@@ -18,6 +18,8 @@ BEGIN {
 	eval "use constant SQL_USER_TABLE => 'users'" unless(defined &SQL_USER_TABLE);
 	eval "use constant SQL_MESSAGE_TABLE => 'msgs'" unless(defined &SQL_MESSAGE_TABLE);
 	eval "use constant SQL_PROXY_TABLE => 'proxy'" unless(defined &SQL_PROXY_TABLE);
+	eval "use constant SQL_REPORTS_TABLE => 'reports'" unless(defined &SQL_REPORTS_TABLE);
+	eval "use constant SQL_BANREQUEST_TABLE => 'banrequests'" unless(defined &SQL_BANREQUEST_TABLE);
 
 	eval "use constant USE_TEMPFILES => 1" unless(defined &USE_TEMPFILES);
 

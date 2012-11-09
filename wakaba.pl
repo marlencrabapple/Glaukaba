@@ -329,9 +329,9 @@ elsif($task eq 'viewthread'){
 	makeThread($admin,$num);
 }
 elsif($task eq 'ippage'){
-	my $admincookie=$query->cookie("wakaadmin"); # needed for ban requests
+	my $admin=$query->param("admin");
 	my $ip=$query->param("ip");
-	makeIPPage($ip,$admincookie);
+	makeIPPage($ip,$admin);
 }
 elsif($task eq 'updateban'){
 	my $admin=$query->param("admin");
@@ -499,30 +499,14 @@ sub requestBan($$){
 	my ($sth,$text,$row,$ipurl,$posturl,@reports);
 	my @session = check_password($admin);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
-	$sth->execute($num) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @reports,$row;
-		$ipurl="[<a href=\"".get_script_name()."?ip=".$$row{ip}."&task=ippage"."\">".dec_to_dot($$row{ip})."</a>]";
+	#"num ".get_sql_autoincrement().",".
+	#"postnum INTEGER,".
+	#"board TEXT,".
+	#"ip TEXT,".
+	#"reason TEXT,".
+	#"reason2 TEXT,".
+	#"fromuser TEXT".
 		
-		if($$row{parent}){
-			$posturl="";
-		}
-		else{
-			$posturl="";
-		}
-		
-		$text="User '".@session[0]."' requested a ban for ".$ipurl." because of post No. ".$$row{num}.".";
-	}
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE class<>'janitor';") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		sendMessage($admin,$text,$$row{user},undef,2,1);
-	}
-	
 	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
 }
 
@@ -688,6 +672,30 @@ sub build_cache_page($$@)
 		my $curr_replies=$replies;
 		my $curr_images=$images;
 		my $max_replies=REPLIES_PER_THREAD;
+		my @staffposts;
+		my $capcodereplies;
+		
+		# count staff posts
+		if(SHOW_STAFF_POSTS){
+			foreach my $post (@replies){
+				if($$post{staffpost}){
+					# 1=admin, 2=mod, 3=dev, and 4=vip
+					if($$post{staffpost}==1){
+						@staffposts[0].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					}
+					elsif($$post{staffpost}==2){
+						@staffposts[1].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					}
+					elsif($$post{staffpost}==3){
+						@staffposts[2].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					}
+					elsif($$post{staffpost}==4){
+						@staffposts[3].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					}
+					$capcodereplies+=1;
+				}
+			}
+		}
 		
 		# only display one reply if the thread is stickied
 		if($$parent{sticky}==1){
@@ -695,16 +703,6 @@ sub build_cache_page($$@)
 		}
 		
 		my $max_images=(IMAGE_REPLIES_PER_THREAD or $images);
-		
-		# get staff posts
-		#if(SHOW_STAFF_POSTS){
-		#	while($curr_replies){
-		#		# not yet implemented
-		#		# need to change capcode generation method first
-		#		shift @replies;
-		#		$curr_replies--;
-		#	}
-		#}
 
 		# drop replies until we have few enough replies and images
 		while($curr_replies>$max_replies or $curr_images>$max_images)
@@ -716,13 +714,17 @@ sub build_cache_page($$@)
 
 		# write the shortened list of replies back
 		$$thread{posts}=[$parent,@replies];
+		$$thread{adminreplies}=@staffposts[0];
+		$$thread{modreplies}=@staffposts[1];
+		$$thread{devreplies}=@staffposts[2];
+		$$thread{vipreplies}=@staffposts[3];
+		$$thread{capcodereplies}=$capcodereplies;
 		$$thread{omit}=$replies-$curr_replies;
 		$$thread{omitimages}=$images-$curr_images;
 		
 		# json stuff
 		my $lastpost = $$thread{posts}[(scalar @replies)];
 		$$lastpost{lastpost} = 1;
-
 
 		# abbreviate the remaining posts
 		foreach my $post (@{$$thread{posts}})
@@ -780,13 +782,35 @@ sub build_cache_page($$@)
 sub build_thread_cache($)
 {
 	my ($thread)=@_;
-	my ($sth,$row,$lastpost,@thread);
+	my ($sth,$row,$lastpost,$capcodereplies,@thread,@staffposts);
 	my ($filename,$tmpname);
 
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
 
 	while($row=get_decoded_hashref($sth)) { push(@thread,$row); }
+	
+	# count staff posts
+	if(SHOW_STAFF_POSTS){
+		foreach my $post (@thread){
+			if(($$post{staffpost}) and ($$post{parent})){
+				# 1=admin, 2=mod, 3=dev, and 4=vip
+				if($$post{staffpost}==1){
+					@staffposts[0].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+				}
+				elsif($$post{staffpost}==2){
+					@staffposts[1].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+				}
+				elsif($$post{staffpost}==3){
+					@staffposts[2].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+				}
+				elsif($$post{staffpost}==4){
+					@staffposts[3].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+				}
+				$capcodereplies+=1;
+			}
+		}
+	}
 
 	make_error(S_NOTHREADERR) if($thread[0]{parent});
 
@@ -797,6 +821,11 @@ sub build_thread_cache($)
 		postform=>(ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES),
 		image_inp=>ALLOW_IMAGE_REPLIES,
 		textonly_inp=>0,
+		capcodereplies=>$capcodereplies,
+		adminreplies=>@staffposts[0],
+		modreplies=>@staffposts[1],
+		devreplies=>@staffposts[2],
+		vipreplies=>@staffposts[3],
 		dummy=>$thread[$#thread]{num},
 		threads=>[{posts=>\@thread}])
 	);
@@ -863,6 +892,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	# get a timestamp for future use
 	my $time=time();
 	my @session;
+	my $class;
 
 	# check that the request came in as a POST, or from the command line
 	make_error(S_UNJUST) if($ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST");
@@ -1062,6 +1092,11 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 			$name = "<span class='modName'>".$name."</span>";
 			$trip = "<span class='modTrip'>".$trip."<span class='modCap'> ## Mod</span></span><img class='capIcon' title='This user is a ".SITE_NAME." Moderator' alt='This user is a ".SITE_NAME." Moderator' src='http://".DOMAIN."/img/mod_opct.png' />";
 		}
+		
+		if(@session[1]="admin") { $class=1; }
+		elsif(@session[1]="mod") { $class=2; }
+		elsif(@session[1]="dev") { $class=3; }
+		elsif(@session[1]="vip") { $class=4; }
 	}
 	
 	# set spoilered image
@@ -1072,10 +1107,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	}
 	
 	# finally, write to the database
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
 	$sth->execute($parent,$time,$lasthit,$numip,
 	$date,$name,$trip,$email,$subject,$password,$comment,
-	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask) or make_error(S_SQLFAIL);
+	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask,$class) or make_error(S_SQLFAIL);
 
 	if($parent) # bumping
 	{
@@ -2400,9 +2435,6 @@ sub parse_range($$)
 	return ($ip,$mask);
 }
 
-
-
-
 #
 # Database utils
 #
@@ -2438,11 +2470,12 @@ sub init_database()
 	"tn_height TEXT,".			# Thumbnail height in pixels
 	
 	"sticky TINYINT,".			# A sticky
-	"permasage TINYINT,".
-	"locked TINYINT,".
-	"filename TEXT,".
-	"tnmask TINYINT".
-
+	"permasage TINYINT,".		# Permasage
+	"locked TINYINT,".			# Locked threads
+	"filename TEXT,".			# The original filename
+	"tnmask TINYINT,".			# Whether or not the thumbnail is masked with a spoiler or something to that effect
+	"staffpost TINYINT".		# Whether or not the post was made by a staff member. 1=admin, 2=mod, 3=dev, and 4=vip
+	
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 }
@@ -2520,6 +2553,24 @@ sub initReportDatabase(){
 	"vio TINYINT,".
 	"spam TINYINT,".
 	"illegal TINYINT".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
+}
+
+sub initBanRequestDatabase(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_BANREQUEST_TABLE.";") if(table_exists(SQL_BANREQUEST_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_BANREQUEST_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".
+	"postnum INTEGER,".
+	"board TEXT,".
+	"ip TEXT,".
+	"reason TEXT,".
+	"reason2 TEXT,".
+	"fromuser TEXT".
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error($sth->errstr);
@@ -3173,30 +3224,12 @@ sub makePage($$){
 }
 
 sub makeIPPage($$){
-	my ($ip,$admincookie)=@_;
-	my ($crypt,$user,$sth,$dengus,@pass);
-	my ($row,@bans,@posts,@notes,$prevtype,$host);
-	
-	make_http_forward(get_script_name()."?task=admin",ALTERNATE_REDIRECT) unless $admincookie;
-	
-	$user=substr($admincookie,0,index($admincookie,":"));
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
-	$sth->execute($user) or make_error($sth->errstr);
-	$dengus=get_decoded_hashref($sth);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @pass,$$row{pass};
-	}
-
-	if ($admincookie eq $user.":".crypt_password($$dengus{pass})){
-		$crypt = crypt_password($$dengus{pass});
-	}
-	
-	my @session = check_password($crypt);
-	
-	$host = gethostbyaddr inet_aton($ip),AF_INET or $ip;
+	my ($ip,$admin)=@_;
+	my @session = check_password($admin);
+	my ($sth,$row,@bans,@posts,@notes,$prevtype,$host);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
+	$host = gethostbyaddr inet_aton($ip),AF_INET or $ip;
 
 	# get bans and other stuff for this ip
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE ival1=? AND (type='ipban' OR type='wordban' OR type='whitelist' OR type='trust') ORDER BY type ASC,num ASC;") or make_error(S_SQLFAIL);
@@ -3230,7 +3263,7 @@ sub makeIPPage($$){
 
 	make_http_header();
 	print encode_string(IP_PAGE_TEMPLATE->(
-		admin=>$crypt,
+		admin=>$admin,
 		ip=>$ip,
 		host=>$host,
 		session=>\@session,

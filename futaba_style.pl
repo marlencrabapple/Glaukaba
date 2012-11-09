@@ -227,7 +227,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <if $thread>
 	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
 	[<a href="#bottom">Bottom</a>]
-	<div class="theader"><const S_POSTING></div> 
+	<div class="theader"><const S_POSTING></div>
 </if>
 <if $postform>
 	<script type="text/javascript">
@@ -363,10 +363,24 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
 				</blockquote>
 			</div>
+			
+			<if SHOW_STAFF_POSTS>
+				<if $capcodereplies\>0>
+					<span class="capcodeReplies">
+						<if $adminreplies><strong>Administrator Replies: </strong><var $adminreplies><br /></if>
+						<if $modreplies><strong>Moderator Replies: </strong><var $modreplies><br /></if>
+						<if $devreplies><strong>Developer Replies: </strong><var $devreplies><br /></if>
+						<if $vipreplies><strong>VIPPER Replies: </strong><var $vipreplies><br /></if>
+					</span>
+					<br/ >
+				</if>
+			</if>
+			
 			<if $omit><span class="omittedposts">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
 				<if !$omitimages><var sprintf S_ABBR,$omit></if>
-			</span></if></if>
+			</span></if>
+		</if>
 		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
 				<div class="doubledash">&gt;&gt;</div>
 				<div class="reply" id="reply<var $num>">
