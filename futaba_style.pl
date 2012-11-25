@@ -23,13 +23,12 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
 </loop>
 <link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
-<link href="http://<var DOMAIN>/css/mobile.css" type="text/css" rel="stylesheet" />
 <script>
 var domain = "http://<var DOMAIN>/";
 var boardDir = "<var BOARD_DIR>";
 var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 </script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
@@ -37,17 +36,6 @@ var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 <script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
 <script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-26348635-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-	var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-</script>
 </head>
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
@@ -143,25 +131,14 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 		</loop>
 		<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-		 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js?<var int(rand(10000))>"></script>
-		<script src="http://malsup.github.com/jquery.form.js"></script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>			
-		<script type="text/javascript">
-		  var _gaq = _gaq || [];
-		  _gaq.push(['_setAccount', 'UA-26348635-1']);
-		  _gaq.push(['_trackPageview']);
-
-		  (function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-		  })();
-		</script>
+		<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
 		<script>
 			var domain = "http://<var DOMAIN>/";
 			var boardDir = "<var BOARD_DIR>";
@@ -361,20 +338,20 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+					
+					<if SHOW_STAFF_POSTS>
+						<if $capcodereplies\>0>
+							<span class="capcodeReplies">
+								<if $adminreplies><strong>Administrator Replies: </strong><var $adminreplies><br /></if>
+								<if $modreplies><strong>Moderator Replies: </strong><var $modreplies><br /></if>
+								<if $devreplies><strong>Developer Replies: </strong><var $devreplies><br /></if>
+								<if $vipreplies><strong>VIPPER Replies: </strong><var $vipreplies></if>
+							</span>
+						</if>
+					</if>
+					
 				</blockquote>
 			</div>
-			
-			<if SHOW_STAFF_POSTS>
-				<if $capcodereplies\>0>
-					<span class="capcodeReplies">
-						<if $adminreplies><strong>Administrator Replies: </strong><var $adminreplies><br /></if>
-						<if $modreplies><strong>Moderator Replies: </strong><var $modreplies><br /></if>
-						<if $devreplies><strong>Developer Replies: </strong><var $devreplies><br /></if>
-						<if $vipreplies><strong>VIPPER Replies: </strong><var $vipreplies><br /></if>
-					</span>
-					<br/ >
-				</if>
-			</if>
 			
 			<if $omit><span class="omittedposts">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
@@ -484,7 +461,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </div>
 }.NORMAL_FOOT_INCLUDE);
 
-use constant ERROR_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
+use constant ERROR_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 	<h1 id="errorMessage" style="text-align: center"><var $error><br /><br />
 	<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a><br /><br />
 	</h1>
@@ -564,7 +541,7 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</loop>
 </div>
 <hr />
-<div class="denguses"><var include("include/bottompad.html",1)></div>
+<div class="denguses"><var include("include/bottomad.html",1)></div>
 <script>
 	$(document).ready(function() {
 		$(".catItem").mouseenter(function () {
@@ -590,16 +567,17 @@ use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div class="logo" style="text-align: center; width:800px;margin-left:auto; margin-right:auto;">
-	<span>You (<var dec_to_dot $ip>) have been banned!</span>
-	<br /><br />
+	<span class="title">You (<var dec_to_dot $ip>) have been banned!</span>
+	<br /><br /><hr />
 	<div style="float:left; width: 49.1%">
 	<img src="http://<var DOMAIN>/img/banned.png"/>
 	</div>
 	<div style="float:right; width: 49.1%">
 	<loop $bans>
-	<p style="font-size:10pt; font-weight: normal;">You were banned on <var make_date($timestamp,DATE_STYLE)> for the following reason: "<em><var $comment></em>"</p>
+	<p style="font-size:10pt; font-weight: normal;">You were banned on <var make_date($timestamp,DATE_STYLE)> for the following reason: "<em><var $comment></em>".<if !$perm> Your ban will expire on <var make_date($duration,DATE_STYLE)>.</if></p>
 	</loop>
 	</div>
+	<hr />
 </div>
 <div style="clear:both"></div>
 <br /><br />

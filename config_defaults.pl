@@ -20,6 +20,8 @@ BEGIN {
 	eval "use constant SQL_PROXY_TABLE => 'proxy'" unless(defined &SQL_PROXY_TABLE);
 	eval "use constant SQL_REPORTS_TABLE => 'reports'" unless(defined &SQL_REPORTS_TABLE);
 	eval "use constant SQL_BANREQUEST_TABLE => 'banrequests'" unless(defined &SQL_BANREQUEST_TABLE);
+	eval "use constant SQL_DELETED_TABLE => 'deleted'" unless(defined &SQL_DELETED_TABLE);
+	eval "use constant SQL_LOG_TABLE => 'log'" unless(defined &SQL_LOG_TABLE);
 
 	eval "use constant USE_TEMPFILES => 1" unless(defined &USE_TEMPFILES);
 

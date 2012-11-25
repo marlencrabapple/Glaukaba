@@ -1,83 +1,79 @@
-body {
-    background: #EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-x;
-    color: black;
-	font-family: arial,helvetica,sans-serif;
-	font-size: 10pt;
-	margin-left: 0;
-	margin-right: 0;
-	margin-top: 5px;
-	margin-left: 8px;
-	margin-right: 8px;
+html, body {
+    background: #FFFFEE url(http://glauchan.org/img/fade.png) top center repeat-x;
+    color: #800000;
+    font-family: arial, helvetica, sans-serif;
+    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 8px;
 }
-a,
-a:visited { color: #34345C }
-a.postlink { color: #DD0000 !important }
-a:hover { color: #DD0000 !important }
+
+a, a:visited { color: #00E }
+
+a.postlink { 
+	color: navy!important;
+    text-decoration: underline!important;
+}
+
+a:hover { color: red }
+
 input {
     font-family: arial,helvetica,sans-serif;
     font-size: 10pt;
     margin: 0 2px 0 0;
     outline: none;
 }
+
 input[type=checkbox] { margin: 3px 3px 3px 4px }
+
 .postInput {
     border: 1px solid #aaa;
     outline: none;
     padding: 2px 4px 3px;
 }
-.postInput:focus,
-#recaptcha_response_field:focus { border: 1px solid #98E }
+
+.postInput:focus, #recaptcha_response_field:focus { border: 1px solid #98E }
+
 .banner {
-    border: 1px solid #34345C;
-    margin: 5px 0px 5px 0px;
-    width: 300px;
-    height: 100px;
-    max-width: 100%;
+	border: 1px solid #800;
+	font-family: Tahoma,sans-serif;
 }
+
 #announcement {
     text-align: center;
     width: 100%;
 }
+
 .thread {
     margin: 0px;
     clear: both;
     margin-bottom: 8px;
 }
+
 .reply {
     display: table;
-    border: 1px solid #B7C5D9;
+    background-color: #f0e0d6;
+    border: 1px solid #D9BFB7;
     border-left: none;
     border-top: none;
     padding: 2px;
-    background: #D6DAF0;
-    color: #000;
-	word-wrap: break-word;
-	white-space: normal;
-}
-.replyContainer {
-    display: block;
-	word-wrap: break-word;
-	white-space: nowrap;
+    margin-top: 4px;
     margin-bottom: 4px;
-	margin-top: 4px;
 }
+
+.replyContainer { display: inline }
+
 .parentPost {
     display: inline;
     clear: both;
     margin: 4px 0px;
+    overflow: hidden;
 }
+
 .mobileParentPostInfo { display: none }
-.reportedReply{
-	background: #FBB;
-    color: #000;
-	border: 3px dashed red;
-}
-.reportedParent{
-	background: #FBB;
-    color: #000;
-	border: 3px dashed red;
-	display: inline-block;
-}
+
 #quickReply {
     top: 0;
     right: 0;
@@ -89,64 +85,63 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
     background: inherit;
     margin-right: 2px;
 }
-.topNavRight {
+
+#topNavRight {
     float: right;
     padding: 5px;
     vertical-align: middle;
 }
-.topNavLeft {
+
+#topNavLeft {
     float: left;
     padding: 5px;
 }
-.topNavContainer {
-    background: #D6DAF0;
-    border-bottom: 1px solid #B7C5D9;
+
+#topNavContainer {
+    background-color: #EDE4DC;
+	overflow: hidden;
+	border-bottom: 1px solid #DCC5B8;
     color: black;
     top: 0;
     left: 0;
-    overflow: hidden;
     position: fixed;
     width: 100%;
     z-index: 9001;
     vertical-align: middle;
-	display:none;
 }
-.topNavContainer a { font-weight: normal }
-#adminNav{
-display:block;
-}
+
+#topNavContainer a { font-weight: normal }
+
 .logo {
     clear: both;
-    color: #AF0A0F;
+	font-family: Tahoma,sans-serif;
+    font-size: 28px;
+    font-weight: 700;
     text-align: center;
     width: 100%;
+    margin-top: 30px;
 }
-.title {
-    font-family: Tahoma,sans-serif;
-    font-size: 28px;
-    font-weight: bold;
-    letter-spacing: -2px;
-    margin-top: 0px;
-}
+
 .logoSubtitle {
-    font-size: x-small;
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
+	font-size: x-small;
+	font-family: arial,helvetica,sans-serif;
+	font-weight: normal;
+	margin: 0;
+	padding: 0;
 }
-.adminLogo{
-margin-top: 40px;
-}
+
 #pageNumber {
-    background: #D6DAF0;
-    border: none;
-    border-bottom: 1px solid #B7C5D9;
-    border-right: 1px solid #B7C5D9;
-    color: #89A;
-    padding: 5px 7px;
     display: table;
+    border: none;
+    background: #F0E0D6;
+	border-right: 1px solid #D9BFB7;
+	border-bottom: 1px solid #D9BFB7;
+    color: #B86;
+    padding: 3px;
 }
+
 .pageForm { display: inline }
+
 .theader {
     background: #E04000;
     color: #FFF;
@@ -155,83 +150,89 @@ margin-top: 40px;
     width: 100%;
     margin-bottom: 5px;
 }
+
 .rules {
     font-size: 10px;
     margin-left: -27px;
     margin-top: -9px;
     width: 468px;
 }
+
 .rules>li {
     list-style: none;
     padding: 0;
 }
+
 .rules>li:before { content: "\2022 \20" }
+
 hr {
     border: none;
     border-top: 1px solid #B7C5D9;
     height: 0;
     clear: both;
 }
+
 .postBlock {
-    background: #98E;
-    border: 1px solid #000;
-    color: #000;
+	background-color: #EA8;
+    color: #800;
+    font-weight: bold;
+    border: 1px solid #800;
     font-size: 10pt;
     font-weight: bold;
     line-height: 20px;
     padding: 0 5px;
     vertical-align: middle;
 }
+
 div.postBlock {
     width: 73px;
     display: table-cell;
 }
+
 .postField {
     display: table-cell;
     margin-left: 10px;
 }
+
 .postSpacer { display: table-cell }
+
 #postTableContainer { display: table-row }
-#postForm,
-#qrPostForm {
+
+#postForm, #qrPostForm {
     display: table;
     border-spacing: 1px;
     margin-left: auto;
     margin-right: auto;
 }
-#field1,
-#field2,
-#qrField1,
-#qrField2 { width: 230px }
-#field1andahalf { width: 230px }
-#field3,
-#qrField3 { width: 230px }
+
+#field1, #field2, #qrField1, #qrField2 { width: 230px }
+
+#field3, #qrField3 { width: 230px }
+
 #field3s { width: 57px }
-#field4,
-#qrField4 {
+
+#field4, #qrField4 {
     width: 292px;
     height: 70px;
-    font-family: arial,helvetica,sans-serif;
-    font-size: 10pt;
+	font-family: arial,helvetica,sans-serif;
+	font-size: 10pt;
 }
+
 @media screen and (-webkit-min-device-pixel-ratio:0) { 
-	#field4,
-	#qrField4 {
+	#field4, #qrField4 {
 	    margin-bottom: -3px!important;
 	    width: 292px;
 	}
 }
-#password,
-#qrPassword { width: 50px }
-.passDesc { font-size: smaller }
+
+#password, #qrPassword { width: 75px }
+
 .footer {
+    clear: both;
+    font-size: xx-small;
     text-align: center;
-    font-size: x-small!important;
-    padding-bottom: 10px;
-    padding-top: 4px;
-    color: black;
-	clear:both;
 }
+
 .passvalid {
     background: #E04000;
     color: #fff;
@@ -239,52 +240,61 @@ div.postBlock {
     width: 100%;
     font-weight: bold;
 }
+
 .dellist {
     font-weight: 700;
     text-align: center;
 }
+
 .delbuttons {
     padding-bottom: 4px;
     text-align: center;
 }
+
 .managehead {
     background: #AA6;
     color: #400000;
     padding: 0;
 }
+
 .postlists {
     background: #FFF;
     color: maroon;
     padding: 0;
     width: 100%;
 }
+
 .row1 {
     background: #EEC;
     color: maroon;
 }
+
 .row2 {
     background: #DDA;
     color: maroon;
 }
+
 .unkfunc {
     color: #789922;
     margin: 0;
     padding: 0;
 }
-.quote { color: #789922 }
-.filetitle,
-.replytitle,
-.oldpost {
+
+.filetitle, .replytitle, .oldpost {
     background: inherit;
     color: #0F0C5D;
     font-weight: bold;
 }
+
 .postertrip { color: #228854 }
+
 .oldpost {
     color: #CC1105;
     font-weight: bold;
 }
-blockquote { font-size: 10pt;  }
+
+blockquote { font-size: 10pt }
+
 pre.prettyprint {
     display: block;
     background-color: #F1F1F1;
@@ -295,6 +305,7 @@ pre.prettyprint {
     font-size: 8pt;
     tab-size: 4;
 }
+
 pre.sqldump {
     display: block;
     background-color: #F1F1F1;
@@ -305,23 +316,31 @@ pre.sqldump {
     font-size: 8pt;
     tab-size: 4;
 }
+
 .doubledash {
-    color: #B7C5D9;
+    color: #e0bfb7;
+    float: left;
+    margin-left: 2px;
+    margin-right: 2px;
+    margin-top: 0px;
     display: block;
-	float: left;
-	margin-right: 2px;
 }
+
 .thumbnailmsg {
     color: maroon;
     font-size: small;
 }
+
 .thumb {
     border: none;
     float: left;
     margin: 2px 20px;
 }
+
 .opThumb { margin-bottom: 2px }
+
 .replyThumb { margin-bottom: 5px }
+
 .nothumb {
     background: #eee;
     border: 2px dashed #aaa;
@@ -329,54 +348,63 @@ pre.sqldump {
     margin: 2px 20px;
     padding: 1em 0.5em 1em 0.5em;
 }
-.spoiler a.quotelink,
-.spoiler .unkfunc { color: inherit }
+
+.spoiler a.quotelink, .spoiler .unkfunc { color: inherit }
+
 .highlight {
     background: #D6BAD0 !important;
     border-bottom: 1px solid #BA9DBF !important;
     color: #000;
 }
+
 span.spoiler { background: #000 }
+
 span:hover.spoiler { color: #FFF }
-.rules a,
-.filesize,
-.filesize { text-decoration: none }
-.postername,
-.commentpostername {
+
+.rules a, .filesize, .filesize { text-decoration: none }
+
+.postername, .commentpostername {
     color: #117743;
     font-weight: bold;
 }
-.omittedposts,
-.abbrev {
+
+.omittedposts, .abbrev {
     color: #707070;
     margin-top: 10px;
     clear: both;
     display: table-cell;
 }
+
 .adminName { color: red }
+
 .adminTrip { color: red }
+
 .adminCap {
     color: red;
     font-weight: bold;
 }
+
 .modName { color: purple }
+
 .modTrip { color: purple }
+
 .modCap {
     color: purple;
     font-weight: bold;
 }
+
 select {
     color: #000000;
     font-size: 13px;
     margin: 0;
 }
-#deleteForm {
-    float: right;
-    text-align: right;
-}
-div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
-#delPass { width: 50px }
+
+#deleteForm { float: right }
+
+#delPass { width: 100px }
+
 .formButtom { }
+
 #navOptionsMenu {
     display: inline-block;
     box-sizing: border-box;
@@ -393,8 +421,9 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     border: 1px solid rgba(0, 0, 0, .25);
     border-left: none;
     border-top: none;
-    background-color: #D6DAF0;
+    background-color: #F0E0D6;
 }
+
 #navOptionsContent {
     overflow: auto;
     position: absolute;
@@ -403,10 +432,12 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     bottom: 5px;
     left: 5px;
 }
+
 .navOptionsListItem {
     text-decoration: underline;
     color: black;
 }
+
 #overlay {
     display: none;
     position: fixed;
@@ -418,16 +449,18 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     background: rgba(0, 0, 0, .5);
     z-index: 1;
 }
+
 #overlay::after {
     content: "";
     display: inline-block;
     height: 100%;
     vertical-align: middle;
 }
+
 .postMenuButton {
     text-decoration: none;
-    color: #34345C;
 }
+
 .postMenuButton > span {
     border-top: .5em solid;
     border-right: .3em solid transparent;
@@ -436,6 +469,7 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     margin: 2px;
     vertical-align: middle;
 }
+
 .postMenu {
     display: none;
     position: absolute;
@@ -443,15 +477,17 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     border: 1px solid rgba(0, 0, 0, .25);
     border-bottom: none;
     padding: 0;
-    background-color: #D6DAF0;
+	background-color: #f0e0d6;
     margin: 2px;
     margin-left: 0;
 }
+
 .subMenu {
     position: absolute;
     left: 100%;
     margin-top: -1px;
 }
+
 .postMenuItem {
     border-bottom: 1px solid rgba(0, 0, 0, .25);
     cursor: pointer;
@@ -462,92 +498,80 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     text-decoration: none;
     white-space: nowrap;
 }
+
 .hidePostButton { text-decoration: none }
+
 #threadList {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    border-spacing: 0px;
 }
+
 #catalog {
-    width: 95%;
+    width: 80%;
     margin-left: auto;
     margin-right: auto;
     text-align: center;
 }
-.catItem {
-    display: inline-block;
-    width: 165px;
-    max-height: 300px;
-    text-align: center;
-    margin-top: 15px;
-    margin-bottom: 10px;
-    vertical-align: top;
-    word-wrap: break-word;
-    overflow: hidden;
-    padding: 5px 0 3px 0;
-    font-size: 9pt;
-}
+
 .catItemHoverNoThumb {
     display: inline-block;
     visibility: hidden;
     background: #f1f1f1;
     position: absolute;
-    width: 150px;
-    height: 150px;
+    width: 126px;
+    height: 126px;
+    margin: 11px;
     border: 2px solid #555555;
     border-radius: 3px 3px 3px 3px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
+
 .catItemHover {
-    display: inline-block;
+    display: block;
     visibility: hidden;
     background: #f1f1f1;
     position: absolute;
+    margin: 11px;
     border: 2px solid #555555;
     border-radius: 3px 3px 3px 3px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
+
 .catItemHoverText {
-    display: inline-block;
+    display: block;
     opacity: .5;
     font-size: 15pt;
     font-weight: bold;
 }
+
 .catItemHoverTextNoThumb {
     display: block;
-    width: 150px;
-    height: 150px;
-    line-height: 150px;
+    width: 126px;
+    height: 126px;
+    line-height: 126px;
     opacity: .5;
     font-size: 15pt;
     font-weight: bold;
 }
+
 .catImage {
+    margin: 11px;
     border: 2px solid #555555;
     border-radius: 3px 3px 3px 3px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
+
 .catImageNoThumb {
     display: inline-block;
-    width: 150px;
-    height: 150px;
+    width: 126px;
+    height: 126px;
+    margin: 10px;
     border: 2px solid #555555;
     border-radius: 3px 3px 3px 3px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
-.catComment {
-    margin-top: 2px;
-    position: relative;
-    max-width: 150px;
-    max-height: 150px;
-    margin-left: auto;
-    margin-right: auto;
-}
-.catCounts {
-    font-size: 7pt;
-    font-weight: bold;
-}
+
 .hasSubMenu::after {
     content: "";
     border-left: .5em solid;
@@ -558,16 +582,20 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     position: absolute;
     right: 3px;
 }
+
 .capIcon {
     margin-bottom: -2px;
     margin-left: 4px;
 }
+
 .replyPostInfo {
     margin: 0px;
     padding: 0px;
     display: inline;
 }
+
 #recaptcha_response_field { padding: 0px }
+
 #recaptcha_response_field {
     margin: 0px;
     margin-right: 2px;
@@ -577,111 +605,5 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     font-family: arial,helvetica,sans-serif;
     font-size: 10pt;
 }
+
 #recaptcha_response_field:not(:focus) { border: 1px solid #AAA!important }
-.reportContainer {
-    height: 250px;
-    width: 430px;
-    border: 1px solid #B7C5D9;
-    margin: 5px;
-    background: #D6DAF0;
-    display: block;
-    float: left;
-}
-.reportHeader {
-    padding: 5px;
-    background: #EA8;
-}
-.reportPostHeader {
-    padding: 5px;
-    background: #F0E0D6;
-}
-.reportContent { padding: 5px }
-.reportOptions {
-    padding: 5px;
-    float: right;
-}
-.reportComment {
-    height: 155px;
-    overflow: auto;
-    margin: 5px;
-}
-.listCol {
-    padding: 6px;
-    margin: 0;
-}
-.listHead {
-    background: #98E;
-    color: black;
-    font-size: 10pt;
-    font-weight: bold;
-    line-height: 20px;
-    padding: 3px;
-    vertical-align: middle;
-    border: 4px solid #B7C5D9;
-    border-left: none;
-    border-top: none;
-}
-.listRow:nth-child(odd) { background-color: #D6DAF0 }
-.listRow:nth-child(even) { background-color: #B7C5D9 }
-.listRow:hover { background: #98B }
-.listPageHeader {
-    text-align: center;
-    font-weight: bold;
-    padding: 5px;
-    margin: 5px;
-    background: #EEF2FF url(http://www.glauchan.org/img/fade-blue.png) top center repeat-x;
-}
-.passNotice {
-    font-size: smaller;
-    padding-left: 6px;
-}
-#image {
-    margin: 0;
-    padding: 0;
-    margin-left: auto;
-    margin-right: auto;
-}
-    
-#bottomNavStatic {
-    padding-top: 10px;
-    padding-bottom: 3px;
-}
-
-.staticNav{
-	font-size: 9pt;
-    color: #89A;
-    clear: both;
-}
-
-.staticNav a {
-	font-weight: normal;
-    padding: 1px;
-    text-decoration: none;
-    color: #34345C;
-}
-.styleChanger { margin-top: 5px }
-
-iframe[src="about:blank"] {
-	display: none;
-}
-
-.reportblock{
-    color: #000;
-    font-weight: bold;
-    padding: 0 5px;
-	line-height: 20px;
-    vertical-align: middle;
-	border: 1px solid black;
-	background: #98E
-}
-.reportstats{
-	border: 1px solid black;
-	border-collapse:collapse;
-}
-.reportright{
-	border: 1px solid black;
-}
-
-.capcodeReplies{
-font-size: smaller;
-}

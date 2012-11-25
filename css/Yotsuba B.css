@@ -3,11 +3,7 @@ body {
     color: black;
 	font-family: arial,helvetica,sans-serif;
 	font-size: 10pt;
-	margin-left: 0;
-	margin-right: 0;
-	margin-top: 5px;
-	margin-left: 8px;
-	margin-right: 8px;
+	margin: 5px;
 }
 a,
 a:visited { color: #34345C }
@@ -238,6 +234,8 @@ div.postBlock {
     text-align: center;
     width: 100%;
     font-weight: bold;
+	padding: 3px 0px;
+	margin-top: 5px;
 }
 .dellist {
     font-weight: 700;
@@ -680,6 +678,24 @@ iframe[src="about:blank"] {
 }
 .reportright{
 	border: 1px solid black;
+}
+
+.bantemplate input,select,textarea,em,label{
+	margin: 1px 2px;
+}
+
+.bantemplate input[type=text]{
+	width: 200px;
+}
+
+.bantemplate textarea{
+	width: 250px;
+	height: 60px;
+}
+
+.bantemplate span.passDesc{
+	margin: 0px 5px;
+	padding: 0;
 }
 
 .capcodeReplies{

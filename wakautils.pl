@@ -183,14 +183,19 @@ sub do_wakabamark($;$$)
 	{
 		# glaukaba's SUPERIOR adaptation of wordwrap2
 		if(ADD_BREAKS==1){
-			if(m/[^\s]{100,}/){
-				my $i=0;
-				for(split(/(.{100})/,$lines[0])){
-					if($i==1){ $lines[0]="$_<br />" if $_; }
-					else{ $lines[0].="$_<br />" if $_; }
-					$i++;
+			unless(m/^$protocol_re/){
+				if(m/[^\s]{100,}/){
+					my $i=0;
+					for(split(/(.{100})/,$lines[0])){
+						if($i==1){ $lines[0]="$_<br />" if $_; }
+						else{ $lines[0].="$_<br />" if $_; }
+						$i++;
+					}
+					$lines[0]=~s/<br \/>$//;
 				}
-				$lines[0]=~s/<br \/>$//;
+			}
+			elsif(m/^$protocol_re/){
+				#$lines[0]=abbreviate_html($lines[0],1,100);
 			}
 		}
 		
@@ -253,6 +258,7 @@ sub do_spans($@)
 
 		# make URLs into links and hide them
 		$line=~s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">$1\</a>"; "<!--$#hidden-->$2"}sge;
+		#$line=~s{$url_re}{push @hidden,"<a href=\"$1\" rel=\"nofollow\">length $1 > 100 ? subtr$1,0,95."\(...\)" : $1\</a>"; "<!--$#hidden-->$2"}sge;
 
 		# do <strong>
 		$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (\*\*|__) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<strong>$2</strong>}gx;
