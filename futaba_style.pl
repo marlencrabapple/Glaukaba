@@ -574,7 +574,7 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 	</div>
 	<div style="float:right; width: 49.1%">
 	<loop $bans>
-	<p style="font-size:10pt; font-weight: normal;">You were banned on <var make_date($timestamp,DATE_STYLE)> for the following reason: "<em><var $comment></em>".<if !$perm> Your ban will expire on <var make_date($duration,DATE_STYLE)>.</if></p>
+	<p style="font-size:10pt; font-weight: normal;">You were <if $warning!=1>banned</if><if $warning==1>warned</if> on <var make_date($timestamp,DATE_STYLE)> for the following reason: "<em><var $comment></em>".<if ((!$perm) and (!$warning))> Your ban will expire on <var make_date($duration,DATE_STYLE)>.</if></p>
 	</loop>
 	</div>
 	<hr />

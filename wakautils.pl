@@ -1262,7 +1262,11 @@ sub make_thumbnail($$$$$$;$)
 	$convert="convert" unless($convert);
 	
 	if($nsfw==1){
-		`$convert -background white -flatten -scale 1% -scale 2000% -size ${width}x${height} -geometry ${width}x${height}! $magickname $thumbnail`;
+		my $scaleup = int(2000*($width/$height));
+		my $scaledown = int(1*($width/$height));
+		
+		# need to proportionally pixelate somehow
+		`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
 		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
 		return 1 unless($?);
 	}

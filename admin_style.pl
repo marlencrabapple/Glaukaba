@@ -372,8 +372,9 @@ use constant SQL_INTERFACE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<div id="nukeBoard" style="display:none">
 		<form action="<var $self>" method="post">
 			<input type="hidden" name="task" value="nuke" />
+			<input type="hidden" name="admin" value="<var $admin>" />
 			<div class="delbuttons"><const S_SQLNUKE>
-				<input type="password" name="admin" value="<var $nuke>" />
+				<input type="password" name="nukepass" value="<var $nuke>" />
 				<input type="submit" value="Nuke Board" />
 			</div>
 		</form>
@@ -830,7 +831,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if !$active>[<a href="<var $self>?task=updateban&amp;num=<var $num>&amp;active=1&amp;ip=<var $ip>&amp;admin=<var $admin>">Activate</a>]</if>
 					<if $active>[<a href="<var $self>?task=updateban&amp;num=<var $num>&amp;&amp;active=0&amp;ip=<var $ip>&amp;admin=<var $admin>">Deactivate</a>]</if>
 					<a href="<var $self>?task=removeban&amp;num=<var $num>&amp;admin=<var $admin>">[Delete]</a>
-					<if $postcomment>[<a href="<var $self>?task=viewdeletedpost&amp;num=<var $num>&amp;admin=<var $admin>">View Post</a>]</if>
+					<if $postnum>[<a href="<var $self>?task=viewdeletedpost&amp;num=<var $postnum>&amp;admin=<var $admin>">View Post</a>]</if>
 				</td>
 			</tr>
 			</loop>

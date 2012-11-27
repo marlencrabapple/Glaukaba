@@ -238,7 +238,8 @@ elsif($task eq "rebuild")
 elsif($task eq "nuke")
 {
 	my $admin=$query->param("admin");
-	do_nuke_database($admin);
+	my $nukepass=$query->param("nukepass");
+	do_nuke_database($nukepass,$admin);
 }
 elsif($task eq "list"){
 	make_error("Disabled");
@@ -737,7 +738,7 @@ sub advancedIPBan($$$){
 	my @session = check_password($admin);
 	make_error(S_CLASS) if (@session[1] eq 'janitor');
 	make_error("Thread banning not yet implemented") if ($threadban==1);
-	logAction("ipban",$ival1."<>".$ival2,@session);
+	logAction("ipban",dec_to_dot $ival1."<>".dec_to_dot $ival2,@session);
 	
 	# get the current time
 	my $time = time();
@@ -753,7 +754,7 @@ sub advancedIPBan($$$){
 
 	# add ban to database
 	$sth=$dbh->prepare("INSERT INTO ".SQL_ADMIN_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
-	$sth->execute($type,$public,$private,$ival1,$ival2,'',@session[0],$pubbannedby,$duration,$perm,$scope,$$post{num},BOARD_DIR,$warn,$time,1) or make_error(S_SQLFAIL);
+	$sth->execute($type,$public,$private,$ival1,$ival2,'',@session[0],$pubbannedby,$duration,$perm,$scope,$num,BOARD_DIR,$warn,$time,1) or make_error(S_SQLFAIL);
 	
 	# clear all ban requests for the banned ip
 	$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE ip=? AND board=?;") or make_error(S_SQLFAIL);
@@ -829,6 +830,7 @@ sub build_cache()
 	while(-e $page.PAGE_EXT)
 	{
 		unlink $page.PAGE_EXT;
+		unlink $page.".json";
 		$page++;
 	}
 }
@@ -1390,8 +1392,15 @@ sub ban_check($$$$)
 		if ($$row{active}==1)
 		{
 			# check if ban is expired
-			if(($time>=$$row{duration}) and ($$row{perm}!=1)){
+			if(($time>=$$row{duration}) and ($$row{perm}!=1) and ($$row{warning}!=1)){
 				# deactivate ban
+				$sth=$dbh->prepare("UPDATE ".SQL_ADMIN_TABLE." SET active=? WHERE num=?;") or make_error("here?");
+				$sth->execute(0,$$row{num}) or make_error("or here");
+			}
+			elsif($$row{warning}){
+				# deactivate warning
+				push @bans,$row;
+				$banned++;
 				$sth=$dbh->prepare("UPDATE ".SQL_ADMIN_TABLE." SET active=? WHERE num=?;") or make_error("here?");
 				$sth->execute(0,$$row{num}) or make_error("or here");
 			}
@@ -2434,12 +2443,12 @@ sub update_spam_file($$)
 	make_http_forward(get_script_name()."?admin=$admin&task=spam",ALTERNATE_REDIRECT);
 }
 
-sub do_nuke_database($)
+sub do_nuke_database($$)
 {
-	my ($admin)=@_;
+	my ($nukepass,$admin)=@_;
 
 	# check_password does not work anymore for this because of multi-user support
-	checkNukePassword($admin,NUKE_PASS);
+	checkNukePassword($nukepass,NUKE_PASS);
 	logAction("nuke","",$admin);
 
 	init_database();
@@ -3578,7 +3587,7 @@ sub updateBan($$$$$){
 	my($admin,$num,$ip,$reason,$active)=@_;
 	my @session = check_password($admin);
 	
-	logAction("updateban",$ip,@session);
+	logAction("updateban",dec_to_dot $ip,@session);
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
 	if($active==0 or $active==1){
@@ -3632,14 +3641,21 @@ sub editPost($$$$$$){
 	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
 
-sub logAction($$;$;$){
-	my ($action,$object,$admin,@session)=@_;
+sub logAction($$;@){
+	my ($action,$object,@session)=@_;
 	my ($time,$sth);
 	
-	if($admin) { @session = check_password($admin) }
-	elsif(@session) {}
-	else { @session[0] = IP_VAR }
-	
+	if(!@session[0]){
+		@session[0]=IP_VAR;
+	}
+	elsif(!@session[1]){
+		my $admin = @session[0];
+		@session = check_password($admin);
+	}
+	else{
+		# do nothing
+	}
+
 	$time=time();
 	$sth=$dbh->prepare("INSERT INTO ".SQL_LOG_TABLE." VALUES(null,?,?,?,?,?,?);") or make_error($dbh->errstr);
 	$sth->execute(@session[0],$action,$object,BOARD_DIR,$time,IP_VAR) or make_error($dbh->errstr);
