@@ -806,6 +806,16 @@ sub process_tripcode($;$$$$)
 	return (clean_string(decode_string($name,$charset)),"");
 }
 
+# enterprise security? maybe not, but who cares i'm just generating pass tokens
+sub generate_token($){
+	my ($jumble)=@_;
+	$jumble = clean_string($jumble);
+	my $maxlen=255-length(SECRET);
+	$jumble=substr $jumble,0,$maxlen if(length($jumble)>$maxlen);
+	$jumble=hide_data($jumble,6,"trip",SECRET,1);
+	return $jumble;
+}
+
 sub make_date($$;@)
 {
 	my ($time,$style,@locdays)=@_;

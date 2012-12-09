@@ -425,17 +425,14 @@ elsif($task eq 'viewlog'){
 
 $dbh->disconnect();
 
-sub makeList(){
-	my ($sth,$row,@threads,@postcount,@threadsize,$index,$filename);
+sub makeList(@){
+	my (@rows)=@_; # less queries = less load
+	my (@threads,$filename);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
+	foreach my $row (@rows){
 		my ($posts,$size)=count_posts($$row{num});
 		$$row{'postcount'}=$posts; # add post count to hash
-		#$$row{'imagecount'}=$images; # add image count to hash
-		#$$row{'threadsize'}=$size; # guess
+		$$row{'threadsize'}=$size; # guess
 		push @threads,$row;
 	}
 	
@@ -443,14 +440,11 @@ sub makeList(){
 	print_page($filename,LIST_TEMPLATE->(threads=>\@threads));
 }
 
-sub makeCatalog(){
-	my ($sth,$row,$filename,@threads);
+sub makeCatalog(@){
+	my (@rows)=@_;
+	my ($filename,@threads);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent='0' ORDER BY lasthit DESC") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth))
-	{
+	foreach my $row (@rows){
 		my ($posts,$size,$images)=count_posts($$row{num},1);
 		$$row{'postcount'}=$posts-1; # add post count to hash
 		$$row{'imagecount'}=$images-1; # add image count to hash
@@ -641,8 +635,10 @@ sub makeReportsList($){
 		$$row{totalreports}=$$row{vio}+$$row{spam}+$$row{illegal};
 	}
 	
+	if((scalar @reportedposts) == 0) { push @reportedposts,1 };
+	
 	# fucking magic
-	$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC";
+	$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC;";
 	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
 	$sth->execute(@reportedposts) or make_error($dbh->errstr);
 	
@@ -797,14 +793,16 @@ sub build_cache()
 	}
 	else
 	{
-		my @threads;
+		my (@threads);
 		my @thread=($row);
+		my @parentposts=($row);
 
 		while($row=get_decoded_hashref($sth))
 		{
 			if(!$$row{parent})
 			{
 				push @threads,{posts=>[@thread]};
+				push @parentposts,$row;
 				@thread=($row); # start new thread
 			}
 			else
@@ -813,6 +811,10 @@ sub build_cache()
 			}
 		}
 		push @threads,{posts=>[@thread]};
+		
+		# hurray for optimization
+		makeList(@parentposts);
+		makeCatalog(@parentposts);
 
 		my $total=get_page_count(scalar @threads);
 		my @pagethreads;
@@ -821,9 +823,6 @@ sub build_cache()
 			build_cache_page($page,$total,@pagethreads);
 			$page++;
 		}
-		
-		makeList();
-		makeCatalog();
 	}
 
 	# check for and remove old pages
@@ -1154,6 +1153,9 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	# process the tripcode - maybe the string should be decoded later
 	my $trip;
 	($name,$trip)=process_tripcode($name,TRIPKEY,SECRET,CHARSET);
+	
+	# manual i <3 summer glau override
+	if($trip eq "&nbsp;&#39;:3&nbsp;99YfK2R6d2") { $trip = "&nbsp;&#39;:3&nbsp;glauJJoHPM" }
 
 	# check for bans
 	ban_check($numip,$c_name,$subject,$comment) unless $whitelisted;
@@ -1739,11 +1741,13 @@ sub get_cb_post($$)
 {
 	my ($board,$thread)=@_;
 	my ($sth);
-
+	
 	return if $board=~/[^A-Za-z0-9-]/;
-
-	$sth=$dbh->prepare("SELECT num, parent FROM ? WHERE num=?;") or return;
-	$sth->execute($board,$thread) or return;
+	
+	$board=$board."_comments";
+	
+	$sth=$dbh->prepare("SELECT num, parent FROM $board WHERE num=?;") or return;
+	$sth->execute($thread) or return;
 
 	return $sth->fetchrow_hashref();
 }
@@ -2285,24 +2289,25 @@ sub make_admin_post($)
 sub do_login($$$$$)
 {
 	my ($user,$password,$nexttask,$savelogin,$admincookie)=@_;
-	my $crypt;
-	my $dengus;
-	my $time=time();
-	my $lastip = IP_VAR;
+	my ($crypt,$dengus,$time,$lastip,$sth,$loglogin);
+
+	$time=time();
+	$lastip = IP_VAR;
 	
 	if($password and $user){
-		my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($user) or make_error($sth->errstr);
 		$dengus=get_decoded_hashref($sth);
 		
 		if($$dengus{pass} eq $password){
 			$crypt=crypt_password($password);
+			$loglogin = 1;
 		}
 	}
 	elsif($admincookie){
 		$user=substr($admincookie,0,index($admincookie,":"));
 		
-		my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($user) or make_error($sth->errstr);
 		$dengus=get_decoded_hashref($sth);
 	
@@ -2318,10 +2323,10 @@ sub do_login($$$$$)
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>time+365*24*3600);
 		}
 		
-		my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET lastdate=?,lastip=? WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET lastdate=?,lastip=? WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($time,$lastip,$user) or make_error($sth->errstr);
 
-		logAction("login","",$crypt);
+		if($loglogin) { logAction("login","",$crypt) }
 		make_http_forward(get_script_name()."?task=$nexttask&admin=$crypt",ALTERNATE_REDIRECT);
 	}
 	else{
@@ -2698,7 +2703,7 @@ sub init_admin_database()
 	"num ".get_sql_autoincrement().",".	# Entry number, auto-increments
 	"type TEXT,".				# Type of entry (ipban, wordban, etc)
 	"comment TEXT,".			# Comment for the entry
-	"private,".					# Private ban info
+	"private TEXT,".			# Private ban info
 	"ival1 TEXT,".				# Integer value 1 (usually IP)
 	"ival2 TEXT,".				# Integer value 2 (usually netmask)
 	"sval1 TEXT,".				# String value 1
@@ -2708,7 +2713,7 @@ sub init_admin_database()
 	"perm TINYINT,".			# Ban duration
 	"scope TEXT,".				# Ban scope
 	"postnum INTEGER,".			# Post number citation
-	"board INTEGER,".			# Board the above post was on
+	"board TEXT,".				# Board the above post was on
 	"warning TINYINT,".			# If the ban is a warning or not
 	"timestamp INTEGER,".		# When the ban was made
 	"active TINYINT".			# Whether or not the ban is active
@@ -2761,6 +2766,26 @@ sub initLogDatabase(){
 	"board TEXT,".
 	"time INTEGER,".
 	"ip TEXT".			
+	
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub initPassDatabase(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_PASS_TABLE.";") if(table_exists(SQL_PASS_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_PASS_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"token TEXT,".						# On 4chan this would probably be used for checking if Stripe processed a vald payment
+										# Here, its just a bunch of hashed shit
+	"pin INTEGER,".						# A 'randomly' generated pin
+	"ip TEXT,".							# A "serialized" array of the last IPs to log in
+	"lasthit INTEGER,".					# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
+	"timestamp INTEGER,".				# DOB
+	"email TEXT,".						# The owner's email address
+	"approved TINYINT".					# Whether or not the pass is approved. All passes are manually approved based on post history or something
 	
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -3681,4 +3706,91 @@ sub makeViewLog($){
 		session=>\@session,
 		log=>\@log
 	));
+}
+
+sub add_pass($){
+	my ($email)=@_;
+	my ($token,$pin,$time,$sth,$row);
+	
+	$time=time();
+	
+	# clean up input
+	make_error(S_UNUSUAL) if($email=~/[\n\r]/);
+	make_error(S_TOOLONG) if(length($email)>MAX_FIELD_LENGTH);
+	$email=clean_string(decode_string($email,CHARSET));
+	
+	# check for an existing pass
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE email=? OR ip LIKE ?;") or make_error(S_SQLFAIL);
+	$sth->execute($email,"%".IP_VAR,"%") or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		if(length $$row{token}) { make_error("You already have a pass.") }
+	}
+	
+	# check for bans
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' AND (? & ival2 = ival1 & ival2) AND (active='1') ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(dot_to_dec IP_VAR) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		if ($$row{active}==1){
+			make_error("You've been warned or banned. Check <a href='http://".DOMAIN."/banned/'>here</a> for details.");
+		}
+	}
+	
+	# generate pin and token
+	$pin = (9999 + int(rand(99999)));
+	$token = generate_token($email.IP_VAR.$time);
+	
+	# insert the pass into the pass table
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_PASS_TABLE." VALUES(NULL,?,?,?,NULL,?,?,0);") or make_error(S_SQLFAIL);
+	$sth->execute($token,$pin,IP_VAR,$time,$email) or make_error(S_SQLFAIL);
+	
+	# create cookie and log user in
+	make_cookies(wakapass=>$token.":".$pin,
+	-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$time+(60*60*24*30));
+	
+	# redirect to an info page
+	make_http_header();
+	print encode_string(PASS_SUCCESS_TEMPLATE->(
+		pin=>$pin,
+		token=>$token
+	));
+}
+
+sub authorize_pass($$$$){
+	# store the ip seperated by a comma from the old ones
+	# its important
+	# please understand
+	# please!!
+}
+
+sub update_pass($$){
+	my ($admin,$num,$status)=@_;
+	my @session = check_password($admin);
+	make_error(S_CLASS) if @session[1] eq 'janitor';
+	
+}
+
+sub make_create_pass(){
+}
+
+sub make_authorize_pass(){
+}
+
+sub make_view_passes($){
+	my ($admin)=@_;
+	my @session = check_password($admin);
+	make_error(S_CLASS) if @session[1] eq 'janitor';
+}
+
+sub clear_log($){
+
+}
+
+sub clear_deleted($){
+
+}
+
+sub view_deleted($){
+
 }

@@ -253,7 +253,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
 							<input type="hidden" name="recaptcha_response_field" value="manual_challenge" />
 						</noscript>
-						<div class="passNotice">Glauchan Pass users can bypass this CAPTCHA. [<a href="http://<var DOMAIN>/pass/">Learn More</a>]</div>
+						<if PASS_ENABLED><div class="passNotice">Bypass this CAPTCHA. [<a href="http://<var DOMAIN>/pass/">Learn More</a>]</div></if>
 					</div>
 					<script type="text/javascript">document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");document.getElementById("recaptcha_response_field").removeAttribute("style");document.getElementById("recaptcha_image").setAttribute("style", "border: 1px solid #aaa!important;");document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");</script>
 					</div></if>
