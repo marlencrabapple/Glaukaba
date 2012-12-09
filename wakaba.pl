@@ -3589,15 +3589,30 @@ sub makeIPPage($$){
 
 sub viewDeletedPost($$){
 	my($admin,$num)=@_;
-	my($sth,@post,$row);
+	my($sth,@post,$row,$parent);
 	my @session = check_password($admin);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_DELETED_TABLE." WHERE num=? AND board=?;") or make_error($dbh->errstr);
 	$sth->execute($num,BOARD_DIR) or make_error($dbh->errstr);
 	
-	while($row=get_decoded_hashref($sth))
-	{
+	while($row=get_decoded_hashref($sth)){
 		push @post,$row;
+	}
+	
+	if(scalar(@post)==0){
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?") or make_error($dbh->errstr);
+		$sth->execute($num) or make_error($dbh->errstr);
+		
+		while($row=get_decoded_hashref($sth)){
+			if($$row{parent}==0){
+				$parent=$num;
+			}
+			else{
+				$parent=$$row{parent};
+			}
+		}
+		
+		make_http_forward(get_script_name()."?admin=$admin&task=viewthread&num=".$parent."#".$num,ALTERNATE_REDIRECT);
 	}
 	
 	make_http_header();
