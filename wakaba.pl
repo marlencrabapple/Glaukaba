@@ -53,10 +53,11 @@ initReportDatabase() if(!table_exists(SQL_REPORT_TABLE));
 initBanRequestDatabase()  if(!table_exists(SQL_BANREQUEST_TABLE));
 initDeletedDatabase()  if(!table_exists(SQL_DELETED_TABLE));
 initLogDatabase()  if(!table_exists(SQL_LOG_TABLE));
+initPassDatabase() if(!table_exists(SQL_PASS_TABLE));
 
 if(!table_exists(SQL_USER_TABLE)){
 	initUserDatabase();
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
 	$sth->execute('admin','admin','admin@admin.com','admin') or make_error(S_SQLFAIL);
 }
 
@@ -97,8 +98,9 @@ elsif($task eq "post")
 	my $capcode=$query->param("capcode");
 	my $spoiler=$query->param("spoiler");
 	my $nsfw=$query->param("nsfw");
+	my $passcookie=$query->cookie("wakapass");
 
-	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw);
+	post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie);
 }
 elsif($task eq "delete")
 {
@@ -126,7 +128,8 @@ elsif($task eq "admin")
 }
 elsif($task eq "logout")
 {
-	do_logout();
+	my $type=$query->param("type");
+	do_logout($type);
 }
 elsif($task eq "mpanel")
 {
@@ -422,6 +425,39 @@ elsif($task eq 'viewlog'){
 	my $admin=$query->param("admin");
 	makeViewLog($admin)
 }
+elsif($task eq 'clearlog'){
+	my $admin=$query->param("admin");
+	clear_log($admin);
+}
+elsif($task eq 'getpass'){
+	make_pass_page();
+}
+elsif($task eq 'addpass'){
+	my $email=$query->param("email");
+	my $mailver=$query->param("mailver");
+	my $accept=$query->param("acceptTerms");
+	add_pass($email,$mailver,$accept);
+}
+elsif($task eq 'passauth'){
+	my $passcookie=$query->cookie("wakapass");
+	make_authorize_pass($passcookie);
+}
+elsif($task eq 'authpass'){
+	my $token=$query->param("token");
+	my $pin=$query->param("pin");
+	my $remember=$query->param("remember");
+	authorize_pass($token,$pin,$remember);
+}
+elsif($task eq 'passlist'){
+	my $admin=$query->param("admin");
+	make_pass_list($admin);
+}
+elsif($task eq 'updatepass'){
+	my $admin=$query->param("admin");
+	my $action=$query->param("action");
+	my $num=$query->param("num");
+	update_pass($admin,$num,$action);
+}
 
 $dbh->disconnect();
 
@@ -469,8 +505,6 @@ sub report($$$){
 	ban_check(dot_to_dec(IP_VAR),'','','');
 	
 	$time=time();
-	
-	my %reasons = ("vio","Rule violation","illegal","Illegal content","spam","Spam/advertising/flooding");
 
 	make_error("Invalid Post No.") unless($num=~m/[0-9]*/);
 	make_error("Invalid Board") unless($board eq BOARD_DIR); # will replace with global board list soon
@@ -505,6 +539,10 @@ sub report($$$){
 	if($index==0){
 		$sth=$dbh->prepare("INSERT INTO ".SQL_REPORT_TABLE." VALUES(null,?,null,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
 		$sth->execute($num,BOARD_DIR,IP_VAR,$time,$vio,$spam,$illegal) or make_error(S_SQLFAIL);
+		
+		# notify moderation staff
+		my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newreports=1") or make_error(S_SQLFAIL);
+		$sth->execute() or make_error(S_SQLFAIL);
 	}
 	else{
 		# update original/parent report
@@ -565,8 +603,12 @@ sub requestBan($$){
 	my $post=get_decoded_hashref($sth);
 	logAction("banrequest",$$post{ip},@session);
 	
-	$sth=$dbh->prepare("INSERT INTO ".SQL_BANREQUEST_TABLE." VALUES(null,?,?,?,?,?,?,?,?);") or make_error($dbh->errstr);
-	$sth->execute($num,$$post{parent},BOARD_DIR,$$post{ip},$reason,$reason2,@session[0],$time) or make_error($dbh->errstr);
+	$sth=$dbh->prepare("INSERT INTO ".SQL_BANREQUEST_TABLE." VALUES(null,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	$sth->execute($num,$$post{parent},BOARD_DIR,$$post{ip},$reason,$reason2,@session[0],$time) or make_error(S_SQLFAIL);
+	
+	# notify non-janitor moderation staff
+	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newbanreqs=1 WHERE class<>?") or make_error(S_SQLFAIL);
+	$sth->execute("janitor") or make_error(S_SQLFAIL);
 		
 	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
 }
@@ -586,6 +628,8 @@ sub makeBanRequestList($){
 	while($row=get_decoded_hashref($sth)){
 		push @requested, $row;
 	}
+	
+	clear_notifications(@session[0],"banrequests");
 	
 	make_http_header();
 	print encode_string(BAN_REQUEST_LIST_TEMPLATE->(
@@ -655,6 +699,8 @@ sub makeReportsList($){
 		push @posts,$row;
 		$index++;
 	}
+	
+	clear_notifications(@session[0],"reports");
 	
 	make_http_header();
 	print encode_string(REPORTS_PAGE_TEMPLATE->(
@@ -734,6 +780,12 @@ sub advancedIPBan($$$){
 	my @session = check_password($admin);
 	make_error(S_CLASS) if (@session[1] eq 'janitor');
 	make_error("Thread banning not yet implemented") if ($threadban==1);
+	make_error("You are required to give a public ban reason.") if (length $public < 1);
+	
+	if((!$duration)&&(!$perm)&&(!$warn)){
+		make_error("Invalid ban duration. Select Permanent, Warning, or enter a valid number in the duration field before submitting a ban.");
+	}
+	
 	logAction("ipban",dec_to_dot $ival1."<>".dec_to_dot $ival2,@session);
 	
 	# get the current time
@@ -1066,13 +1118,12 @@ sub build_thread_cache_all()
 
 sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 {
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw)=@_;
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie)=@_;
 	my $parent_res; # defining this earlier for locked threads
 	
 	# get a timestamp for future use
 	my $time=time();
-	my @session;
-	my $class;
+	my ($class,@session,@taargus);
 
 	# check that the request came in as a POST, or from the command line
 	make_error(S_UNJUST) if($ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST");
@@ -1168,9 +1219,14 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 		charset=>CHARSET,
 		included_fields=>["field1","field2","field3","field4"],
 	) unless $whitelisted;
+	
+	if(!$no_captcha){
+		@taargus=has_pass($passcookie);
+		make_error("You must enter a CAPTCHA until your pass is approved by a moderator.") if @taargus[0]==2;
+	}
 
 	# check captcha
-	if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip))
+	if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip) and @taargus[0]!=1)
 	{
 		check_captcha($dbh,$captcha,$ip,$parent) if(ENABLE_CAPTCHA ne 'recaptcha');
 		check_recaptcha($challenge,$response,$ip) if(ENABLE_CAPTCHA eq 'recaptcha');
@@ -1289,10 +1345,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$)
 	}
 	
 	# finally, write to the database
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
 	$sth->execute($parent,$time,$lasthit,$numip,
 	$date,$name,$trip,$email,$subject,$password,$comment,
-	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask,$class) or make_error(S_SQLFAIL);
+	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask,$class,@taargus[1]) or make_error(S_SQLFAIL);
 
 	if($parent) # bumping
 	{
@@ -1362,6 +1418,7 @@ sub is_whitelisted($)
 	return 0;
 }
 
+# deprecated
 sub is_trusted($)
 {
 	my ($trip)=@_;
@@ -1377,6 +1434,60 @@ sub is_trusted($)
         return 1 if(($sth->fetchrow_array())[0]);
 
 	return 0;
+}
+
+sub has_pass($){
+	my($passcookie)=@_;
+	my($row,$sth,$time,$invalid,$num);
+	my($pin,$token,$verified)=split("##",$passcookie);
+	
+	return 0 unless $passcookie;
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
+	$sth->execute($pin) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		$time=time();
+		$invalid=1 unless $token eq $$row{token};
+		$num = $$row{num};
+		
+		# gives an error code if the pass isn't approved yet
+		return 2,$num unless $$row{approved}==1;
+		
+		if(($verified==0)and($$row{approved}==1)){
+			make_cookies(wakapass=>$pin."##".$token."##"."1",
+			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$time+(60*60*24*30));
+		}
+		
+		# checks if pass has expired
+		if(($$row{lasthit}+2678000) < $time){
+			my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET approved=0 WHERE pin=?;") or make_error(S_SQLFAIL);
+			$sth->execute($pin) or make_error(S_SQLFAIL);
+			$invalid=2;
+		}
+		
+		# checks if a different IP is currently authorized
+		if($$row{ip} ne IP_VAR){
+			authorize_pass($token,$pin,1);
+		}
+		else{
+			# update lasthit
+			my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET lasthit=? WHERE pin=?;") or make_error(S_SQLFAIL);
+			$sth->execute($time,$pin) or make_error(S_SQLFAIL);
+		}
+	}
+	
+	$invalid=1 unless $time;
+	
+	# removes pass cookie if its invalid or expired
+	if($invalid!=0){
+		make_cookies(wakapass=>$pin."##".$token."##"."0",
+		-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>"Thu, 01-Jan-1970 00:00:01 GMT");
+		make_error("Your pass has expired due to inactivity.") if $invalid==2;
+		make_error("Invalid Pass.") if $invalid==1;
+	}
+
+	return 1,$num;
 }
 
 sub ban_check($$$$)
@@ -2300,7 +2411,7 @@ sub do_login($$$$$)
 		$dengus=get_decoded_hashref($sth);
 		
 		if($$dengus{pass} eq $password){
-			$crypt=crypt_password($password);
+			$crypt=crypt_password($user.$password);
 			$loglogin = 1;
 		}
 	}
@@ -2311,8 +2422,8 @@ sub do_login($$$$$)
 		$sth->execute($user) or make_error($sth->errstr);
 		$dengus=get_decoded_hashref($sth);
 	
-		if ($admincookie eq $user.":".crypt_password($$dengus{pass})){
-			$crypt = crypt_password($$dengus{pass}); # BECAUSE FUCK YOU THAT'S WHY
+		if ($admincookie eq $user.":".crypt_password($$dengus{user}.$$dengus{pass})){
+			$crypt = crypt_password($$dengus{user}.$$dengus{pass}); # BECAUSE FUCK YOU THAT'S WHY
 			$nexttask="mpanel"; # BECAUSE FUCK YOU THAT'S WHY AGAIN
 		}
 	}
@@ -2335,10 +2446,21 @@ sub do_login($$$$$)
 	}
 }
 
-sub do_logout()
+sub do_logout($)
 {
-	make_cookies(wakaadmin=>"",-expires=>1);
-	make_http_forward(get_script_name()."?task=admin",ALTERNATE_REDIRECT);
+	my ($type)=@_;
+	
+	if($type eq "admin"){
+		make_cookies(wakaadmin=>"",-expires=>1);
+		make_http_forward(get_script_name()."?task=admin",ALTERNATE_REDIRECT);
+	}
+	elsif($type eq "pass"){
+		make_cookies(wakapass=>"",-expires=>1);
+		make_http_forward("http://".DOMAIN,ALTERNATE_REDIRECT);
+	}
+	else{
+		make_http_forward("http://".DOMAIN,ALTERNATE_REDIRECT);
+	}
 }
 
 sub do_rebuild_cache($)
@@ -2466,32 +2588,36 @@ sub do_nuke_database($$)
 	unlink glob RES_DIR.'*';
 
 	build_cache();
-
 	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
+}
+
+sub clear_notifications($$){
+	my ($user,$type)=@_;
+	my ($time,$row,$sth);
+	my %types = ("msgs","newmsgs","reports","newreports","banrequests","newbanreqs");
+	
+	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET ".$types{$type}."=0 WHERE user=?;") or make_error($dbh->errstr);
+	$sth->execute($user) or make_error($dbh->errstr);
 }
 
 sub check_password($)
 {
 	my ($admin)=@_; # $password is useless now
-	my $dengus;
+	my ($dengus,$sth,@session);
 	
-	my @session;
-	
-	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
 	while($dengus=get_decoded_hashref($sth))
 	{
-		if($admin eq $$dengus{pass}){
+		if($admin eq crypt_password($$dengus{user}.$$dengus{pass})){
 			@session[0] = $$dengus{user};
 			@session[1] = $$dengus{class};
 			@session[2] = $$dengus{newmsgs};
-			return @session;
-		}
-		if($admin eq crypt_password($$dengus{pass})){
-			@session[0] = $$dengus{user};
-			@session[1] = $$dengus{class};
-			@session[2] = $$dengus{newmsgs};
+			@session[3] = $$dengus{newreports};
+			@session[4] = $$dengus{newbanreqs};
+			@session[5] = $$dengus{lastdate};
+			
 			return @session;
 		}
 	}
@@ -2499,7 +2625,6 @@ sub check_password($)
 	make_error(S_WRONGPASS);
 }
 
-# this may be useless in future commits once multiuser support becomes a little more stable
 sub checkNukePassword($$){
 	my ($admin,$password)=@_;
 
@@ -2687,7 +2812,9 @@ sub init_database()
 	"locked TINYINT,".			# Locked threads
 	"filename TEXT,".			# The original filename
 	"tnmask TINYINT,".			# Whether or not the thumbnail is masked with a spoiler or something to that effect
-	"staffpost TINYINT".		# Whether or not the post was made by a staff member. 1=admin, 2=mod, 3=dev, and 4=vip
+	"staffpost TINYINT,".		# Whether or not the post was made by a staff member. 1=admin, 2=mod, 3=dev, and 4=vip
+	"passnum INTEGER".			# If a post was made with a pass, its number is stored here
+	
 	
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2783,9 +2910,11 @@ sub initPassDatabase(){
 	"pin INTEGER,".						# A 'randomly' generated pin
 	"ip TEXT,".							# A "serialized" array of the last IPs to log in
 	"lasthit INTEGER,".					# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
+	"lastswitch INTEGER,".				# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
 	"timestamp INTEGER,".				# DOB
 	"email TEXT,".						# The owner's email address
-	"approved TINYINT".					# Whether or not the pass is approved. All passes are manually approved based on post history or something
+	"approved TINYINT,".				# Whether or not the pass is approved. All passes are manually approved based on post history or something
+	"banned TINYINT".					# Whether or not the pass is banned
 	
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -2803,7 +2932,9 @@ sub initUserDatabase(){
 	"class TEXT,".
 	"lastip TEXT,".
 	"lastdate INTEGER,".
-	"newmsgs TINYINT".
+	"newmsgs TINYINT,".
+	"newreports TINYINT,".
+	"newbanreqs TINYINT".
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -3032,17 +3163,7 @@ sub get_decoded_arrayref($)
 	return $row;
 }
 
-sub emailUser($$$$){
-	my ($from,$to,$subject,$message)=@_;
-	
-	return;
-}
-
-sub smsUser($$$$){
-	my ($from,$to,$subject,$message)=@_;
-	
-	return;
-}
+# not database utils
 
 sub moveThread($$$$){
 	my ($admin,$from,$to,$parentpost)=@_;
@@ -3050,15 +3171,6 @@ sub moveThread($$$$){
 	make_error(thread_exists($from));
 	
 	logAction("movethread","",$admin);
-	
-	
-	### How to accomplish this ###
-		# SELECT * FROM from WHERE (parent='parentpost' OR (parent='0' AND num='parentpost')) and save to an array or something
-		# Find highest post in $to's board
-		# Replace all numbers in $parentpost's thread with numbers counting from the number found
-		# Insert into $to
-		# Move thread assets
-		# Rebuild Caches
 	
 	return;
 }
@@ -3174,7 +3286,7 @@ sub addUser($$$$$){
 	make_error("Invalid Class") unless $class=~m/(admin|mod|janitor|vip)/;
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
 	$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
@@ -3195,7 +3307,7 @@ sub removeUser($$){
 	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
 }
 
-sub makeEditUser(??){
+sub makeEditUser($$){
 	my ($admin,$user)=@_;
 	my @session = check_password($admin);
 	
@@ -3213,7 +3325,7 @@ sub makeEditUser(??){
 	else { print encode_string(EDIT_USER_TEMPLATE->(admin=>$admin,user=>@session[0],session=>\@session,userinfo=>$dengus)) }
 }
 
-sub updateUserDetails(??????){
+sub updateUserDetails($$$$$$){
 	my ($user,$oldpass,$newpass,$email,$class,$admin)=@_;
 	my @session = check_password($admin);
 	my ($sth);
@@ -3233,11 +3345,11 @@ sub updateUserDetails(??????){
 	if(@session[1] eq "admin"){
 		# protect admins from other admins (if there are other admins for whatever reason)
 		if(($$dengus{class} eq "admin") and ($$dengus{user} ne @session[0])) { make_error("ya turkey") }
-		elsif(($newpass ne $$dengus{pass}) and ($$dengus{user} eq @session[0])) { make_error("ya turkey") } # don't let admins change own password without entering their old pass
+		elsif(($oldpass ne $$dengus{pass}) and ($$dengus{user} eq @session[0]) and ($newpass)) { make_error("Your old password was incorrect") } # don't let admins change own password without entering their old pass
 	}
 	else{
 		if($$dengus{user} ne @session[0]) { make_error("ya turkey") }
-		if($$dengus{pass} ne $oldpass) { make_error("ya turkey") }
+		if(($$dengus{pass} ne $oldpass) and ($newpass)) { make_error("Your old password was incorrect") }
 	}
 	
 	# keep original values if user input is null
@@ -3248,11 +3360,11 @@ sub updateUserDetails(??????){
 	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=?,class=?,email=? WHERE user=?") or make_error(S_SQLFAIL);
 	$sth->execute($newpass,$class,$email,$user) or make_error(S_SQLFAIL);
 	
-	if($$dengus{user} eq @session[0]) { make_http_forward(get_script_name()."?admin=$admin&task=logout",ALTERNATE_REDIRECT) }
+	if($$dengus{user} eq @session[0]) { make_http_forward(get_script_name()."?admin=$admin&task=logout&type=admin",ALTERNATE_REDIRECT) }
 	else { make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT) }
 }
 
-sub makeComposeMessage(???){
+sub makeComposeMessage($$$){
 	my ($admin,$parentmsg,$to)=@_;
 	my @session = check_password($admin);
 	
@@ -3260,7 +3372,7 @@ sub makeComposeMessage(???){
 	print encode_string(COMPOSE_MESSAGE_TEMPLATE->(admin=>$admin,session=>\@session,parentmsg=>$parentmsg,to=>$to));
 }
 
-sub makeViewMessage(??){
+sub makeViewMessage($$){
 	my ($admin,$num)=@_;
 	my @session = check_password($admin);
 	my (@messages,$row);
@@ -3294,7 +3406,7 @@ sub makeViewMessage(??){
 }
 
 sub sendMessage($$$$$$){
-	my ($admin,$msg,$to,$parentmsg,$isnote,$noformat)=@_;
+	my ($admin,$msg,$to,$parentmsg,$isnote,$noformat,$email)=@_;
 	my @session = check_password($admin);
 	my $from=@session[0];
 	my $time=time();
@@ -3324,18 +3436,37 @@ sub sendMessage($$$$$$){
 		# updates parent msgs lasthit
 		$sth=$dbh->prepare("UPDATE ".SQL_MESSAGE_TABLE." SET lasthit=?,wasread=null WHERE num=?") or make_error(S_SQLFAIL);
 		$sth->execute($time,$$dengus{num}) or make_error(S_SQLFAIL);
+		
+		# gets the recipients email
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($to) or make_error($sth->errstr);
+		$email=get_decoded_hashref($sth);
+		$email=$$email{email};
 	}
 	else{
 		my $sth=$dbh->prepare("INSERT INTO ".SQL_MESSAGE_TABLE." VALUES(?,?,?,null,null,?,?,null);") or make_error(S_SQLFAIL);
 		$sth->execute($to,$from,$msg,$time,$time) or make_error(S_SQLFAIL);
+		
+		# gets the recipients email
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth->execute($to) or make_error($sth->errstr);
+		$email=get_decoded_hashref($sth);
+		$email=$$email{email};
 	}
 	
-	# Gives the user a new message notification
+	# gives the user a new message notification
 	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newmsgs=1 WHERE user=?") or make_error(S_SQLFAIL);
 	$sth->execute($to) or make_error(S_SQLFAIL);
 	
+	# send an email to the message recipient
+	send_email(
+		$email,
+		"cameron\@".DOMAIN,
+		$to." sent you a message","You've recieved a new message from ".$to.". Login to the ".SITE_NAME." management panel to view it."
+	);
+	
 	if($isnote){
-		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT) unless $isnote==2; # if it equals two its probably a ban request
+		make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$to,ALTERNATE_REDIRECT) unless $isnote==2; # if it equals two its probably a ban request or some other type of message that doesn't need a redirect at all
 	}
 	else{
 		make_http_forward(get_script_name()."?admin=$admin&task=inbox",ALTERNATE_REDIRECT);
@@ -3360,8 +3491,7 @@ sub makeInbox($){
 		}
 	}
 	
-	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newmsgs=0 WHERE user=?") or make_error(S_SQLFAIL);
-	$sth->execute(@session[0]) or make_error(S_SQLFAIL);
+	clear_notifications(@session[0],"msgs");
 	
 	make_http_header();
 	print encode_string(INBOX_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages));
@@ -3410,7 +3540,8 @@ sub makeThread($$){
 		dummy=>$thread[$#thread]{num},
 		threads=>[{posts=>\@thread}],
 		admin=>$admin,
-		session=>\@session));
+		session=>\@session
+	));
 }
 
 sub makePage($$){
@@ -3710,8 +3841,7 @@ sub makeViewLog($){
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_LOG_TABLE." WHERE board=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
 	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth))
-	{
+	while($row=get_decoded_hashref($sth)){
 		push @log,$row;
 	}
 	
@@ -3723,8 +3853,15 @@ sub makeViewLog($){
 	));
 }
 
-sub add_pass($){
-	my ($email)=@_;
+sub make_pass_page(){
+	make_http_header();
+	print encode_string(REGISTER_PASS_TEMPLATE->(
+		dengus=>"asdf"
+	));
+}
+
+sub add_pass($$$){
+	my ($email,$mailver,$accept)=@_;
 	my ($token,$pin,$time,$sth,$row);
 	
 	$time=time();
@@ -3732,11 +3869,13 @@ sub add_pass($){
 	# clean up input
 	make_error(S_UNUSUAL) if($email=~/[\n\r]/);
 	make_error(S_TOOLONG) if(length($email)>MAX_FIELD_LENGTH);
+	make_error("The two email fields do not match.") unless ($email eq $mailver);
+	make_error("You did not accept the terms of use or terms of application.") unless ($accept==1);
 	$email=clean_string(decode_string($email,CHARSET));
 	
 	# check for an existing pass
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE email=? OR ip LIKE ?;") or make_error(S_SQLFAIL);
-	$sth->execute($email,"%".IP_VAR,"%") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE email=? OR ip=?;") or make_error(S_SQLFAIL);
+	$sth->execute($email,IP_VAR) or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
 		if(length $$row{token}) { make_error("You already have a pass.") }
@@ -3753,16 +3892,25 @@ sub add_pass($){
 	}
 	
 	# generate pin and token
-	$pin = (9999 + int(rand(99999)));
-	$token = generate_token($email.IP_VAR.$time);
+	$pin=int(rand(900000)+100000);
+	$token=$time.dot_to_dec(IP_VAR).$pin.$email;
+	$token=hide_data($token,9,"pass",SECRET,1);
 	
 	# insert the pass into the pass table
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_PASS_TABLE." VALUES(NULL,?,?,?,NULL,?,?,0);") or make_error(S_SQLFAIL);
-	$sth->execute($token,$pin,IP_VAR,$time,$email) or make_error(S_SQLFAIL);
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_PASS_TABLE." VALUES(NULL,?,?,?,?,NULL,?,?,0,NULL);") or make_error(S_SQLFAIL);
+	$sth->execute($token,$pin,IP_VAR,$time,$time,$email) or make_error(S_SQLFAIL);
 	
 	# create cookie and log user in
-	make_cookies(wakapass=>$token.":".$pin,
+	make_cookies(wakapass=>$pin."##".$token."##"."0",
 	-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$time+(60*60*24*30));
+	
+	# send an email
+	send_email(
+		$email,
+		"cameron\@".DOMAIN,
+		SITE_NAME." Pass Info",
+		"Your pass is currently pending verification.\n\nToken: ".$token."\nPin: ".$pin."\n\nFor more info, visit http://".DOMAIN."/pass/"
+	);
 	
 	# redirect to an info page
 	make_http_header();
@@ -3772,34 +3920,146 @@ sub add_pass($){
 	));
 }
 
-sub authorize_pass($$$$){
-	# store the ip seperated by a comma from the old ones
-	# its important
-	# please understand
-	# please!!
+sub make_authorize_pass($){
+	my($cookie)=@_;
+	make_http_header();
+	print encode_string(AUTHORIZE_PASS_TEMPLATE->(
+		dengus=>$cookie
+	));
 }
 
-sub update_pass($$){
-	my ($admin,$num,$status)=@_;
+sub authorize_pass($$$;$){
+	my ($token,$pin,$remember,$noredirect)=@_;
+	my ($sth,$row,$i,$time,$expiration,$verified);
+	#$pin=clean_string(decode_string($pin,CHARSET));
+	#$token=clean_string(decode_string($token,CHARSET));
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
+	$sth->execute($pin) or make_error(S_SQLFAIL);
+	
+	# check if pass is valid and trim ip list
+	while($row=get_decoded_hashref($sth)){
+		$time=time();
+		make_error("Invalid pass") unless $token eq $$row{token};
+		
+		# checks if its been 30 minutes since the last ip authorized
+		if((($$row{lastswitch}+1800) > $time) and ($$row{lastswitch}>0)){
+			make_error("Another IP has authorized for this pass within the last 30 minutes.") unless ($$row{ip} eq IP_VAR);
+		}
+		
+		# checks if its been 31 days since the last post made with a pass
+		if(($$row{lasthit}+2678000) < $time){
+			my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET approved=0 WHERE pin=?;") or make_error(S_SQLFAIL);
+			$sth->execute($pin) or make_error(S_SQLFAIL);
+		}
+		
+		$verified=$$row{approved};
+	}
+	
+	make_error("Invalid Pass") unless $time;
+	
+	# update ip list
+	my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ip=?, lastswitch=? WHERE pin=?;") or make_error(S_SQLFAIL);
+	$sth->execute(IP_VAR,$time,$pin) or make_error(S_SQLFAIL);
+	
+	# create cookie and log user in
+	$expiration=$time+(60*60*24*30) if $remember;
+	$expiration="session" if !$remember;
+	make_cookies(wakapass=>$pin."##".$token."##".$verified,
+	-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$expiration) unless $noredirect;
+	
+	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT) unless $noredirect;
+}
+
+sub update_pass($$$;$){
+	my($admin,$num,$action,$noredirect)=@_;
+	my($value,$message,$sth,$row,$unapprove);
+	my %types = ("ban","banned","unban","banned","verify","approved","unverfiy","approved");
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
+	# get pass
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
+	
+	# some spaghetti code
+	if(($action eq "ban")or($action eq "verify")){
+		$unapprove=",approved=0" unless $action eq "verify";
+		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$types{$action}."=1".$unapprove." WHERE num=?;") or make_error(S_SQLFAIL);
+		$sth->execute($num) or make_error(S_SQLFAIL);
+		if($action eq "ban"){
+			$message="Your pass was just banned.";
+		}
+		else{
+			$message="Congratulation! Your pass was just verified by a ".SITE_NAME." staff member!";
+		}
+	}
+	elsif(($action eq "unban")or($action eq "unverify")){
+		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$types{$action}."=? WHERE num=?;") or make_error(S_SQLFAIL);
+		$sth->execute(0,$num) or make_error(S_SQLFAIL);
+		if($action eq "unverify"){
+			$message="Your pass was just disabled for inactivity. It will be eligible for renewal after you've made 5 more posts with it on.";
+		}
+		else{
+			$message="Congratulation! Your pass was just unbanned by a ".SITE_NAME." staff member!";
+		}
+	}
+	
+	# send an email
+	while($row=get_decoded_hashref($sth)){
+		send_email(
+			$$row{email},
+			"cameron\@".DOMAIN,
+			SITE_NAME." Pass Update",
+			$message."\n\nToken: ".$$row{token}."\nPin: ".$$row{pin}."\n\nFor more info, visit http://".DOMAIN."/pass/"
+		);
+	}
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=passlist",ALTERNATE_REDIRECT) unless $noredirect;
 }
 
-sub make_create_pass(){
-}
-
-sub make_authorize_pass(){
-}
-
-sub make_view_passes($){
+sub make_pass_list($){
 	my ($admin)=@_;
+	my (@unverified,@banned,@normal,$sth,$row);
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
+	
+	# grab all passes organized by last hit
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	# put unverified and banned ones in seperate arrays
+	while($row=get_decoded_hashref($sth)){
+		if($$row{approved}==0){
+			push @unverified,$row;
+		}
+		elsif($$row{banned}==1){
+			push @banned,$row;
+		}
+		else{
+			push @normal,$row;
+		}
+	}
+	
+	make_http_header();
+	print encode_string(PASS_LIST_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		normal=>\@normal,
+		banned=>\@banned,
+		unverified=>\@unverified
+	));
 }
 
 sub clear_log($){
-
+	my ($admin)=@_;
+	my @session = check_password($admin);
+	make_error(S_CLASS) if @session[1] ne 'admin';
+	
+	my $sth=$dbh->prepare("DELETE FROM ".SQL_LOG_TABLE." WHERE board=?;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
 
 sub clear_deleted($){

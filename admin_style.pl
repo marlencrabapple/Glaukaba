@@ -18,6 +18,8 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		</if>
 		<div class="topNavRight">
 			<if $session-\>[2]>[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">New Messages</a>]</if>
+			<if $session-\>[3]>[<a href="<var $self>?task=viewreports&amp;admin=<var $admin>">New Reports</a>]</if>
+			<if $session-\>[4]>[<a href="<var $self>?task=listrequests&amp;admin=<var $admin>">New Ban Requests</a>]</if>
 			<strong>Logged in as:</strong> <var $session-\>[0]>
 		</div>
 	</div>
@@ -31,12 +33,14 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_MANAPANEL></a>]
 	<if $session-\>[1] eq 'mod'>
 		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
+		[<a href="<var $self>?task=passlist&amp;admin=<var $admin>">Pass List</a>]
 		[<a href="<var $self>?task=rebuild&amp;admin=<var $admin>"><const S_MANAREBUILD></a>]
 		[<a href="<var $self>?task=listrequests&amp;admin=<var $admin>">Ban Requests</a>]
 		[<a href="<var $self>?task=viewlog&amp;admin=<var $admin>">View Log</a>]
 	</if>
 	<if $session-\>[1] eq 'admin'>
 		[<a href="<var $self>?task=bans&amp;admin=<var $admin>"><const S_MANABANS></a>]
+		[<a href="<var $self>?task=passlist&amp;admin=<var $admin>">Pass List</a>]
 		[<a href="<var $self>?task=proxy&amp;admin=<var $admin>"><const S_MANAPROXY></a>]
 		[<a href="<var $self>?task=spam&amp;admin=<var $admin>"><const S_MANASPAM></a>]
 		[<a href="<var $self>?task=sqldump&amp;admin=<var $admin>"><const S_MANASQLDUMP></a>]
@@ -46,10 +50,10 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		[<a href="<var $self>?task=viewlog&amp;admin=<var $admin>">View Log</a>]
 	</if>
 	[<a href="<var $self>?task=manageusers&amp;admin=<var $admin>"><if $session-\>[1] eq 'admin'>Manage Users</if><if $session-\>[1] ne 'admin'>User List</if></a>]
-	[<a href="<var $self>?task=edituser&amp;admin=<var $admin>&user=<var $session-\>[0]>">Change Password</a>]
+	[<a href="<var $self>?task=edituser&amp;admin=<var $admin>&user=<var $session-\>[0]>">Edit Profile</a>]
 	[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">Inbox</a>]
 	[<a id="reportQueueButton" href="<var $self>?task=viewreports&amp;admin=<var $admin>"><const S_REPORTS></a>]
-	[<a href="<var $self>?task=logout"><const S_MANALOGOUT></a>]
+	[<a href="<var $self>?task=logout&amp;type=admin"><const S_MANALOGOUT></a>]
 </if>
 <div class="passvalid"><const S_MANAMODE></div><br />
 };
@@ -487,7 +491,7 @@ use constant REPORT_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<td class="reportblock">Reported By</td>
 			<td class="reportright">
 				<loop $reports>
-					[<a href="<var $self>?task=ippage&amp;ip=<var dot_to_dec $fromip>&amp;admin=<var $admin>"><var $fromip></a>] [<a href="javascript:void(0)" onclick="addBan('<var BOARD_DIR>','<var $fromip>','<var $admin>')">Ban</a>]<br />
+					[<a href="<var $self>?task=ippage&amp;ip=<var dot_to_dec $fromip>&amp;admin=<var $admin>"><var $fromip></a>] [<a href="<var $self>?task=bantemplate&amp;ip=<var $fromip>&amp;admin=<var $admin>">Ban</a>]<br />
 				</loop>
 			</td>
 		</tr></if>
@@ -541,7 +545,7 @@ use constant BAN_REQUEST_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.
 <loop $requested>
 <div>
 User '<em><var $fromuser></em>' requested a ban for user [<a href="<var $self>?task=ippage&amp;ip=<var $ip>&amp;admin=<var $admin>"><var dec_to_dot $ip></a>] the following reason: <em>'<var $reason>'</em>. <if $reason2>Additional Details: '<em><var $reason2></em>'.</if> Post Number: <em>'<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<if $postparent><var $postparent></if><if !$postparent><var $postnum></if>#<var $postnum>" target="_blank">/<const BOARD_DIR>/<var $postnum></a>'</em>.
- - [<a href="javascript:void(0)" onclick="addBan('<var BOARD_DIR>','<var $ip>','<var $admin>')">Ban</a>] [<a href="<var $self>?task=dismissrequests&amp;ip=<var $ip>&amp;admin=<var $admin>">Dismiss</a>]
+ - [<a href="<var $self>?task=bantemplate&amp;ip=<var $ip>&amp;num=<if $postparent><var $postparent></if><if !$postparent><var $postnum></if>&amp;admin=<var $admin>">Ban</a>] [<a href="<var $self>?task=dismissrequests&amp;ip=<var $ip>&amp;admin=<var $admin>">Dismiss</a>]
 <br />
 </div>
 </loop>
@@ -613,12 +617,12 @@ use constant EDIT_USER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<input type="hidden" name="admin" value="<var $admin>" />
 	<input type="hidden" name="user" value="<if $session-\>[1] eq 'admin'><var $user></if><if $session-\>[1] ne 'admin'><var $session-\>[0]></if>" />
 	<tr><td class="postBlock">Email</td><td><input name="email" value="<var $$userinfo{email}>" size="28" /></td></tr>
-	<if $session-\>[1] eq 'admin'><tr><td class="postBlock">Class</td><td><select name="class">
+	<if (($session-\>[1] eq 'admin') and ($session-\>[0] ne $user))><tr><td class="postBlock">Class</td><td><select name="class">
 		<option value="janitor">Janitor</option>
 		<option value="mod">Moderator</option>
 		<option value="admin">Administrator</option>
 	</select></td></tr></if>
-	<tr><td class="postBlock">Old Pass</td><td><input <if (($session-\>[1] eq 'admin') and ($session-\>[1] ne $user))>disabled="disabled"</if> type="password" name="oldpass" size="28" /></td></tr>
+	<tr><td class="postBlock">Old Pass</td><td><input <if (($session-\>[1] eq 'admin') and ($session-\>[0] ne $user))>disabled="disabled"</if> type="password" name="oldpass" size="28" /></td></tr>
 	<tr><td class="postBlock">New Pass</td><td><input type="password" name="newpass" size="28" /></td></tr>
 	<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
 </tbody></table></form></div>
@@ -645,7 +649,7 @@ use constant INBOX_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <if $wasread><td><a href="<var $self>?task=viewmsg&amp;num=<var $num>&amp;admin=<var $admin>"><var truncateComment $message></a></td></if>
 <td class="listCol"><var $fromuser></td>
 <td class="listCol"><var make_date($timestamp,tiny)></td>
-<td class="listCol"><a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">[Reply]</a></td></tr>
+<td class="listCol">[<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">Reply</a>]</td></tr>
 </loop>
 <tr><td><br/></td></tr>
 <tr><td colspan="5">[<a href="<var $self>?task=composemsg&amp;admin=<var $admin>">Compose Message</a>]</td></tr>
@@ -662,10 +666,14 @@ use constant VIEW_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 </tbody>
 <hr/>
 </loop>
-<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">[Reply]</a>
+[<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">Reply</a>]
 }.NORMAL_FOOT_INCLUDE);
 
 use constant STAFF_LOG_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<if $session-\>[1] eq 'admin'>
+	[<a href="<var $self>?task=clearlog&amp;admin=<var $admin>">Clear Log</a>]
+	<hr />
+</if>
 <loop $log>
 <var $num>: User [<var $user>@<var $ip>] <var $action> <var $object> from /<var $board>/ on <var make_date $time,DATE_STYLE><br />
 </loop>
@@ -716,6 +724,57 @@ use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 </loop>
 }.NORMAL_FOOT_INCLUDE);
 
+use constant PASS_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+<fieldset>
+<legend>Pending Action</legend>
+<loop $unverified>
+<p>
+<strong>Token</strong>: '<var $token>'
+<strong>Pin:</strong> '<var $pin>'
+<strong>Email:</strong> '<var $email>'
+<strong>Created:</strong> '<var make_date($timestamp,DATE_STYLE)>'
+<strong>Last Use:</strong> '<var make_date($lasthit,DATE_STYLE)>'
+<strong>Last IP Change:</strong> '<var make_date($lastswitch,DATE_STYLE)>'
+<strong>Last IP:</strong> '<var $ip>'
+[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=verify">Verify</a>]
+[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Revoke</a>]
+[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
+</p>
+</loop>
+</fieldset>
+<fieldset>
+<legend>Active</legend>
+<loop $normal>
+<p>
+<var $num>.
+<strong>Token</strong>: '<var $token>'
+<strong>Pin:</strong> '<var $pin>'
+<strong>Email:</strong> '<var $email>'
+<strong>Last Use:</strong> '<var make_date($lasthit,DATE_STYLE)>'
+<strong>Created:</strong> '<var make_date($timestamp,DATE_STYLE)>'
+<strong>IP List:</strong> '<var $ip>'
+[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Revoke</a>]
+[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
+</p>
+</loop>
+</fieldset>
+<fieldset>
+<legend>Banned</legend>
+<loop $banned>
+<p>
+<var $num>.
+<strong>Token</strong>: '<var $token>'
+<strong>Pin:</strong> '<var $pin>'
+<strong>Email:</strong> '<var $email>'
+<strong>Last Use:</strong> '<var make_date($lasthit,DATE_STYLE)>'
+<strong>Created:</strong> '<var make_date($timestamp,DATE_STYLE)>'
+<strong>IP List:</strong> '<var $ip>'
+[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
+</p>
+</loop>
+</fieldset>
+}.NORMAL_FOOT_INCLUDE);
+
 use constant BAN_TEMPLATE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <form action="<var $self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="admin" value="<var $admin>" />
@@ -725,7 +784,7 @@ use constant BAN_TEMPLATE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		<tr>
 			<td class="reportblock">Template:</td>
 			<td class="reportright">
-				<select name="template">
+				<select name="template" disabled>
 					<option value="clear">None</option>
 					<option value="illegal">Illegal</option>
 					<option value="spam">Spam</option>
@@ -751,11 +810,17 @@ use constant BAN_TEMPLATE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		</tr>
 		<tr>
 			<td class="reportblock">Public reason:</td>
-			<td class="reportright"><textarea name="public" class="postInput"></textarea></td>
+			<td class="reportright">
+				<textarea name="public" class="postInput"></textarea><br />
+				<span class="passDesc">(This must be filled out)</span>
+			</td>
 		</tr>
 		<tr>
 			<td class="reportblock">Private info:</td>
-			<td class="reportright"><textarea name="private" class="postInput"></textarea></td>
+			<td class="reportright">
+				<textarea name="private" class="postInput"></textarea><br />
+				<span class="passDesc">(This will only be seen by other moderation staff)</span>
+			</td>
 		</tr>
 		<tr>
 			<td class="reportblock">Banned by:</td>
@@ -848,7 +913,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<td class="listCol">Code: <em>'<var $reason>'</em>. <if $reason2>Additional Details: '<em><var $reason2></em>'.</if> Post: <em>'<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<if $postparent><var $postparent></if><if !$postparent><var $postnum></if>#<var $postnum>" target="_blank">/<const BOARD_DIR>/<var $postnum></a>'</em>.</td>
 	<td class="listCol"><var $fromuser></td>
 	<td class="listCol"><var make_date($timestamp,tiny)></td>
-	<td class="listCol">[<a href="javascript:void(0)" onclick="addBan('<var BOARD_DIR>','<var $ip>','<var $admin>')">Ban</a>]</td></tr>
+	<td class="listCol">[<a href="<var $self>?task=bantemplate&amp;ip=<var $ip>&amp;admin=<var $admin>">Ban</a>]</td></tr>
 	</loop>
 	<tr><td><br/></td></tr>
 	<tbody>

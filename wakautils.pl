@@ -183,24 +183,25 @@ sub do_wakabamark($;$$)
 	{
 		# glaukaba's SUPERIOR adaptation of wordwrap2
 		if(ADD_BREAKS==1){
-			unless(m/^$protocol_re/){
-				if(m/[^\s]{100,}/){
-					my $i=0;
-					for(split(/(.{100})/,$lines[0])){
-						if($i==1){ $lines[0]="$_<br />" if $_; }
-						else{ $lines[0].="$_<br />" if $_; }
-						$i++;
-					}
-					$lines[0]=~s/<br \/>$//;
+			if(m/[^\s]{100,}/){
+				my $i=0;
+				for(split(/(.{100})/,$lines[0])){
+					if($i==1){ $lines[0]="$_<br />" if $_; }
+					else{ $lines[0].="$_<br />" if $_; }
+					$i++;
 				}
+				$lines[0]=~s/<br \/>$//;
 			}
-			elsif(m/^$protocol_re/){
-				#$lines[0]=abbreviate_html($lines[0],1,100);
+		}
+		else{
+			# yo-yo-yo-yo move mvb
+			if(m/[^\s]{100,}/){
+				$lines[0]="<span class=\"longtext\">$_</span>";
 			}
 		}
 		
 		# convert empty lines to line breaks
-		if(/^\s*$/){ 
+		if(/^\s*$/){
 			$res.="<br />";
 			shift @lines;
 		}
@@ -660,7 +661,8 @@ sub make_cookies(%)
 
 		$value=cookie_encode($value,$charset);
 
-		print "Set-Cookie: $name=$value; path=$path; expires=$date;\n";
+		print "Set-Cookie: $name=$value; path=$path; expires=$date;\n" unless $cookies{'-expires'} eq "session";
+		print "Set-Cookie: $name=$value; path=$path;\n" if $cookies{'-expires'} eq "session";
 	}
 }
 
@@ -804,16 +806,6 @@ sub process_tripcode($;$$$$)
 
 	return clean_string($name) if $nonamedecoding;
 	return (clean_string(decode_string($name,$charset)),"");
-}
-
-# enterprise security? maybe not, but who cares i'm just generating pass tokens
-sub generate_token($){
-	my ($jumble)=@_;
-	$jumble = clean_string($jumble);
-	my $maxlen=255-length(SECRET);
-	$jumble=substr $jumble,0,$maxlen if(length($jumble)>$maxlen);
-	$jumble=hide_data($jumble,6,"trip",SECRET,1);
-	return $jumble;
 }
 
 sub make_date($$;@)
@@ -1511,6 +1503,18 @@ sub truncateLine($){
 	}
 	
 	return $line;
+}
+
+sub send_email($$$$){
+	my($to,$from,$subject,$message)=@_;
+	$from=~s/\@www\./\@/;
+ 	my $sendmail = '/usr/lib/sendmail';
+ 	open(MAIL, "|$sendmail -oi -t");
+ 		print MAIL "From: $from\n";
+ 		print MAIL "To: $to\n";
+ 		print MAIL "Subject: $subject\n\n";
+ 		print MAIL "$message\n";
+ 	close(MAIL);
 }
 
 sub add(@) { my ($sum,$term); while(defined ($term=shift)) { $sum+=$term } return $sum%4294967296 }

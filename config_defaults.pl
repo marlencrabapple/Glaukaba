@@ -22,6 +22,7 @@ BEGIN {
 	eval "use constant SQL_BANREQUEST_TABLE => 'banrequests'" unless(defined &SQL_BANREQUEST_TABLE);
 	eval "use constant SQL_DELETED_TABLE => 'deleted'" unless(defined &SQL_DELETED_TABLE);
 	eval "use constant SQL_LOG_TABLE => 'log'" unless(defined &SQL_LOG_TABLE);
+	eval "use constant SQL_PASS_TABLE => 'passes'" unless(defined &SQL_PASS_TABLE);
 
 	eval "use constant USE_TEMPFILES => 1" unless(defined &USE_TEMPFILES);
 
@@ -40,6 +41,7 @@ BEGIN {
 	eval "use constant SILLY_ANONYMOUS => ''" unless(defined &SILLY_ANONYMOUS);
 	eval "use constant DEFAULT_STYLE => 'Yotsuba B'" unless(defined &DEFAULT_STYLE);
 	eval "use constant SOCIAL => 0" unless(defined &SOCIAL);
+	eval "use constant ADD_BREAKS => 0" unless(defined &ADD_BREAKS);
 
 	eval "use constant MAX_KB => 5000" unless(defined &MAX_KB);
 	eval "use constant MAX_W => 250" unless(defined &MAX_W);
@@ -67,6 +69,7 @@ BEGIN {
 	eval "use constant CAPTCHA_SPACING => 2.5" unless(defined &CAPTCHA_SPACING);
 	eval "use constant RECAPTCHA_PRIVATE_KEY => ''" unless(defined &RECAPTCHA_PRIVATE_KEY);
 	eval "use constant RECAPTCHA_PUBLIC_KEY => ''" unless(defined &RECAPTCHA_PUBLIC_KEY);
+	eval "use constant PASS_ENABLED => 0" unless(defined &PASS_ENABLED);
 
 	eval "use constant ENABLE_LOAD => 0" unless(defined &ENABLE_LOAD);
 	eval "use constant LOAD_SENDER_SCRIPT => 'sender.pl'" unless(defined &LOAD_SENDER_SCRIPT);

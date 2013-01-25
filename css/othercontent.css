@@ -1,0 +1,124 @@
+#doc{
+margin: auto;
+text-align: left;
+width: 57.69em;
+min-width: 750px;
+padding: 0;
+}
+#siteLogo{
+margin:auto;
+text-align:center;
+}
+.box{
+border: 1px black solid;
+margin: 0;
+padding: 0;
+margin-top: 7px;
+}
+.full{
+width:100%;
+}
+.half{
+width: 49.2%;
+margin-left: auto;
+margin-right: auto;
+}
+.left{
+float:left;
+}
+.right{
+float:right;
+margin-right: -2px;
+}
+.red{
+background: #fff;
+}
+.green{
+background: #efe;
+color: #000;
+}
+.blue{
+background: #eff;
+color: #000;
+}
+.blue strong{
+background: #eff;
+color: #006;
+}
+.red .boxHeader{
+background: #fca;
+color: #800;
+}
+.green .boxHeader{
+background: #9c6;
+color: #060;
+}
+.blue .boxHeader{
+background: #59a;
+color: #fff;
+}
+.boxHeader{
+margin: 0;
+padding: 0;
+position: relative;
+zoom: 100%;
+padding-left: .5em;
+line-height: 2em;
+}
+.boxHeader h2{
+font-size: 131%;
+font-weight: bold;
+margin: 0;
+padding: 0;
+}
+.boxHeader a{
+color: #060;
+}
+.boxHeader a:hover{
+color: #060 !important;
+}
+.boxContent{
+padding: 5px;
+font-size: 93%;
+}
+.faq{
+margin: 10px;
+}
+.faq p{
+color:black;
+margin: 15px;
+}
+.email{
+margin: 15px;
+}
+#acceptTerms{
+margin: 0;
+padding: 0;
+overflow: hidden;
+}
+label{
+margin: 0;
+}
+input[type=text] {
+margin: 0px;
+margin-right: 2px;
+padding: 2px 4px 3px 4px;
+border: 1px solid #AAA;
+outline: none;
+font-family: arial,helvetica,sans-serif;
+font-size: 10pt;
+text-align: center;
+width: 145px;
+}
+ol{
+margin: 1em;
+margin-top: 0.5em;
+margin-left: 0;
+padding-left: 30px;
+}
+
+ol li{
+list-style: decimal outside;
+margin: 0;
+padding: 0;
+}
