@@ -27,15 +27,13 @@ sub protocol_regexp() { return $protocol_re }
 
 sub url_regexp() { return $url_re }
 
-sub abbreviate_html($$$)
-{
+sub abbreviate_html($$$){
 	my ($html,$max_lines,$approx_len)=@_;
 	my ($lines,$chars,@stack);
 
 	return undef unless($max_lines);
 
-	while($html=~m!(?:([^<]+)|<(/?)(\w+).*?(/?)>)!g)
-	{
+	while($html=~m!(?:([^<]+)|<(/?)(\w+).*?(/?)>)!g){
 		my ($text,$closing,$tag,$implicit)=($1,$2,lc($3),$4);
 
 		if($text) { $chars+=length $text; }
@@ -45,15 +43,13 @@ sub abbreviate_html($$$)
 			pop @stack if($closing);
 
 			if(($closing or $implicit) and ($tag eq "p" or $tag eq "blockquote" or $tag eq "pre"
-			or $tag eq "li" or $tag eq "ol" or $tag eq "ul" or $tag eq "br"))
-			{
+			or $tag eq "li" or $tag eq "ol" or $tag eq "ul" or $tag eq "br")){
 				$lines+=int($chars/$approx_len)+1;
 				$lines++ if($tag eq "p" or $tag eq "blockquote");
 				$chars=0;
 			}
 
-			if($lines>=$max_lines)
-			{
+			if($lines>=$max_lines){
  				# check if there's anything left other than end-tags
  				return undef if (substr $html,pos $html)=~m!^(?:\s*</\w+>)*\s*$!s;
 
@@ -68,38 +64,30 @@ sub abbreviate_html($$$)
 	return undef;
 }
 
-sub sanitize_html($%)
-{
+sub sanitize_html($%){
 	my ($html,%tags)=@_;
 	my (@stack,$clean);
 	my $entity_re=qr/&(?!\#[0-9]+;|\#x[0-9a-fA-F]+;|amp;|lt;|gt;)/;
 
-	while($html=~/(?:([^<]+)|<([^<>]*)>|(<))/sg)
-	{
+	while($html=~/(?:([^<]+)|<([^<>]*)>|(<))/sg){
 		my ($text,$tag,$lt)=($1,$2,$3);
 
-		if($lt)
-		{
+		if($lt){
 			$clean.="&lt;";
 		}
-		elsif($text)
-		{
+		elsif($text){
 			$text=~s/$entity_re/&amp;/g;
 			$text=~s/>/&gt;/g;
 			$clean.=$text;
 		}
 		else
 		{
-			if($tag=~m!^\s*(/?)\s*([a-z0-9_:\-\.]+)(?:\s+(.*?)|)\s*(/?)\s*$!si)
-			{
+			if($tag=~m!^\s*(/?)\s*([a-z0-9_:\-\.]+)(?:\s+(.*?)|)\s*(/?)\s*$!si){
 				my ($closing,$name,$args,$implicit)=($1,lc($2),$3,$4);
 
-				if($tags{$name})
-				{
-					if($closing)
-					{
-						if(grep { $_ eq $name } @stack)
-						{
+				if($tags{$name}){
+					if($closing){
+						if(grep { $_ eq $name } @stack){
 							my $entry;
 
 							do {
@@ -114,22 +102,19 @@ sub sanitize_html($%)
 
 						$args=~s/\s/ /sg;
 
-						while($args=~/([a-z0-9_:\-\.]+)(?:\s*=\s*(?:'([^']*?)'|"([^"]*?)"|['"]?([^'" ]*))|)/gi)
-						{
+						while($args=~/([a-z0-9_:\-\.]+)(?:\s*=\s*(?:'([^']*?)'|"([^"]*?)"|['"]?([^'" ]*))|)/gi){
 							my ($arg,$value)=(lc($1),defined($2)?$2:defined($3)?$3:$4);
 							$value=$arg unless defined($value);
 
 							my $type=$tags{$name}{args}{$arg};
 
-							if($type)
-							{
+							if($type){
 								my $passes=1;
 
 								if($type=~/url/i) { $passes=0 unless $value=~/(?:^${protocol_re}|^[^:]+$)/ }
 								if($type=~/number/i) { $passes=0 unless $value=~/^[0-9]+$/  }
 
-								if($passes)
-								{
+								if($passes){
 									$value=~s/$entity_re/&amp;/g;
 									$args{$arg}=$value;
 								}
@@ -165,22 +150,19 @@ sub sanitize_html($%)
 	return $clean;
 }
 
-sub describe_allowed(%)
-{
+sub describe_allowed(%){
 	my (%tags)=@_;
 
 	return join ", ",map { $_.($tags{$_}{args}?" (".(join ", ",sort keys %{$tags{$_}{args}}).")":"") } sort keys %tags;
 }
 
-sub do_wakabamark($;$$)
-{
+sub do_wakabamark($;$$){
 	my ($text,$handler,$simplify)=@_;
 	my $res;
 	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
 
-	while(defined($_=$lines[0]))
-	{
+	while(defined($_=$lines[0])){
 		# glaukaba's SUPERIOR adaptation of wordwrap2
 		if(ADD_BREAKS==1){
 			if(m/[^\s]{100,}/){
@@ -205,15 +187,13 @@ sub do_wakabamark($;$$)
 			$res.="<br />";
 			shift @lines;
 		}
-		elsif(/^(1\.|[\*\+\-]) /) # lists
-		{
+		elsif(/^(1\.|[\*\+\-]) /){ # lists
 			my ($tag,$re,$skip,$html);
 
 			if($1 eq "1.") { $tag="ol"; $re=qr/[0-9]+\./; $skip=1; }
 			else { $tag="ul"; $re=qr/\Q$1\E/; $skip=0; }
 
-			while($lines[0]=~/^($re)(?: |\t)(.*)/)
-			{
+			while($lines[0]=~/^($re)(?: |\t)(.*)/){
 				my $spaces=(length $1)+1;
 				my $item="$2\n";
 				shift @lines;
@@ -225,14 +205,12 @@ sub do_wakabamark($;$$)
 			}
 			$res.="<$tag>$html</$tag>";
 		}
-		elsif(/^&gt;/) # quoted sections
-		{
+		elsif(/^&gt;/){ # quoted sections
 			my @quote;
 			while($lines[0]=~/^(&gt;.*)/) { push @quote,$1; shift @lines; }
 			$res.="<span class=\"quote\">".do_spans($handler,@quote)."</span><br />";
 		}
-		else # normal text
-		{
+		else{ # normal text
 			my @text;
 			my $i = 0;
 			
@@ -246,11 +224,9 @@ sub do_wakabamark($;$$)
 	return $res;
 }
 
-sub do_spans($@)
-{
+sub do_spans($@){
 	my $handler=shift;
-	return join "<br />",map
-	{
+	return join "<br />",map{
 		my $line=$_;
 		my @hidden;
 
@@ -271,8 +247,7 @@ sub do_spans($@)
 		#$line=~s{ (?<![0-9a-zA-Z\*_\x80-\x9f\xe0-\xfc]) (~~) (?![<>\s\*_]) ([^<>]+?) (?<![<>\s\*_\x80-\x9f\xe0-\xfc]) \1 (?![0-9a-zA-Z\*_]) }{<span class="spoiler">$2</span>}gx;
 
 		# do ^H
-		if($]>5.007)
-		{
+		if($]>5.007){
 			my $regexp;
 			$regexp=qr/(?:&#?[0-9a-zA-Z]+;|[^&<>])(?<!\^H)(??{$regexp})?\^H/;
 			$line=~s{($regexp)}{"<del>".(substr $1,0,(length $1)/3)."</del>"}gex;
@@ -287,13 +262,11 @@ sub do_spans($@)
 	} @_;
 }
 
-sub compile_template($;$)
-{
+sub compile_template($;$){
 	my ($str,$nostrip)=@_;
 	my $code;
 
-	unless($nostrip)
-	{
+	unless($nostrip){
 		$str=~s/^\s+//;
 		$str=~s/\s+$//;
 		$str=~s/\n\s*/ /sg;
@@ -303,18 +276,15 @@ sub compile_template($;$)
 		$str=~s/\n\s*//sg;
 	}
 
-	while($str=~m!(.*?)(<(/?)(var|const|if|loop)(?:|\s+(.*?[^\\]))>|$)!sg)
-	{
+	while($str=~m!(.*?)(<(/?)(var|const|if|loop)(?:|\s+(.*?[^\\]))>|$)!sg){
 		my ($html,$tag,$closing,$name,$args)=($1,$2,$3,$4,$5);
 
 		$html=~s/(['\\])/\\$1/g;
 		$code.="\$res.='$html';" if(length $html);
 		$args=~s/\\>/>/g;
 
-		if($tag)
-		{
-			if($closing)
-			{
+		if($tag){
+			if($closing){
 				if($name eq 'if') { $code.='}' }
 				elsif($name eq 'loop') { $code.='$$_=$__ov{$_} for(keys %__ov);}}' }
 			}
@@ -323,8 +293,7 @@ sub compile_template($;$)
 				if($name eq 'var') { $code.='$res.=eval{'.$args.'};' }
 				elsif($name eq 'const') { my $const=eval $args; $const=~s/(['\\])/\\$1/g; $code.='$res.=\''.$const.'\';' }
 				elsif($name eq 'if') { $code.='if(eval{'.$args.'}){' }
-				elsif($name eq 'loop')
-				{ $code.='my $__a=eval{'.$args.'};if($__a){for(@$__a){my %__v=%{$_};my %__ov;for(keys %__v){$__ov{$_}=$$_;$$_=$__v{$_};}' }
+				elsif($name eq 'loop'){ $code.='my $__a=eval{'.$args.'};if($__a){for(@$__a){my %__v=%{$_};my %__ov;for(keys %__v){$__ov{$_}=$$_;$$_=$__v{$_};}' }
 			}
 		}
 	}
@@ -347,14 +316,12 @@ sub compile_template($;$)
 	return $sub;
 }
 
-sub template_for($$$)
-{
+sub template_for($$$){
 	my ($var,$start,$end)=@_;
 	return [map +{$var=>$_},($start..$end)];
 }
 
-sub include($;$)
-{
+sub include($;$){
 	my ($filename,$nostrip)=@_;
 
 	open FILE,$filename or return '';
@@ -370,8 +337,7 @@ sub include($;$)
 }
 
 
-sub forbidden_unicode($;$)
-{
+sub forbidden_unicode($;$){
 	my ($dec,$hex)=@_;
 	return 1 if length($dec)>7 or length($hex)>7; # too long numbers
 	my $ord=($dec or hex $hex);
@@ -386,8 +352,7 @@ sub forbidden_unicode($;$)
 	return 0;
 }
 
-sub clean_string($;$)
-{
+sub clean_string($;$){
 	my ($str,$cleanentities)=@_;
 
 	if($cleanentities) { $str=~s/&/&amp;/g } # clean up &
@@ -411,8 +376,7 @@ sub clean_string($;$)
 	return $str;
 }
 
-sub decode_string($;$$)
-{
+sub decode_string($;$$){
 	my ($str,$charset,$noentities)=@_;
 	my $use_unicode=$has_encode && $charset;
 
@@ -433,8 +397,7 @@ sub decode_string($;$$)
 	return $str;
 }
 
-sub escamp($)
-{
+sub escamp($){
 	my ($str)=@_;
 	$str=~s/&/&amp;/g;
 	return $str;
@@ -451,16 +414,14 @@ sub mahou_inyoufu($){
 	return $dengus;
 }
 
-sub urlenc($)
-{
+sub urlenc($){
 	my ($str)=@_;
 	$str=~s/([^\w ])/"%".sprintf("%02x",ord $1)/sge;
 	$str=~s/ /+/sg;
 	return $str;
 }
 
-sub clean_path($)
-{
+sub clean_path($){
 	my ($str)=@_;
 	$str=~s!([^\w/._\-])!"%".sprintf("%02x",ord $1)!sge;
 	return $str;
@@ -472,8 +433,7 @@ sub clean_path($)
 # Javascript utilities
 #
 
-sub clean_to_js($)
-{
+sub clean_to_js($){
 	my $str=shift;
 
 	$str=~s/&amp;/\\x26/g;
@@ -489,8 +449,7 @@ sub clean_to_js($)
 	return "'$str'";
 }
 
-sub js_string($)
-{
+sub js_string($){
 	my $str=shift;
 
 	$str=~s/\\/\\\\/g;
@@ -502,13 +461,11 @@ sub js_string($)
 	return "'$str'";
 }
 
-sub js_array(@)
-{
+sub js_array(@){
 	return "[".(join ",",@_)."]";
 }
 
-sub js_hash(%)
-{
+sub js_hash(%){
 	my %hash=@_;
 	return "{".(join ",",map "'$_':$hash{$_}",keys %hash)."}";
 }
@@ -526,8 +483,7 @@ use constant FORCETIME => '0.04'; 	# If the cache is less than (FORCETIME) days 
                                     # Saves everyone some bandwidth. 0.04 days is ~ 1 hour. 0.0007 days is ~ 1 min.
 eval 'use IO::Socket::INET'; # Will fail on old Perl versions!
 
-sub get_http($;$$$)
-{
+sub get_http($;$$$){
 	my ($url,$maxsize,$referer,$cacheprefix)=@_;
 	my ($host,$port,$doc)=$url=~m!^(?:http://|)([^/]+)(:[0-9]+|)(.*)$!;
 	$port=80 unless($port);
@@ -563,18 +519,15 @@ sub get_http($;$$$)
 
 	# body
 	my ($line,$output);
-	while($line=<$sock>)
-	{
+	while($line=<$sock>){
 		$output.=$line;
 		last if $maxsize and $output>=$maxsize;
 	}
 	undef $sock;
 
-	if($statuscode=="200")
-	{
+	if($statuscode=="200"){
 		#navbar changed, update cache
-		if(open CACHE,">$cachefile")
-		{
+		if(open CACHE,">$cachefile"){
 			print CACHE "$lastmod\n";
 			print CACHE $output;
 			close CACHE or die "close cache: $!";
@@ -588,12 +541,10 @@ sub get_http($;$$$)
 	}
 }
 
-sub make_http_forward($;$)
-{
+sub make_http_forward($;$){
 	my ($location,$alternate_method)=@_;
 
-	if($alternate_method)
-	{
+	if($alternate_method){
 		print "Content-Type: text/html\n";
 		print "\n";
 		print "<html><head>";
@@ -611,12 +562,10 @@ sub make_http_forward($;$)
 	}
 }
 
-sub make_http_forward_new($;$;$)
-{
+sub make_http_forward_new($;$;$){
 	my ($location,$alternate_method,$target)=@_;
 
-	if($alternate_method)
-	{
+	if($alternate_method){
 		print "Content-Type: text/html\n";
 		print "\n";
 		print "<html><head>";
@@ -634,8 +583,7 @@ sub make_http_forward_new($;$;$)
 	}
 }
 
-sub make_cookies(%)
-{
+sub make_cookies(%){
 	my (%cookies)=@_;
 
 	my $charset=$cookies{'-charset'};
@@ -645,15 +593,13 @@ sub make_cookies(%)
 
 	my $date=make_date($expires,"cookie");
 
-	unless($path)
-	{
+	unless($path){
 		if($autopath eq 'current') { ($path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$! }
 		elsif($autopath eq 'parent') { ($path)=$ENV{SCRIPT_NAME}=~m!^(.*?/)(?:[^/]+/)?[^/]+$! }
 		else { $path='/'; }
 	}
 
-	foreach my $name (keys %cookies)
-	{
+	foreach my $name (keys %cookies){
 		next if($name=~/^-/); # skip entries that start with a dash
 
 		my $value=$cookies{$name};
@@ -666,14 +612,12 @@ sub make_cookies(%)
 	}
 }
 
-sub cookie_encode($;$)
-{
+sub cookie_encode($;$){
 	my ($str,$charset)=@_;
 
 	if($]>5.007) # new perl, use Encode.pm
 	{
-		if($charset)
-		{
+		if($charset){
 			require Encode;
 			$str=Encode::decode($charset,$str);
 			$str=~s/&\#([0-9]+);/chr $1/ge;
@@ -687,20 +631,17 @@ sub cookie_encode($;$)
 	}
 	else # do the hard work ourselves
 	{
-		if($charset=~/\butf-?8$/i)
-		{
+		if($charset=~/\butf-?8$/i){
 			$str=~s{([\xe0-\xef][\x80-\xBF][\x80-\xBF]|[\xc0-\xdf][\x80-\xBF]|&#([0-9]+);|&#[xX]([0-9a-fA-F]+);|[^0-9a-zA-Z])}{ # convert UTF-8 to URL encoding - only handles up to U-FFFF
 				my $c;
 				if($2) { $c=$2 }
 				elsif($3) { $c=hex $3 }
 				elsif(length $1==1) { $c=ord $1 }
-				elsif(length $1==2)
-				{
+				elsif(length $1==2){
 					my @b=map { ord $_ } split //,$1;
 					$c=(($b[0]-0xc0)<<6)+($b[1]-0x80);
 				}
-				elsif(length $1==3)
-				{
+				elsif(length $1==3){
 					my @b=map { ord $_ } split //,$1;
 					$c=(($b[0]-0xe0)<<12)+(($b[1]-0x80)<<6)+($b[2]-0x80);
 				}
@@ -726,8 +667,7 @@ sub cookie_encode($;$)
 	return $str;
 }
 
-sub get_xhtml_content_type(;$$)
-{
+sub get_xhtml_content_type(;$$){
 	my ($charset,$usexhtml)=@_;
 	my $type;
 
@@ -739,8 +679,7 @@ sub get_xhtml_content_type(;$$)
 	return $type;
 }
 
-sub expand_filename($)
-{
+sub expand_filename($){
 	my ($filename)=@_;
 	return $filename if($filename=~m!^/!);
 	return $filename if($filename=~m!^\w+:!);
@@ -753,8 +692,7 @@ sub expand_filename($)
 # Network utilities
 #
 
-sub resolve_host($)
-{
+sub resolve_host($){
 	my $ip=shift;
 	return (gethostbyaddr inet_aton($ip),AF_INET or $ip);
 }
@@ -764,13 +702,11 @@ sub resolve_host($)
 # Data utilities
 #
 
-sub process_tripcode($;$$$$)
-{
+sub process_tripcode($;$$$$){
 	my ($name,$tripkey,$secret,$charset,$nonamedecoding)=@_;
 	$tripkey="!" unless($tripkey);
 
-	if($name=~/^(.*?)((?<!&)#|\Q$tripkey\E)(.*)$/)
-	{
+	if($name=~/^(.*?)((?<!&)#|\Q$tripkey\E)(.*)$/){
 		my ($namepart,$marker,$trippart)=($1,$2,$3);
 		my $trip;
 	
@@ -789,8 +725,7 @@ sub process_tripcode($;$$$$)
 
 		# 2ch trips are processed as Shift_JIS whenever possible
 		eval 'use Encode qw(decode encode)';
-		unless($@)
-		{
+		unless($@){
 			$trippart=decode_string($trippart,$charset);
 			$trippart=encode("Shift_JIS",$trippart,0x0200);
 		}
@@ -808,58 +743,49 @@ sub process_tripcode($;$$$$)
 	return (clean_string(decode_string($name,$charset)),"");
 }
 
-sub make_date($$;@)
-{
+sub make_date($$;@){
 	my ($time,$style,@locdays)=@_;
 	my @days=qw(Sun Mon Tue Wed Thu Fri Sat);
 	my @months=qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 	@locdays=@days unless(@locdays);
 
-	if($style eq "2ch")
-	{
+	if($style eq "2ch"){
 		my @ltime=localtime($time);
 
 		return sprintf("%04d-%02d-%02d %02d:%02d",
 		$ltime[5]+1900,$ltime[4]+1,$ltime[3],$ltime[2],$ltime[1]);
 	}
-	elsif($style eq "futaba" or $style eq "0")
-	{
+	elsif($style eq "futaba" or $style eq "0"){
 		my @ltime=localtime($time);
 
 		return sprintf("%02d/%02d/%02d(%s)%02d:%02d",
 		$ltime[5]-100,$ltime[4]+1,$ltime[3],$locdays[$ltime[6]],$ltime[2],$ltime[1]);
 	}
-	elsif($style eq "localtime")
-	{
+	elsif($style eq "localtime"){
 		return scalar(localtime($time));
 	}
-	elsif($style eq "tiny")
-	{
+	elsif($style eq "tiny"){
 		my @ltime=localtime($time);
 
 		return sprintf("%02d/%02d %02d:%02d",
 		$ltime[4]+1,$ltime[3],$ltime[2],$ltime[1]);
 	}
-	elsif($style eq "http")
-	{
+	elsif($style eq "http"){
 		my ($sec,$min,$hour,$mday,$mon,$year,$wday)=gmtime($time);
 		return sprintf("%s, %02d %s %04d %02d:%02d:%02d GMT",
 		$days[$wday],$mday,$months[$mon],$year+1900,$hour,$min,$sec);
 	}
-	elsif($style eq "cookie")
-	{
+	elsif($style eq "cookie"){
 		my ($sec,$min,$hour,$mday,$mon,$year,$wday)=gmtime($time);
 		return sprintf("%s, %02d-%s-%04d %02d:%02d:%02d GMT",
 		$days[$wday],$mday,$months[$mon],$year+1900,$hour,$min,$sec);
 	}
-	elsif($style eq "month")
-	{
+	elsif($style eq "month"){
 		my ($sec,$min,$hour,$mday,$mon,$year,$wday)=gmtime($time);
 		return sprintf("%s %d",
 		$months[$mon],$year+1900);
 	}
-	elsif($style eq "2ch-sep93")
-	{
+	elsif($style eq "2ch-sep93"){
 		my $sep93=timelocal(0,0,0,1,8,93);
 		return make_date($time,"2ch") if($time<$sep93);
 
@@ -870,19 +796,16 @@ sub make_date($$;@)
 	}
 }
 
-sub parse_http_date($)
-{
+sub parse_http_date($){
 	my ($date)=@_;
 	my %months=(Jan=>0,Feb=>1,Mar=>2,Apr=>3,May=>4,Jun=>5,Jul=>6,Aug=>7,Sep=>8,Oct=>9,Nov=>10,Dec=>11);
 
-	if($date=~/^[SMTWF][a-z][a-z], (\d\d) ([JFMASOND][a-z][a-z]) (\d\d\d\d) (\d\d):(\d\d):(\d\d) GMT$/)
-	{ return eval { timegm($6,$5,$4,$1,$months{$2},$3-1900) } }
+	if($date=~/^[SMTWF][a-z][a-z], (\d\d) ([JFMASOND][a-z][a-z]) (\d\d\d\d) (\d\d):(\d\d):(\d\d) GMT$/){ return eval { timegm($6,$5,$4,$1,$months{$2},$3-1900) } }
 
 	return undef;
 }
 
-sub cfg_expand($%)
-{
+sub cfg_expand($%){
 	my ($str,%grammar)=@_;
 	$str=~s/%(\w+)%/
 		my @expansions=@{$grammar{$1}};
@@ -920,18 +843,15 @@ sub decode_base64($) # stolen from MIME::Base64::Perl
 	return unpack "u",join '',map { chr(32+length($_)*3/4).$_ } $str=~/(.{1,60})/gs;
 }
 
-sub dot_to_dec($)
-{
+sub dot_to_dec($){
 	return unpack('N',pack('C4',split(/\./, $_[0]))); # wow, magic.
 }
 
-sub dec_to_dot($)
-{
+sub dec_to_dot($){
 	return join('.',unpack('C4',pack('N',$_[0])));
 }
 
-sub mask_ip($$;$)
-{
+sub mask_ip($$;$){
 	my ($ip,$key,$algorithm)=@_;
 
 	$ip=dot_to_dec($ip) if $ip=~/\./;
@@ -939,8 +859,7 @@ sub mask_ip($$;$)
 	my ($block,$stir)=setup_masking($key,$algorithm);
 	my $mask=0x80000000;
 
-	for(1..32)
-	{
+	for(1..32){
 		my $bit=$ip&$mask?"1":"0";
 		$block=$stir->($block);
 		$ip^=$mask if(ord($block)&0x80);
@@ -951,8 +870,7 @@ sub mask_ip($$;$)
 	return sprintf "%08x",$ip;
 }
 
-sub unmask_ip($$;$)
-{
+sub unmask_ip($$;$){
 	my ($id,$key,$algorithm)=@_;
 
 	$id=hex($id);
@@ -960,8 +878,7 @@ sub unmask_ip($$;$)
 	my ($block,$stir)=setup_masking($key,$algorithm);
 	my $mask=0x80000000;
 
-	for(1..32)
-	{
+	for(1..32){
 		$block=$stir->($block);
 		$id^=$mask if(ord($block)&0x80);
 		my $bit=$id&$mask?"1":"0";
@@ -972,16 +889,14 @@ sub unmask_ip($$;$)
 	return dec_to_dot($id);
 }
 
-sub setup_masking($$)
-{
+sub setup_masking($$){
 	my ($key,$algorithm)=@_;
 
 	$algorithm=$has_md5?"md5":"rc6" unless $algorithm;
 
 	my ($block,$stir);
 
-	if($algorithm eq "md5")
-	{
+	if($algorithm eq "md5"){
 		return (md5($key),sub { md5(shift) })
 	}
 	else
@@ -991,8 +906,7 @@ sub setup_masking($$)
 	}
 }
 
-sub make_random_string($)
-{
+sub make_random_string($){
 	my ($num)=@_;
 	my $chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	my $str;
@@ -1004,14 +918,12 @@ sub make_random_string($)
 
 sub null_string($) { "\0"x(shift) }
 
-sub make_key($$$)
-{
+sub make_key($$$){
 	my ($key,$secret,$length)=@_;
 	return rc4(null_string($length),$key.$secret);
 }
 
-sub hide_data($$$$;$)
-{
+sub hide_data($$$$;$){
 	my ($data,$bytes,$key,$secret,$base64)=@_;
 
 	my $crypt=rc4(null_string($bytes),make_key($key,$secret,32).$data);
@@ -1026,12 +938,10 @@ sub hide_data($$$$;$)
 # File utilities
 #
 
-sub read_array($)
-{
+sub read_array($){
 	my ($file)=@_;
 
-	if(ref $file eq "GLOB")
-	{
+	if(ref $file eq "GLOB"){
 		return map { s/\r?\n?$//; $_ } <$file>;
 	}
 	else
@@ -1044,27 +954,22 @@ sub read_array($)
 	}
 }
 
-sub write_array($@)
-{
+sub write_array($@){
 	my ($file,@array)=@_;
 
-	if(ref $file eq "GLOB")
-	{
+	if(ref $file eq "GLOB"){
 		print $file join "\n",@array;
 	}
 	else # super-paranoid atomic write
 	{
 		my $rndname1="__".make_random_string(12).".dat";
 		my $rndname2="__".make_random_string(12).".dat";
-		if(open FILE,">$rndname1")
-		{
+		if(open FILE,">$rndname1"){
 			binmode FILE;
-			if(print FILE join "\n",@array)
-			{
+			if(print FILE join "\n",@array){
 				close FILE;
 				rename $file,$rndname2 if -e $file;
-				if(rename $rndname1,$file)
-				{
+				if(rename $rndname1,$file){
 					unlink $rndname2 if -e $rndname2;
 					return;
 				}
@@ -1087,8 +992,7 @@ sub spam_check($$) # Deprecated function
 	return compile_spam_checker($spamfile)->($text);
 }
 
-sub compile_spam_checker(@)
-{
+sub compile_spam_checker(@){
 	my @re=map {
 		s{(\\?\\?&\\?#([0-9]+)\\?;|\\?&\\?#x([0-9a-f]+)\\?;)}{
 			sprintf("\\x{%x}",($2 or hex $3));
@@ -1109,8 +1013,7 @@ sub compile_spam_checker(@)
 	}';
 }
 
-sub spam_engine(%)
-{
+sub spam_engine(%){
 	my %args=@_;
 	my @spam_files=@{$args{spam_files}||[]};
 	my @trap_fields=@{$args{trap_fields}||[]};
@@ -1131,8 +1034,7 @@ sub spam_engine(%)
 	spam_screen($query) if $spam_checker->($fulltext);
 }
 
-sub spam_screen($)
-{
+sub spam_screen($){
 	my $query=shift;
 
 	print "Content-Type: text/html\n\n";
@@ -1145,7 +1047,7 @@ sub spam_screen($)
 	print "$_<br>" for(map $query->param($_),$query->param);
 	print "</small></small>";
 
-	exit 0;
+	stop_script();
 }
 
 
@@ -1153,8 +1055,7 @@ sub spam_screen($)
 # Image utilities
 #
 
-sub analyze_image($$)
-{
+sub analyze_image($$){
 	my ($file,$name)=@_;
 	my (@res);
 
@@ -1169,8 +1070,7 @@ sub analyze_image($$)
 	return (lc($ext),0,0);
 }
 
-sub safety_check($file)
-{
+sub safety_check($file){
 	my ($file)=@_;
 
 	# Check for IE MIME sniffing XSS exploit - thanks, MS, totally appreciating this
@@ -1179,20 +1079,16 @@ sub safety_check($file)
 	die "Possible IE XSS exploit in file" if $buffer=~/<(?:body|head|html|img|plaintext|pre|script|table|title|a href|channel|scriptlet)/;
 }
 
-sub analyze_jpeg($)
-{
+sub analyze_jpeg($){
 	my ($file)=@_;
 	my ($buffer);
 
 	read($file,$buffer,2);
 
-	if($buffer eq "\xff\xd8")
-	{
+	if($buffer eq "\xff\xd8"){
 		OUTER:
-		for(;;)
-		{
-			for(;;)
-			{
+		for(;;){
+			for(;;){
 				last OUTER unless(read($file,$buffer,1));
 				last if($buffer eq "\xff");
 			}
@@ -1220,8 +1116,7 @@ sub analyze_jpeg($)
 	return ();
 }
 
-sub analyze_png($)
-{
+sub analyze_png($){
 	my ($file)=@_;
 	my ($bytes,$buffer);
 
@@ -1236,8 +1131,7 @@ sub analyze_png($)
 	return ($width,$height);
 }
 
-sub analyze_gif($)
-{
+sub analyze_gif($){
 	my ($file)=@_;
 	my ($bytes,$buffer);
 
@@ -1252,8 +1146,7 @@ sub analyze_gif($)
 	return ($width,$height);
 }
 
-sub make_thumbnail($$$$$$;$)
-{
+sub make_thumbnail($$$$$$;$){
 	my ($filename,$thumbnail,$nsfw,$width,$height,$quality,$convert)=@_;
 
 	# Imagemagick is only used for NSFW images because of openmp incompatibilities with low resource debian installations
@@ -1274,19 +1167,16 @@ sub make_thumbnail($$$$$$;$)
 	}
 	else{
 		#`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
-		if($filename=~/\.jpg$/)
-		{
+		if($filename=~/\.jpg$/){
 			`djpeg $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
 			# could use -scale 1/n
 			return 1 unless($?);
 		}
-		elsif($filename=~/\.png$/)
-		{
+		elsif($filename=~/\.png$/){
 			`pngtopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
 			return 1 unless($?);
 		}
-		elsif($filename=~/\.gif$/)
-		{
+		elsif($filename=~/\.gif$/){
 			`giftopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
 			return 1 unless($?);
 		}
@@ -1300,8 +1190,7 @@ sub make_thumbnail($$$$$$;$)
 	# try PerlMagick (it sucks)
 
 	eval 'use Image::Magick';
-	unless($@)
-	{
+	unless($@){
 		my ($res,$magick);
 
 		$magick=Image::Magick->new;
@@ -1323,8 +1212,7 @@ sub make_thumbnail($$$$$$;$)
 		my $src;
 		if($filename=~/\.jpg$/i) { $src=GD::Image->newFromJpeg($filename) }
 		elsif($filename=~/\.png$/i) { $src=GD::Image->newFromPng($filename) }
-		elsif($filename=~/\.gif$/i)
-		{
+		elsif($filename=~/\.gif$/i){
 			if(defined &GD::Image->newFromGif) { $src=GD::Image->newFromGif($filename) }
 			else
 			{
@@ -1354,8 +1242,7 @@ sub make_thumbnail($$$$$$;$)
 # Crypto code
 #
 
-sub rc4($$;$)
-{
+sub rc4($$;$){
 	my ($message,$key,$skip)=@_;
 	my @s=0..255;
 	my @k=unpack 'C*',$key;
@@ -1364,22 +1251,19 @@ sub rc4($$;$)
 	$skip=256 unless(defined $skip);
 
 	$y=0;
-	for $x (0..255)
-	{
+	for $x (0..255){
 		$y=($y+$s[$x]+$k[$x%@k])%256;
 		@s[$x,$y]=@s[$y,$x];
 	}
 
 	$x=0; $y=0;
-	for(1..$skip)
-	{
+	for(1..$skip){
 		$x=($x+1)%256;
 		$y=($y+$s[$x])%256;
 		@s[$x,$y]=@s[$y,$x];
 	}
 
-	for(@message)
-	{
+	for(@message){
 		$x=($x+1)%256;
 		$y=($y+$s[$x])%256;
 		@s[$x,$y]=@s[$y,$x];
@@ -1391,8 +1275,7 @@ sub rc4($$;$)
 
 my @S;
 
-sub setup_rc6($)
-{
+sub setup_rc6($){
 	my ($key)=@_;
 
 	$key.="\0"x(4-(length $key)&3); # pad key
@@ -1405,8 +1288,7 @@ sub setup_rc6($)
 	my $v=@L>44 ? @L*3 : 132;
 	my ($A,$B,$i,$j)=(0,0,0,0);
 
-	for(1..$v)
-	{
+	for(1..$v){
 		$A=$S[$i]=rol(add($S[$i],$A,$B),3);
 		$B=$L[$j]=rol(add($L[$j]+$A+$B),add($A+$B));
 		$i=($i+1)%@S;
@@ -1414,16 +1296,14 @@ sub setup_rc6($)
 	}
 }
 
-sub encrypt_rc6($)
-{
+sub encrypt_rc6($){
 	my ($block,)=@_;
 	my ($A,$B,$C,$D)=unpack "V4",$block."\0"x16;
 
 	$B=add($B,$S[0]);
 	$D=add($D,$S[1]);
 
-	for(my $i=1;$i<=20;$i++)
-	{
+	for(my $i=1;$i<=20;$i++){
 		my $t=rol(mul($B,rol($B,1)|1),5);
 		my $u=rol(mul($D,rol($D,1)|1),5);
 		$A=add(rol($A^$t,$u),$S[2*$i]);
@@ -1438,16 +1318,14 @@ sub encrypt_rc6($)
 	return pack "V4",$A,$B,$C,$D;
 }
 
-sub decrypt_rc6($)
-{
+sub decrypt_rc6($){
 	my ($block,)=@_;
 	my ($A,$B,$C,$D)=unpack "V4",$block."\0"x16;
 
 	$C=add($C,-$S[43]);
 	$A=add($A,-$S[42]);
 
-	for(my $i=20;$i>=1;$i--)
-	{
+	for(my $i=20;$i>=1;$i--){
 		($A,$B,$C,$D)=($D,$A,$B,$C);
 		my $u=rol(mul($D,add(rol($D,1)|1)),5);
 		my $t=rol(mul($B,add(rol($B,1)|1)),5);
@@ -1462,16 +1340,13 @@ sub decrypt_rc6($)
 	return pack "V4",$A,$B,$C,$D;
 }
 
-sub setup_xtea($)
-{
+sub setup_xtea($){
 }
 
-sub encrypt_xtea($)
-{
+sub encrypt_xtea($){
 }
 
-sub decrypt_xtea($)
-{
+sub decrypt_xtea($){
 }
 
 sub truncateComment($;$){
@@ -1515,6 +1390,12 @@ sub send_email($$$$){
  		print MAIL "Subject: $subject\n\n";
  		print MAIL "$message\n";
  	close(MAIL);
+}
+
+sub get_ip($){
+	my ($cf)=@_;
+	return $ENV{REMOTE_ADDR} unless $cf;
+	return $ENV{HTTP_CF_CONNECTING_IP};
 }
 
 sub add(@) { my ($sum,$term); while(defined ($term=shift)) { $sum+=$term } return $sum%4294967296 }

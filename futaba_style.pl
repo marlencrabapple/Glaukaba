@@ -88,6 +88,7 @@ var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 </div>
 <div id="topNavStatic" class="staticNav">
 	[<loop BOARDS><a href="http://<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
+	[<loop LINKS><a href="<var $url>"><var $name></a><if !$lastBoard> / </if></loop>]
 	<div style="float:right">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
 		[<a href="http://<const DOMAIN>">Home</a>]
