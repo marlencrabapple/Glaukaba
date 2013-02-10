@@ -75,14 +75,14 @@ sub init(){
 	# check for admin tables
 	init_admin_database() if(!table_exists(SQL_ADMIN_TABLE));
 	initMessageDatabase() if(!table_exists(SQL_MESSAGE_TABLE));
-	initReportDatabase() if(!table_exists(SQL_REPORT_TABLE));
-	initBanRequestDatabase()  if(!table_exists(SQL_BANREQUEST_TABLE));
-	initDeletedDatabase()  if(!table_exists(SQL_DELETED_TABLE));
-	initLogDatabase()  if(!table_exists(SQL_LOG_TABLE));
-	initPassDatabase() if(!table_exists(SQL_PASS_TABLE));
+	init_report_database() if(!table_exists(SQL_REPORT_TABLE));
+	init_ban_request_database()  if(!table_exists(SQL_BANREQUEST_TABLE));
+	init_deleted_database()  if(!table_exists(SQL_DELETED_TABLE));
+	init_log_database()  if(!table_exists(SQL_LOG_TABLE));
+	init_pass_database() if(!table_exists(SQL_PASS_TABLE));
 
 	if(!table_exists(SQL_USER_TABLE)){
-		initUserDatabase();
+		init_user_database();
 		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
 		$sth->execute('admin','admin','admin@admin.com','admin') or make_error(S_SQLFAIL);
 	}
@@ -155,7 +155,7 @@ sub init(){
 	elsif($task eq "mpanel"){
 		my $admin=$query->param("admin");
 		#make_admin_post_panel($admin);
-		make_page($admin,0);
+		make_admin_page($admin,0);
 	}
 	elsif($task eq "deleteall"){
 		my $admin=$query->param("admin");
@@ -185,7 +185,7 @@ sub init(){
 		my $warn=$query->param("warn");
 		my $perm=$query->param("perm");
 		
-		advancedIPBan($admin,$type,$public,$private,parse_range($ip,$mask),$duration,$pubbannedby,$displayfrom,$scope,$threadban,$num,$postban,$warn,$perm);
+		add_ip_ban($admin,$type,$public,$private,parse_range($ip,$mask),$duration,$pubbannedby,$displayfrom,$scope,$threadban,$num,$postban,$warn,$perm);
 	}
 	elsif($task eq "addstring"){
 		my $admin=$query->param("admin");
@@ -280,7 +280,7 @@ sub init(){
 		my $board=$query->param("board");
 		my $reason=$query->param("reason");
 		report($num,$board,$reason) if(length $reason>1); # lol perl style
-		makeReportForm($num, $board);
+		make_report_form($num, $board);
 	}
 	elsif($task eq "register"){
 		my $admin=$query->param("admin");
@@ -344,12 +344,12 @@ sub init(){
 	elsif($task eq 'viewthreads'){
 		my $admin=$query->param("admin");
 		my $page=$query->param("page");
-		make_page($admin,$page);
+		make_admin_page($admin,$page);
 	}
 	elsif($task eq 'viewthread'){
 		my $admin=$query->param("admin");
 		my $num=$query->param("num");
-		make_thread($admin,$num);
+		make_admin_thread($admin,$num);
 	}
 	elsif($task eq 'ippage'){
 		my $admin=$query->param("admin");
@@ -480,13 +480,13 @@ sub restart_script($){
 	my ($admin)=@_;
 	my @session = check_password($admin);
 	
-	logAction("restartscript","",@session);
+	log_action("restartscript","",@session);
 
 	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
 	last FASTCGI;
 }
 
-sub makeList(@){
+sub make_admin_thread_list(@){
 	my (@rows)=@_; # less queries = less load
 	my (@threads,$filename);
 	
@@ -501,7 +501,7 @@ sub makeList(@){
 	print_page($filename,LIST_TEMPLATE->(threads=>\@threads));
 }
 
-sub makeCatalog(@){
+sub make_admin_thread_catalog(@){
 	my (@rows)=@_;
 	my ($filename,@threads);
 	
@@ -516,7 +516,7 @@ sub makeCatalog(@){
 	print_page($filename,CATALOG_TEMPLATE->(threads=>\@threads));
 }
 
-sub makeReportForm($$){
+sub make_report_form($$){
 	my ($num,$board)=@_;
 	
 	make_http_header();
@@ -582,275 +582,11 @@ sub report($$$){
 	make_http_forward('javascript:window.close();',1);
 }
 
-sub dismiss_remort($$){
-	my ($admin,$num)=@_;
-	my $sth;
-	my @session = check_password($admin);
-	
-	logAction("dismissreport",$num,@session);
-	
-	$sth=$dbh->prepare("DELETE FROM ".SQL_REPORT_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
-	$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
-	
-	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
-}
-
-sub make_ban_request($$){
-	my ($admin,$num)=@_;
-	my ($sth,$row,@requested);
-	my @session = check_password($admin);
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_BANREQUEST_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
-	$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @requested, $row;
-	}
-	
-	make_http_header();
-	print encode_string(BAN_REQUEST_TEMPLATE->(
-		admin=>$admin,
-		session=>\@session,
-		requested=>\@requested,
-		num=>$num
-	));
-}
-
-sub request_ban($$){
-	my ($admin,$num,$reason,$reason2)=@_;
-	my ($sth,$row,$posturl);
-	my @session = check_password($admin);
-	my $time=time();
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
-	$sth->execute($num) or make_error(S_SQLFAIL);
-	
-	my $post=get_decoded_hashref($sth);
-	logAction("banrequest",$$post{ip},@session);
-	
-	$sth=$dbh->prepare("INSERT INTO ".SQL_BANREQUEST_TABLE." VALUES(null,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
-	$sth->execute($num,$$post{parent},BOARD_DIR,$$post{ip},$reason,$reason2,@session[0],$time) or make_error(S_SQLFAIL);
-	
-	# notify non-janitor moderation staff
-	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newbanreqs=1 WHERE class<>?") or make_error(S_SQLFAIL);
-	$sth->execute("janitor") or make_error(S_SQLFAIL);
-		
-	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
-}
-
-sub make_ban_requests($){
-	my ($admin)=@_;
-	my @session = check_password($admin);
-	my (@requested,@postnumbers,$sth,$row);
-	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_BANREQUEST_TABLE." WHERE board=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
-	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @requested, $row;
-	}
-	
-	clear_notifications(@session[0],"banrequests");
-	
-	make_http_header();
-	print encode_string(BAN_REQUEST_LIST_TEMPLATE->(
-		admin=>$admin,
-		session=>\@session,
-		requested=>\@requested
-	));
-}
-
-sub dismiss_requests($$$){
-	my ($admin,$ip,$num)=@_;
-	my $sth;
-	my @session = check_password($admin);
-	
-	if (@session[1] eq "janitor"){
-		make_error(S_CLASS);
-	}
-	
-	logAction("dismissrequests",$ip,@session);
-	
-	if($ip){
-		$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE ip=? AND board=?;") or make_error(S_SQLFAIL);
-		$sth->execute($ip,BOARD_DIR) or make_error(S_SQLFAIL);
-	}
-	elsif($num){
-		$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
-		$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
-	}
-	
-	make_http_forward(get_script_name()."?admin=$admin&task=listrequests",ALTERNATE_REDIRECT);
-}
-
-sub make_reports_list($){
-	my ($admin)=@_;
-	my @session = check_password($admin);
-	my ($sth,$row,$lastnum,$lastrow,$index,$statement,@reportedposts,@reports,@posts);
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND (parent IS NULL) ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
-	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @reports,$row;
-		push @reportedposts,$$row{postnum};
-		$$row{vio}=0 unless $$row{vio};
-		$$row{spam}=0 unless $$row{spam};
-		$$row{illegal}=0 unless $$row{illegal};
-		$$row{totalreports}=$$row{vio}+$$row{spam}+$$row{illegal};
-	}
-	
-	if((scalar @reportedposts) == 0) { push @reportedposts,1 };
-	
-	# fucking magic
-	$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC;";
-	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
-	$sth->execute(@reportedposts) or make_error($dbh->errstr);
-	
-	$index = 0;
-	
-	while($row=get_decoded_hashref($sth)){
-		# add report data to posts
-		$$row{fromip}=$reports[$index]{fromip};
-		$$row{totalreports}=$reports[$index]{totalreports};
-		$$row{vio}=$reports[$index]{vio};
-		$$row{illegal}=$reports[$index]{illegal};
-		$$row{spam}=$reports[$index]{spam};
-		
-		push @posts,$row;
-		$index++;
-	}
-	
-	clear_notifications(@session[0],"reports");
-	
-	make_http_header();
-	print encode_string(REPORTS_PAGE_TEMPLATE->(
-		admin=>$admin,
-		session=>\@session,
-		posts=>\@posts
-	));
-}
-
-sub make_view_report($$){
-	my ($num,$admin)=@_;
-	my @session = check_password($admin);
-	my ($sth,$row,@post,@reports,$first,$last,@iplist,$total);
-	
-	# grab all reports for the post and prepare some data
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=? ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
-	$sth->execute(BOARD_DIR,$num) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @reports, $row;
-		$$row{vio}=0 unless $$row{vio};
-		$$row{spam}=0 unless $$row{spam};
-		$$row{illegal}=0 unless $$row{illegal};
-	}
-	
-	$first = $reports[0]{timestamp};
-	if((scalar @reports)==1) { $last=$first } else { $last = $reports[((scalar @reports) - 1)]{timestamp} }
-	$total = $reports[0]{vio} + $reports[0]{illegal} + $reports[0]{spam};
-	
-	# grab the post without get_post() to make modifying the template easier
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
-	$sth->execute($num) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)) { push @post, $row }
-	
-	make_http_header();
-	print encode_string(REPORT_PAGE_TEMPLATE->(
-		admin=>$admin,
-		session=>\@session,
-		post=>\@post,
-		first=>$first,
-		last=>$last,
-		total=>$total,
-		reports=>\@reports,
-		num=>$num,
-		parent=>$post[0]{parent}
-	));
-}
-
-sub make_ban_page($$$){
-	my ($ip,$num,$admin)=@_;
-	my ($sth,$row,@bans);
-	my @session = check_password($admin);
-	make_error(S_CLASS) if (@session[1] eq 'janitor');
-	
-	# get current bans
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE ival1=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
-	$sth->execute($ip) or make_error(S_SQLFAIL);
-	
-	while($row=get_decoded_hashref($sth)){
-		push @bans, $row;
-	}
-	
-	make_http_header();
-	print encode_string(BAN_TEMPLATE_TEMPLATE->( # ha!
-		admin=>$admin,
-		ip=>$ip,
-		num=>$num,
-		session=>\@session,
-		bans=>\@bans
-	));
-}
-
-sub advancedIPBan($$$){
-	my ($admin,$type,$public,$private,$ival1,$ival2,$duration,$pubbannedby,$displayfrom,$scope,$threadban,$num,$postban,$warn,$perm)=@_;
-	my ($sth,$row,$post,@bans);
-	my @session = check_password($admin);
-	make_error(S_CLASS) if (@session[1] eq 'janitor');
-	make_error("Thread banning not yet implemented") if ($threadban==1);
-	make_error("You are required to give a public ban reason.") if (length $public < 1);
-	
-	if((!$duration)&&(!$perm)&&(!$warn)){
-		make_error("Invalid ban duration. Select Permanent, Warning, or enter a valid number in the duration field before submitting a ban.");
-	}
-	
-	logAction("ipban",dec_to_dot $ival1."<>".dec_to_dot $ival2,@session);
-	
-	# get the current time
-	my $time = time();
-	
-	# clean up text
-	$public=clean_string(decode_string($public,CHARSET));
-	$private=clean_string(decode_string($private,CHARSET));
-	if($displayfrom==1) { $pubbannedby=clean_string(decode_string($pubbannedby,CHARSET)) }
-	else { $pubbannedby='' }
-	
-	# convert days into seconds and add that to the current time
-	$duration=$time+(($duration*24)*3600);
-
-	# add ban to database
-	$sth=$dbh->prepare("INSERT INTO ".SQL_ADMIN_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
-	$sth->execute($type,$public,$private,$ival1,$ival2,'',@session[0],$pubbannedby,$duration,$perm,$scope,$num,BOARD_DIR,$warn,$time,1) or make_error(S_SQLFAIL);
-	
-	# clear all ban requests for the banned ip
-	$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE ip=? AND board=?;") or make_error(S_SQLFAIL);
-	$sth->execute($ival1,BOARD_DIR) or make_error(S_SQLFAIL);
-	
-	# post ban action
-	if($postban eq 'deletebynum'){
-		delete_stuff('',0,0,$admin,$num);
-	}
-	elsif($postban eq 'deletebynumfo'){
-		delete_stuff('',1,0,$admin,$num);
-	}
-	elsif($postban eq 'deletebyip'){
-		delete_all($admin,$ival1,$ival2);
-	}
-	
-	# redirect to the ip page
-	make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ival1,ALTERNATE_REDIRECT);
-}
 
 #
 # Cache page creation
 #
+
 
 sub build_cache(){
 	my ($sth,$row,@thread);
@@ -887,8 +623,8 @@ sub build_cache(){
 		push @threads,{posts=>[@thread]};
 		
 		# hurray for optimization
-		makeList(@parentposts);
-		makeCatalog(@parentposts);
+		make_admin_thread_list(@parentposts);
+		make_admin_thread_catalog(@parentposts);
 
 		my $total=get_page_count(scalar @threads);
 		my @pagethreads;
@@ -1401,7 +1137,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	}
 	else
 	{
-		make_http_forward($noko ? getPrintedReplyLink($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",ALTERNATE_REDIRECT);
+		make_http_forward($noko ? get_rewritten_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",ALTERNATE_REDIRECT);
 	}
 }
 
@@ -1422,7 +1158,7 @@ sub is_trusted($){
 	my ($trip)=@_;
 	my $key = TRIPKEY; # constants r stoopid
 	
-	$trip =~ s/$key+//g; # removes the key so shit doesn't break.
+	$trip =~ s/$key+//g; # removes the key so shit doesn't break
 	#$trip =~ s/\'\:3/dicks/g;
 	
 	my ($sth);
@@ -1616,7 +1352,7 @@ sub add_proxy_entry($$$$$){
 	my ($sth);
 
 	check_password($admin);
-	logAction("addproxyentry",$ip,$admin);
+	log_action("addproxyentry",$ip,$admin);
 
 	# Verifies IP range is sane. The price for a human-readable db...
 	unless ($ip =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255 && $4 <= 255) {
@@ -1666,7 +1402,7 @@ sub remove_proxy_entry($$){
 	my ($sth);
 
 	check_password($admin);
-	logAction("removeproxyentry",$num,$admin);
+	log_action("removeproxyentry",$num,$admin);
 
 	$sth=$dbh->prepare("DELETE FROM ".SQL_PROXY_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
@@ -1701,7 +1437,7 @@ sub format_comment($){
 		# Normal post citation
 		$line=~s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<a href="'.getPrintedReplyLink($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
+			if($res) { '<a href="'.get_rewritten_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
 			else { "<span class=\"quote\">&gt;&gt;$1</span>"; }
 		!ge;
 		
@@ -2062,7 +1798,7 @@ sub delete_post($$$$;$){
 		unless($fileonly){
 			# log posts deleted by staff
 			if($password eq ""){
-				logAction("deletepost",$post,@session);
+				log_action("deletepost",$post,@session);
 				my $time = time();
 				$sth=$dbh->prepare("INSERT INTO ".SQL_DELETED_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error($dbh->errstr);
 				$sth->execute($$row{num},$$row{parent},$$row{timestamp},$$row{lasthit},$$row{ip},$$row{name},$$row{trip},$$row{email},$$row{subject},$$row{comment},$$row{image},$$row{size},$$row{md5},$$row{width},$$row{height},$$row{filename},@session[0],$time,BOARD_DIR) or make_error($dbh->errstr);
@@ -2098,7 +1834,7 @@ sub delete_post($$$$;$){
 		}
 		else # remove just the image and update the database
 		{
-			logAction("deletefile",$post,@session);
+			log_action("deletefile",$post,@session);
 			if($$row{image}){
 				$hasimage = 1;
 				system(LOAD_SENDER_SCRIPT." $$row{image} &") if(ENABLE_LOAD);
@@ -2164,10 +1900,10 @@ sub delete_post($$$$;$){
 }
 
 
-
 #
 # Admin interface
 #
+
 
 sub make_admin_login(){
 	make_http_header();
@@ -2319,6 +2055,272 @@ sub make_admin_post($){
 	print encode_string(ADMIN_POST_TEMPLATE->(admin=>$admin,session=>\@session));
 }
 
+sub dismiss_remort($$){
+	my ($admin,$num)=@_;
+	my $sth;
+	my @session = check_password($admin);
+	
+	log_action("dismissreport",$num,@session);
+	
+	$sth=$dbh->prepare("DELETE FROM ".SQL_REPORT_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
+}
+
+sub make_ban_request($$){
+	my ($admin,$num)=@_;
+	my ($sth,$row,@requested);
+	my @session = check_password($admin);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_BANREQUEST_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @requested, $row;
+	}
+	
+	make_http_header();
+	print encode_string(BAN_REQUEST_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		requested=>\@requested,
+		num=>$num
+	));
+}
+
+sub request_ban($$){
+	my ($admin,$num,$reason,$reason2)=@_;
+	my ($sth,$row,$posturl);
+	my @session = check_password($admin);
+	my $time=time();
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
+	
+	my $post=get_decoded_hashref($sth);
+	log_action("banrequest",$$post{ip},@session);
+	
+	$sth=$dbh->prepare("INSERT INTO ".SQL_BANREQUEST_TABLE." VALUES(null,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	$sth->execute($num,$$post{parent},BOARD_DIR,$$post{ip},$reason,$reason2,@session[0],$time) or make_error(S_SQLFAIL);
+	
+	# notify non-janitor moderation staff
+	my $sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newbanreqs=1 WHERE class<>?") or make_error(S_SQLFAIL);
+	$sth->execute("janitor") or make_error(S_SQLFAIL);
+		
+	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
+}
+
+sub make_ban_requests($){
+	my ($admin)=@_;
+	my @session = check_password($admin);
+	my (@requested,@postnumbers,$sth,$row);
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_BANREQUEST_TABLE." WHERE board=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @requested, $row;
+	}
+	
+	clear_notifications(@session[0],"banrequests");
+	
+	make_http_header();
+	print encode_string(BAN_REQUEST_LIST_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		requested=>\@requested
+	));
+}
+
+sub dismiss_requests($$$){
+	my ($admin,$ip,$num)=@_;
+	my $sth;
+	my @session = check_password($admin);
+	
+	if (@session[1] eq "janitor"){
+		make_error(S_CLASS);
+	}
+	
+	log_action("dismissrequests",$ip,@session);
+	
+	if($ip){
+		$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE ip=? AND board=?;") or make_error(S_SQLFAIL);
+		$sth->execute($ip,BOARD_DIR) or make_error(S_SQLFAIL);
+	}
+	elsif($num){
+		$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
+		$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
+	}
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=listrequests",ALTERNATE_REDIRECT);
+}
+
+sub make_reports_list($){
+	my ($admin)=@_;
+	my @session = check_password($admin);
+	my ($sth,$row,$lastnum,$lastrow,$index,$statement,@reportedposts,@reports,@posts);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND (parent IS NULL) ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @reports,$row;
+		push @reportedposts,$$row{postnum};
+		$$row{vio}=0 unless $$row{vio};
+		$$row{spam}=0 unless $$row{spam};
+		$$row{illegal}=0 unless $$row{illegal};
+		$$row{totalreports}=$$row{vio}+$$row{spam}+$$row{illegal};
+	}
+	
+	if((scalar @reportedposts) == 0) { push @reportedposts,1 };
+	
+	# fucking magic
+	$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC;";
+	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
+	$sth->execute(@reportedposts) or make_error($dbh->errstr);
+	
+	$index = 0;
+	
+	while($row=get_decoded_hashref($sth)){
+		# add report data to posts
+		$$row{fromip}=$reports[$index]{fromip};
+		$$row{totalreports}=$reports[$index]{totalreports};
+		$$row{vio}=$reports[$index]{vio};
+		$$row{illegal}=$reports[$index]{illegal};
+		$$row{spam}=$reports[$index]{spam};
+		
+		push @posts,$row;
+		$index++;
+	}
+	
+	clear_notifications(@session[0],"reports");
+	
+	make_http_header();
+	print encode_string(REPORTS_PAGE_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		posts=>\@posts
+	));
+}
+
+sub make_view_report($$){
+	my ($num,$admin)=@_;
+	my @session = check_password($admin);
+	my ($sth,$row,@post,@reports,$first,$last,@iplist,$total);
+	
+	# grab all reports for the post and prepare some data
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_REPORT_TABLE." WHERE board=? AND postnum=? ORDER BY postnum DESC;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR,$num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @reports, $row;
+		$$row{vio}=0 unless $$row{vio};
+		$$row{spam}=0 unless $$row{spam};
+		$$row{illegal}=0 unless $$row{illegal};
+	}
+	
+	$first = $reports[0]{timestamp};
+	if((scalar @reports)==1) { $last=$first } else { $last = $reports[((scalar @reports) - 1)]{timestamp} }
+	$total = $reports[0]{vio} + $reports[0]{illegal} + $reports[0]{spam};
+	
+	# grab the post without get_post() to make modifying the template easier
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)) { push @post, $row }
+	
+	make_http_header();
+	print encode_string(REPORT_PAGE_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		post=>\@post,
+		first=>$first,
+		last=>$last,
+		total=>$total,
+		reports=>\@reports,
+		num=>$num,
+		parent=>$post[0]{parent}
+	));
+}
+
+sub make_ban_page($$$){
+	my ($ip,$num,$admin)=@_;
+	my ($sth,$row,@bans);
+	my @session = check_password($admin);
+	make_error(S_CLASS) if (@session[1] eq 'janitor');
+	
+	# get current bans
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE ival1=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute($ip) or make_error(S_SQLFAIL);
+	
+	while($row=get_decoded_hashref($sth)){
+		push @bans, $row;
+	}
+	
+	make_http_header();
+	print encode_string(BAN_TEMPLATE_TEMPLATE->( # ha!
+		admin=>$admin,
+		ip=>$ip,
+		num=>$num,
+		session=>\@session,
+		bans=>\@bans
+	));
+}
+
+sub add_ip_ban($$$){
+	my ($admin,$type,$public,$private,$ival1,$ival2,$duration,$pubbannedby,$displayfrom,$scope,$threadban,$num,$postban,$warn,$perm)=@_;
+	my ($sth,$row,$post,@bans);
+	my @session = check_password($admin);
+	make_error(S_CLASS) if (@session[1] eq 'janitor');
+	make_error("Thread banning not yet implemented") if ($threadban==1);
+	make_error("You are required to give a public ban reason.") if (length $public < 1);
+	
+	if((!$duration)&&(!$perm)&&(!$warn)){
+		make_error("Invalid ban duration. Select Permanent, Warning, or enter a valid number in the duration field before submitting a ban.");
+	}
+	
+	log_action("ipban",dec_to_dot $ival1."<>".dec_to_dot $ival2,@session);
+	
+	# get the current time
+	my $time = time();
+	
+	# clean up text
+	$public=clean_string(decode_string($public,CHARSET));
+	$private=clean_string(decode_string($private,CHARSET));
+	if($displayfrom==1) { $pubbannedby=clean_string(decode_string($pubbannedby,CHARSET)) }
+	else { $pubbannedby='' }
+	
+	# convert days into seconds and add that to the current time
+	$duration=$time+(($duration*24)*3600);
+
+	# add ban to database
+	$sth=$dbh->prepare("INSERT INTO ".SQL_ADMIN_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	$sth->execute($type,$public,$private,$ival1,$ival2,'',@session[0],$pubbannedby,$duration,$perm,$scope,$num,BOARD_DIR,$warn,$time,1) or make_error(S_SQLFAIL);
+	
+	# clear all ban requests for the banned ip
+	$sth=$dbh->prepare("DELETE FROM ".SQL_BANREQUEST_TABLE." WHERE ip=? AND board=?;") or make_error(S_SQLFAIL);
+	$sth->execute($ival1,BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	# post ban action
+	if($postban eq 'deletebynum'){
+		delete_stuff('',0,0,$admin,$num);
+	}
+	elsif($postban eq 'deletebynumfo'){
+		delete_stuff('',1,0,$admin,$num);
+	}
+	elsif($postban eq 'deletebyip'){
+		delete_all($admin,$ival1,$ival2);
+	}
+	
+	# redirect to the ip page
+	make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ival1,ALTERNATE_REDIRECT);
+}
+
 sub do_login($$$$$){
 	my ($user,$password,$nexttask,$savelogin,$admincookie)=@_;
 	my ($crypt,$dengus,$time,$lastip,$sth,$loglogin);
@@ -2358,11 +2360,11 @@ sub do_login($$$$$){
 		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET lastdate=?,lastip=? WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($time,$lastip,$user) or make_error($sth->errstr);
 
-		if($loglogin) { logAction("login","",$crypt) }
+		if($loglogin) { log_action("login","",$crypt) }
 		make_http_forward(get_script_name()."?task=$nexttask&admin=$crypt",ALTERNATE_REDIRECT);
 	}
 	else{
-		logAction("attemptlogin","");
+		log_action("attemptlogin","");
 		make_admin_login();
 	}
 }
@@ -2387,7 +2389,7 @@ sub do_rebuild_cache($){
 	my ($admin)=@_;
 	my @session = check_password($admin);
 	
-	logAction("rebuildcache","",@session);
+	log_action("rebuildcache","",@session);
 	
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
@@ -2399,7 +2401,6 @@ sub do_rebuild_cache($){
 	build_thread_cache_all();
 	build_cache();
 
-	#make_http_forward_new(HTML_SELF,ALTERNATE_REDIRECT,"site"); # this was supposed to do the redirect in another frame, but it isn't working
 	make_http_forward("http://".DOMAIN."/".BOARD_DIR."/wakaba.pl?task=mpanel&admin=$admin",ALTERNATE_REDIRECT);
 }
 
@@ -2410,7 +2411,7 @@ sub add_admin_entry($$$$$$){
 
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq "janitor";
-	logAction($type,$ival1."<>".$ival2."<>".$sval1,@session);
+	log_action($type,$ival1."<>".$ival2."<>".$sval1,@session);
 	
 	$comment=clean_string(decode_string($comment,CHARSET));
 	make_error("gotta fix this");
@@ -2439,7 +2440,7 @@ sub remove_admin_entry($$){
 	my ($sth);
 
 	my @session = check_password($admin);
-	logAction("removeadminentry",$num,@session);
+	log_action("removeadminentry",$num,@session);
 	
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
@@ -2455,7 +2456,7 @@ sub delete_all($$$){
 	my ($admin,$ip,$mask)=@_;
 	my ($sth,$row,@posts);
 
-	logAction("deleteall",$ip,$admin);
+	log_action("deleteall",$ip,$admin);
 
 	$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE ip & ? = ? & ?;") or make_error(S_SQLFAIL);
 	$sth->execute($mask,$ip,$mask) or make_error(S_SQLFAIL);
@@ -2468,7 +2469,7 @@ sub update_spam_file($$){
 	my ($admin,$spam)=@_;
 
 	my @session = check_password($admin);
-	logAction("updatespam","",@session);
+	log_action("updatespam","",@session);
 	
 	if (@session[1] ne "admin"){
 		make_error(S_CLASS);
@@ -2485,8 +2486,8 @@ sub do_nuke_database($$){
 	my ($nukepass,$admin)=@_;
 
 	# check_password does not work anymore for this because of multi-user support
-	checkNukePassword($nukepass,NUKE_PASS);
-	logAction("nuke","",$admin);
+	check_nuke_password($nukepass,NUKE_PASS);
+	log_action("nuke","",$admin);
 
 	init_database();
 	#init_admin_database();
@@ -2510,562 +2511,12 @@ sub clear_notifications($$){
 	$sth->execute($user) or make_error($dbh->errstr);
 }
 
-sub check_password($){
-	my ($admin)=@_; # $password is useless now
-	my ($dengus,$sth,@session);
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-	
-	while($dengus=get_decoded_hashref($sth)){
-		if($admin eq crypt_password($$dengus{user}.$$dengus{pass})){
-			@session[0] = $$dengus{user};
-			@session[1] = $$dengus{class};
-			@session[2] = $$dengus{newmsgs};
-			@session[3] = $$dengus{newreports};
-			@session[4] = $$dengus{newbanreqs};
-			@session[5] = $$dengus{lastdate};
-			
-			return @session;
-		}
-	}
-
-	make_error(S_WRONGPASS);
-}
-
-sub checkNukePassword($$){
-	my ($admin,$password)=@_;
-
-	return if($admin eq NUKE_PASS);
-	return if($admin eq crypt_password($password));
-
-	logAction("failnuke","");
-	make_error(S_WRONGPASS);
-}
-
-sub crypt_password($){
-	my $crypt=hide_data((shift).get_ip(USE_CLOUDFLARE),9,"admin",SECRET,1);
-	$crypt=~tr/+/./; # for web shit
-	return $crypt;
-}
-
-
-
-#
-# Page creation utils
-#
-
-sub make_http_header(){
-	# >2012 >xhtml
-	#print "Content-Type: ".get_xhtml_content_type(CHARSET,0)."\n";
-	print "Content-Type: text/html; charset=utf-8 \n";
-	print "\n";
-}
-
-sub make_json_header(){
-	print "Content-Type: application/json; charset=utf-8 \n";
-	print "\n";
-}
-
-sub make_error($){
-	my ($error)=@_;
-
-	make_http_header();
-	print encode_string(ERROR_TEMPLATE->(error=>$error));
-
-	if(!$use_fastcgi and $dbh){
-		$dbh->{Warn}=0;
-		$dbh->disconnect();
-	}
-
-	# could print even more data, really.
-	if(ERRORLOG){
-		$error=~s/"/\\"/g;
-		open ERRORFILE,'>>'.ERRORLOG;
-		printf ERRORFILE '%s - %s - "%s" "%s"'."\n", get_ip(USE_CLOUDFLARE), scalar localtime, $ENV{HTTP_USER_AGENT}, $error;
-		close ERRORFILE;
-	}
-
-	# delete temp files
-	stop_script();
-}
-
-sub stop_script(){
-	if($use_fastcgi) { next FASTCGI; }
-	else { exit; }
-}
-
-sub get_script_name(){
-	return $ENV{SCRIPT_NAME};
-}
-
-sub get_secure_script_name(){
-	return 'https://'.$ENV{SERVER_NAME}.$ENV{SCRIPT_NAME} if(USE_SECURE_ADMIN);
-	return $ENV{SCRIPT_NAME};
-}
-
-sub expand_image_filename($){
-	my $filename=shift;
-
-	return expand_filename(clean_path($filename)) unless ENABLE_LOAD;
-
-	my ($self_path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;
-	my $src=IMG_DIR;
-	$filename=~/$src(.*)/;
-	return $self_path.REDIR_DIR.clean_path($1).'.html';
-}
-
-sub get_reply_link($$){
-	my ($reply,$parent)=@_;
-
-	return expand_filename(RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
-	return expand_filename(RES_DIR.$reply.PAGE_EXT);
-}
-
-# for rewritten links
-sub getPrintedReplyLink($$){
-	my ($reply,$parent)=@_;
-
-	return expand_filename(RES_DIR.$parent).'#'.$reply if($parent);
-	return expand_filename(RES_DIR.$reply);
-}
-
-sub get_cb_reply_link($$$){
-	my ($board,$reply,$parent)=@_;
-
-	return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
-	return expand_filename("../$board/".RES_DIR.$parent).'#'.$reply if($parent);
-	return expand_filename("../$board/".RES_DIR.$reply);
-}
-
-sub get_page_count(;$){
-	my $total=(shift or count_threads());
-	return int(($total+IMAGES_PER_PAGE-1)/IMAGES_PER_PAGE);
-}
-
-sub get_filetypes(){
-	my %filetypes=FILETYPES;
-	$filetypes{gif}=$filetypes{jpg}=$filetypes{png}=1;
-	return join ", ",map { uc } sort keys %filetypes;
-}
-
-sub dot_to_dec($){
-	return unpack('N',pack('C4',split(/\./, $_[0]))); # wow, magic.
-}
-
-sub dec_to_dot($){
-	return join('.',unpack('C4',pack('N',$_[0])));
-}
-
-sub parse_range($$){
-	my ($ip,$mask)=@_;
-
-	$ip=dot_to_dec($ip) if($ip=~/^\d+\.\d+\.\d+\.\d+$/);
-
-	if($mask=~/^\d+\.\d+\.\d+\.\d+$/) { $mask=dot_to_dec($mask); }
-	elsif($mask=~/(\d+)/) { $mask=(~((1<<$1)-1)); }
-	else { $mask=0xffffffff; }
-
-	return ($ip,$mask);
-}
-
-#
-# Database utils
-#
-
-sub init_database(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_TABLE.";") if(table_exists(SQL_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
-	"parent INTEGER,".			# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
-	"timestamp INTEGER,".		# Timestamp in seconds for when the post was created
-	"lasthit INTEGER,".			# Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
-	"ip TEXT,".					# IP number of poster, in integer form!
-
-	"date TEXT,".				# The date, as a string
-	"name TEXT,".				# Name of the poster
-	"trip TEXT,".				# Tripcode (encoded)
-	"email TEXT,".				# Email address
-	"subject TEXT,".			# Subject
-	"password TEXT,".			# Deletion password (in plaintext) 
-	"comment TEXT,".			# Comment text, HTML encoded.
-
-	"image TEXT,".				# Image filename with path and extension (IE, src/1081231233721.jpg)
-	"size INTEGER,".			# File size in bytes
-	"md5 TEXT,".				# md5 sum in hex
-	"width INTEGER,".			# Width of image in pixels
-	"height INTEGER,".			# Height of image in pixels
-	"thumbnail TEXT,".			# Thumbnail filename with path and extension
-	"tn_width TEXT,".			# Thumbnail width in pixels
-	"tn_height TEXT,".			# Thumbnail height in pixels
-	
-	"sticky TINYINT,".			# A sticky
-	"permasage TINYINT,".		# Permasage
-	"locked TINYINT,".			# Locked threads
-	"filename TEXT,".			# The original filename
-	"tnmask TINYINT,".			# Whether or not the thumbnail is masked with a spoiler or something to that effect
-	"staffpost TINYINT,".		# Whether or not the post was made by a staff member. 1=admin, 2=mod, 3=dev, and 4=vip
-	"passnum INTEGER".			# If a post was made with a pass, its number is stored here
-	
-	
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub init_admin_database(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_ADMIN_TABLE.";") if(table_exists(SQL_ADMIN_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_ADMIN_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".	# Entry number, auto-increments
-	"type TEXT,".				# Type of entry (ipban, wordban, etc)
-	"comment TEXT,".			# Comment for the entry
-	"private TEXT,".			# Private ban info
-	"ival1 TEXT,".				# Integer value 1 (usually IP)
-	"ival2 TEXT,".				# Integer value 2 (usually netmask)
-	"sval1 TEXT,".				# String value 1
-	"fromuser TEXT,".			# User that made the ban
-	"publicfromuser TEXT,".		# Username displayed to the banned user (useful for IRC nicks and that sorta thing)
-	"duration INTEGER,".		# Ban duration
-	"perm TINYINT,".			# Ban duration
-	"scope TEXT,".				# Ban scope
-	"postnum INTEGER,".			# Post number citation
-	"board TEXT,".				# Board the above post was on
-	"warning TINYINT,".			# If the ban is a warning or not
-	"timestamp INTEGER,".		# When the ban was made
-	"active TINYINT".			# Whether or not the ban is active
-
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub initDeletedDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_DELETED_TABLE.";") if(table_exists(SQL_DELETED_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_DELETED_TABLE." (".
-
-	"indexnum ".get_sql_autoincrement().",".	# Post number, auto-increments
-	"num INTEGER,".				# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
-	"parent INTEGER,".			# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
-	"timestamp INTEGER,".		# Timestamp in seconds for when the post was created
-	"lasthit INTEGER,".			# Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
-	"ip TEXT,".					# IP number of poster, in integer form!
-	"name TEXT,".				# Name of the poster
-	"trip TEXT,".				# Tripcode (encoded)
-	"email TEXT,".				# Email address
-	"subject TEXT,".			# Subject
-	"comment TEXT,".			# Comment text, HTML encoded.
-	"image TEXT,".				# Image filename with path and extension (IE, src/1081231233721.jpg)
-	"size INTEGER,".			# File size in bytes
-	"md5 TEXT,".				# md5 sum in hex
-	"width INTEGER,".			# Width of image in pixels
-	"height INTEGER,".			# Height of image in pixels
-	"filename TEXT,".			# The original filename
-	"deletedby TEXT,".			# 
-	"deletedtime INTEGER,".		# 
-	"board TEXT".				# 
-	
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub initLogDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_LOG_TABLE.";") if(table_exists(SQL_LOG_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_LOG_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
-	"user TEXT,".
-	"action TEXT,".
-	"object TEXT,".	
-	"board TEXT,".
-	"time INTEGER,".
-	"ip TEXT".			
-	
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub initPassDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_PASS_TABLE.";") if(table_exists(SQL_PASS_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_PASS_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
-	"token TEXT,".						# On 4chan this would probably be used for checking if Stripe processed a vald payment
-										# Here, its just a bunch of hashed shit
-	"pin INTEGER,".						# A 'randomly' generated pin
-	"ip TEXT,".							# A "serialized" array of the last IPs to log in
-	"lasthit INTEGER,".					# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
-	"lastswitch INTEGER,".				# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
-	"timestamp INTEGER,".				# DOB
-	"email TEXT,".						# The owner's email address
-	"approved TINYINT,".				# Whether or not the pass is approved. All passes are manually approved based on post history or something
-	"banned TINYINT".					# Whether or not the pass is banned
-	
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub initUserDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_USER_TABLE.";") if(table_exists(SQL_USER_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_USER_TABLE." (".
-
-	"user TEXT,".
-	"pass TEXT,".
-	"email TEXT,".
-	"class TEXT,".
-	"lastip TEXT,".
-	"lastdate INTEGER,".
-	"newmsgs TINYINT,".
-	"newreports TINYINT,".
-	"newbanreqs TINYINT".
-
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub initMessageDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_MESSAGE_TABLE.";") if(table_exists(SQL_MESSAGE_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_MESSAGE_TABLE." (".
-
-	"touser TEXT,".
-	"fromuser TEXT,".
-	"message TEXT,".
-	"num ".get_sql_autoincrement().",".
-	"parent INTEGER,".
-	"timestamp INTEGER,".
-	"lasthit INTEGER,".
-	"wasread TINYINT".
-
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error($sth->errstr);
-}
-
-sub initReportDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_REPORT_TABLE.";") if(table_exists(SQL_REPORT_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_REPORT_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".
-	"postnum INTEGER,".
-	"parent TINYINT,".
-	"board TEXT,".
-	"fromip TEXT,".
-	"timestamp INTEGER,".
-	"vio TINYINT,".
-	"spam TINYINT,".
-	"illegal TINYINT".
-
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error($sth->errstr);
-}
-
-sub initBanRequestDatabase(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_BANREQUEST_TABLE.";") if(table_exists(SQL_BANREQUEST_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_BANREQUEST_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".
-	"postnum INTEGER,".
-	"postparent INTEGER,".
-	"board TEXT,".
-	"ip TEXT,".
-	"reason TEXT,".
-	"reason2 TEXT,".
-	"fromuser TEXT,".
-	"timestamp INTEGER".
-
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error($sth->errstr);
-}
-
-sub init_proxy_database(){
-	my ($sth);
-
-	$sth=$dbh->do("DROP TABLE ".SQL_PROXY_TABLE.";") if(table_exists(SQL_PROXY_TABLE));
-	$sth=$dbh->prepare("CREATE TABLE ".SQL_PROXY_TABLE." (".
-
-	"num ".get_sql_autoincrement().",".	# Entry number, auto-increments
-	"type TEXT,".				# Type of entry (black, white, etc)
-	"ip TEXT,".				# IP address
-	"timestamp INTEGER,".			# Age since epoch
-	"date TEXT".				# Human-readable form of date 
-
-	");") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-}
-
-sub repair_database(){
-	my ($sth,$row,@threads,$thread);
-
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0;") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-
-	while($row=$sth->fetchrow_hashref()) { push(@threads,$row); }
-
-	foreach $thread (@threads){
-		# fix lasthit
-		my ($upd);
-
-		$upd=$dbh->prepare("UPDATE ".SQL_TABLE." SET lasthit=? WHERE parent=?;") or make_error(S_SQLFAIL);
-		$upd->execute($$thread{lasthit},$$thread{num}) or make_error(S_SQLFAIL." ".$dbh->errstr());
-	}
-}
-
-sub get_sql_autoincrement(){
-	return 'INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT' if(SQL_DBI_SOURCE=~/^DBI:mysql:/i);
-	return 'INTEGER PRIMARY KEY' if(SQL_DBI_SOURCE=~/^DBI:SQLite:/i);
-	return 'INTEGER PRIMARY KEY' if(SQL_DBI_SOURCE=~/^DBI:SQLite2:/i);
-
-	make_error(S_SQLCONF); # maybe there should be a sane default case instead?
-}
-
-sub trim_database(){
-	my ($sth,$row,$order);
-
-	if(TRIM_METHOD==0) { $order='num ASC'; }
-	else { $order='lasthit ASC'; }
-
-	if(MAX_AGE) # needs testing
-	{
-		my $mintime=time()-(MAX_AGE)*3600;
-
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 AND timestamp<=$mintime;") or make_error(S_SQLFAIL);
-		$sth->execute() or make_error(S_SQLFAIL);
-
-		while($row=$sth->fetchrow_hashref()){
-			delete_post($$row{num},"",0,ARCHIVE_MODE);
-		}
-	}
-
-	my $threads=count_threads();
-	my ($posts,$size)=count_posts();
-	my $max_threads=(MAX_THREADS or $threads);
-	my $max_posts=(MAX_POSTS or $posts);
-	my $max_size=(MAX_MEGABYTES*1024*1024 or $size);
-
-	while($threads>$max_threads or $posts>$max_posts or $size>$max_size){
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 ORDER BY $order LIMIT 1;") or make_error(S_SQLFAIL);
-		$sth->execute() or make_error(S_SQLFAIL);
-
-		if($row=$sth->fetchrow_hashref()){
-			my ($threadposts,$threadsize)=count_posts($$row{num});
-
-			delete_post($$row{num},"",0,ARCHIVE_MODE);
-
-			$threads--;
-			$posts-=$threadposts;
-			$size-=$threadsize;
-		}
-		else { last; } # shouldn't happen
-	}
-}
-
-sub table_exists($){
-	my ($table)=@_;
-	my ($sth);
-
-	return 0 unless($sth=$dbh->prepare("SELECT * FROM ".$table." LIMIT 1;"));
-	return 0 unless($sth->execute());
-	return 1;
-}
-
-sub count_threads(){
-	my ($sth);
-
-	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE parent=0;") or make_error(S_SQLFAIL);
-	$sth->execute() or make_error(S_SQLFAIL);
-
-	return ($sth->fetchrow_array())[0];
-}
-
-sub count_posts(;$$){
-	my ($parent,$countimages)=@_;
-	my ($sth,$where);
-
-	$where="WHERE parent=$parent or num=$parent" if($parent);
-	$sth=$dbh->prepare("SELECT count(*),sum(size) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL) unless ($countimages);
-	$sth=$dbh->prepare("SELECT count(*),sum(size),count(image) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL) if ($countimages);
-	$sth->execute() or make_error(S_SQLFAIL);
-
-	return $sth->fetchrow_array();
-}
-
-sub thread_exists($){
-	my ($thread)=@_;
-	my ($sth);
-
-	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE num=? AND parent=0;") or make_error(S_SQLFAIL);
-	$sth->execute($thread) or make_error(S_SQLFAIL);
-
-	return ($sth->fetchrow_array())[0];
-}
-
-sub get_decoded_hashref($){
-	my ($sth)=@_;
-
-	my $row=$sth->fetchrow_hashref();
-
-	if($row and $has_encode){
-		for my $k (keys %$row) # don't blame me for this shit, I got this from perlunicode.
-		{ defined && /[^\000-\177]/ && Encode::_utf8_on($_) for $row->{$k}; }
-	}
-
-	return $row;
-}
-
-sub get_decoded_arrayref($){
-	my ($sth)=@_;
-
-	my $row=$sth->fetchrow_arrayref();
-
-	if($row and $has_encode){
-		# don't blame me for this shit, I got this from perlunicode.
-		defined && /[^\000-\177]/ && Encode::_utf8_on($_) for @$row;
-	}
-
-	return $row;
-}
-
-# not database utils
-
-sub moveThread($$$$){
-	my ($admin,$from,$to,$parentpost)=@_;
-	make_error("Not yet implemented");
-	make_error(thread_exists($from));
-	
-	logAction("movethread","",$admin);
-	
-	return;
-}
-
-sub movePost($$$$){
-	my ($admin,$from,$to,$post)=@_;
-	make_error("Not yet implemented");
-	logAction("movepost","",$admin);
-	return;
-}
-
 sub toggle_sticky($$$){
 	my ($admin,$num,$jimmies)=@_;
 	my ($sth);
 	my @session = check_password($admin);
 	
-	logAction("sticky",$num,@session);
+	log_action("sticky",$num,@session);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 
@@ -3086,7 +2537,7 @@ sub toggle_permasage($$$){
 	my ($sth);
 	my @session = check_password($admin);
 	
-	logAction("permasage",$num,@session);
+	log_action("permasage",$num,@session);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
@@ -3107,7 +2558,7 @@ sub toggle_lock($$$){
 	my ($sth);
 	my @session = check_password($admin);
 	
-	logAction("close",$num,@session);
+	log_action("close",$num,@session);
 	
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
@@ -3152,7 +2603,7 @@ sub add_user($$$$$){
 	my ($admin,$user,$pass,$email,$class)=@_;
 	my @session = check_password($admin);
 	
-	logAction("adduser",$user,@session);
+	log_action("adduser",$user,@session);
 	
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
@@ -3173,7 +2624,7 @@ sub remove_user($$){
 	my ($user,$admin)=@_;
 	my @session = check_password($admin);
 	
-	logAction("removeuser",$user,@session);
+	log_action("removeuser",$user,@session);
 	
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	$user=clean_string(decode_string($user,CHARSET));
@@ -3207,7 +2658,7 @@ sub update_user_details($$$$$$){
 	my @session = check_password($admin);
 	my ($sth);
 	
-	logAction("edituser",$user,@session);
+	log_action("edituser",$user,@session);
 	
 	$oldpass=clean_string(decode_string($oldpass,CHARSET));
 	$newpass=clean_string(decode_string($newpass,CHARSET));
@@ -3371,7 +2822,7 @@ sub make_inbox($){
 	print encode_string(INBOX_TEMPLATE->(admin=>$admin,session=>\@session,messages=>\@messages));
 }
 
-sub make_thread($$){
+sub make_admin_thread($$){
 	my ($admin,$thread)=@_;
 	my ($sth,$row,@thread,@postnumbers,@reportedposts);
 
@@ -3418,7 +2869,7 @@ sub make_thread($$){
 	));
 }
 
-sub make_page($$){
+sub make_admin_page($$){
 	my ($admin,$page)=@_;
 	my ($sth,$row,@threads,$total,$filename,@postnumbers);
 	my @session = check_password($admin);
@@ -3623,7 +3074,7 @@ sub update_ban($$$$$){
 	my($admin,$num,$ip,$reason,$active)=@_;
 	my @session = check_password($admin);
 	
-	logAction("updateban",dec_to_dot $ip,@session);
+	log_action("updateban",dec_to_dot $ip,@session);
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
 	if($active==0 or $active==1){
@@ -3664,7 +3115,7 @@ sub edit_post($$$$$$){
 	my ($admin,$num,$comment,$subject,$name,$link,$trip)=@_;
 	my @session = check_password($admin);
 	make_error(S_CLASS) unless @session[1] eq 'admin';
-	logAction("editpost",$num,@session);
+	log_action("editpost",$num,@session);
 	
 	$comment=~s/^\s+//;
 	$comment=~s/\s+$//;
@@ -3676,7 +3127,7 @@ sub edit_post($$$$$$){
 	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
 
-sub logAction($$;@){
+sub log_action($$;@){
 	my ($action,$object,@session)=@_;
 	my ($time,$sth);
 	
@@ -3715,6 +3166,551 @@ sub make_view_log($){
 		session=>\@session,
 		log=>\@log
 	));
+}
+
+sub clear_log($){
+	my ($admin)=@_;
+	my @session = check_password($admin);
+	make_error(S_CLASS) if @session[1] ne 'admin';
+	
+	my $sth=$dbh->prepare("DELETE FROM ".SQL_LOG_TABLE." WHERE board=?;") or make_error(S_SQLFAIL);
+	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
+}
+
+sub clear_deleted($){
+
+}
+
+sub view_deleted($){
+
+}
+
+sub check_password($){
+	my ($admin)=@_; # $password is useless now
+	my ($dengus,$sth,@session);
+	
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+	
+	while($dengus=get_decoded_hashref($sth)){
+		if($admin eq crypt_password($$dengus{user}.$$dengus{pass})){
+			@session[0] = $$dengus{user};
+			@session[1] = $$dengus{class};
+			@session[2] = $$dengus{newmsgs};
+			@session[3] = $$dengus{newreports};
+			@session[4] = $$dengus{newbanreqs};
+			@session[5] = $$dengus{lastdate};
+			
+			return @session;
+		}
+	}
+
+	make_error(S_WRONGPASS);
+}
+
+sub check_nuke_password($$){
+	my ($admin,$password)=@_;
+
+	return if($admin eq NUKE_PASS);
+	return if($admin eq crypt_password($password));
+
+	log_action("failnuke","");
+	make_error(S_WRONGPASS);
+}
+
+sub crypt_password($){
+	my $crypt=hide_data((shift).get_ip(USE_CLOUDFLARE),9,"admin",SECRET,1);
+	$crypt=~tr/+/./; # for web shit
+	return $crypt;
+}
+
+#
+# Page creation utils
+#
+
+sub make_http_header(){
+	print "Content-Type: text/html; charset=utf-8 \n";
+	print "\n";
+}
+
+sub make_json_header(){
+	print "Content-Type: application/json; charset=utf-8 \n";
+	print "\n";
+}
+
+sub make_error($){
+	my ($error)=@_;
+
+	make_http_header();
+	print encode_string(ERROR_TEMPLATE->(error=>$error));
+
+	if(!$use_fastcgi and $dbh){
+		$dbh->{Warn}=0;
+		$dbh->disconnect();
+	}
+
+	# could print even more data, really.
+	if(ERRORLOG){
+		$error=~s/"/\\"/g;
+		open ERRORFILE,'>>'.ERRORLOG;
+		printf ERRORFILE '%s - %s - "%s" "%s"'."\n", get_ip(USE_CLOUDFLARE), scalar localtime, $ENV{HTTP_USER_AGENT}, $error;
+		close ERRORFILE;
+	}
+
+	# delete temp files
+	stop_script();
+}
+
+sub stop_script(){
+	if($use_fastcgi) { next FASTCGI; }
+	else { exit; }
+}
+
+sub get_script_name(){
+	return $ENV{SCRIPT_NAME};
+}
+
+sub get_secure_script_name(){
+	return 'https://'.$ENV{SERVER_NAME}.$ENV{SCRIPT_NAME} if(USE_SECURE_ADMIN);
+	return $ENV{SCRIPT_NAME};
+}
+
+sub expand_image_filename($){
+	my $filename=shift;
+
+	return expand_filename(clean_path($filename)) unless ENABLE_LOAD;
+
+	my ($self_path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;
+	my $src=IMG_DIR;
+	$filename=~/$src(.*)/;
+	return $self_path.REDIR_DIR.clean_path($1).'.html';
+}
+
+sub get_reply_link($$){
+	my ($reply,$parent)=@_;
+
+	return expand_filename(RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
+	return expand_filename(RES_DIR.$reply.PAGE_EXT);
+}
+
+sub get_rewritten_reply_link($$){
+	my ($reply,$parent)=@_;
+
+	return expand_filename(RES_DIR.$parent).'#'.$reply if($parent);
+	return expand_filename(RES_DIR.$reply);
+}
+
+sub get_cb_reply_link($$$){
+	my ($board,$reply,$parent)=@_;
+
+	return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
+	return expand_filename("../$board/".RES_DIR.$parent).'#'.$reply if($parent);
+	return expand_filename("../$board/".RES_DIR.$reply);
+}
+
+sub get_page_count(;$){
+	my $total=(shift or count_threads());
+	return int(($total+IMAGES_PER_PAGE-1)/IMAGES_PER_PAGE);
+}
+
+sub get_filetypes(){
+	my %filetypes=FILETYPES;
+	$filetypes{gif}=$filetypes{jpg}=$filetypes{png}=1;
+	return join ", ",map { uc } sort keys %filetypes;
+}
+
+sub dot_to_dec($){
+	return unpack('N',pack('C4',split(/\./, $_[0]))); # wow, magic.
+}
+
+sub dec_to_dot($){
+	return join('.',unpack('C4',pack('N',$_[0])));
+}
+
+sub parse_range($$){
+	my ($ip,$mask)=@_;
+
+	$ip=dot_to_dec($ip) if($ip=~/^\d+\.\d+\.\d+\.\d+$/);
+
+	if($mask=~/^\d+\.\d+\.\d+\.\d+$/) { $mask=dot_to_dec($mask); }
+	elsif($mask=~/(\d+)/) { $mask=(~((1<<$1)-1)); }
+	else { $mask=0xffffffff; }
+
+	return ($ip,$mask);
+}
+
+#
+# Database utils
+#
+
+sub init_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_TABLE.";") if(table_exists(SQL_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"parent INTEGER,".			# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
+	"timestamp INTEGER,".		# Timestamp in seconds for when the post was created
+	"lasthit INTEGER,".			# Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
+	"ip TEXT,".					# IP number of poster, in integer form!
+
+	"date TEXT,".				# The date, as a string
+	"name TEXT,".				# Name of the poster
+	"trip TEXT,".				# Tripcode (encoded)
+	"email TEXT,".				# Email address
+	"subject TEXT,".			# Subject
+	"password TEXT,".			# Deletion password (in plaintext) 
+	"comment TEXT,".			# Comment text, HTML encoded.
+
+	"image TEXT,".				# Image filename with path and extension (IE, src/1081231233721.jpg)
+	"size INTEGER,".			# File size in bytes
+	"md5 TEXT,".				# md5 sum in hex
+	"width INTEGER,".			# Width of image in pixels
+	"height INTEGER,".			# Height of image in pixels
+	"thumbnail TEXT,".			# Thumbnail filename with path and extension
+	"tn_width TEXT,".			# Thumbnail width in pixels
+	"tn_height TEXT,".			# Thumbnail height in pixels
+	
+	"sticky TINYINT,".			# A sticky
+	"permasage TINYINT,".		# Permasage
+	"locked TINYINT,".			# Locked threads
+	"filename TEXT,".			# The original filename
+	"tnmask TINYINT,".			# Whether or not the thumbnail is masked with a spoiler or something to that effect
+	"staffpost TINYINT,".		# Whether or not the post was made by a staff member. 1=admin, 2=mod, 3=dev, and 4=vip
+	"passnum INTEGER".			# If a post was made with a pass, its number is stored here
+	
+	
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_admin_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_ADMIN_TABLE.";") if(table_exists(SQL_ADMIN_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_ADMIN_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".	# Entry number, auto-increments
+	"type TEXT,".				# Type of entry (ipban, wordban, etc)
+	"comment TEXT,".			# Comment for the entry
+	"private TEXT,".			# Private ban info
+	"ival1 TEXT,".				# Integer value 1 (usually IP)
+	"ival2 TEXT,".				# Integer value 2 (usually netmask)
+	"sval1 TEXT,".				# String value 1
+	"fromuser TEXT,".			# User that made the ban
+	"publicfromuser TEXT,".		# Username displayed to the banned user (useful for IRC nicks and that sorta thing)
+	"duration INTEGER,".		# Ban duration
+	"perm TINYINT,".			# Ban duration
+	"scope TEXT,".				# Ban scope
+	"postnum INTEGER,".			# Post number citation
+	"board TEXT,".				# Board the above post was on
+	"warning TINYINT,".			# If the ban is a warning or not
+	"timestamp INTEGER,".		# When the ban was made
+	"active TINYINT".			# Whether or not the ban is active
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_deleted_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_DELETED_TABLE.";") if(table_exists(SQL_DELETED_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_DELETED_TABLE." (".
+
+	"indexnum ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"num INTEGER,".				# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
+	"parent INTEGER,".			# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
+	"timestamp INTEGER,".		# Timestamp in seconds for when the post was created
+	"lasthit INTEGER,".			# Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
+	"ip TEXT,".					# IP number of poster, in integer form!
+	"name TEXT,".				# Name of the poster
+	"trip TEXT,".				# Tripcode (encoded)
+	"email TEXT,".				# Email address
+	"subject TEXT,".			# Subject
+	"comment TEXT,".			# Comment text, HTML encoded.
+	"image TEXT,".				# Image filename with path and extension (IE, src/1081231233721.jpg)
+	"size INTEGER,".			# File size in bytes
+	"md5 TEXT,".				# md5 sum in hex
+	"width INTEGER,".			# Width of image in pixels
+	"height INTEGER,".			# Height of image in pixels
+	"filename TEXT,".			# The original filename
+	"deletedby TEXT,".			# 
+	"deletedtime INTEGER,".		# 
+	"board TEXT".				# 
+	
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_log_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_LOG_TABLE.";") if(table_exists(SQL_LOG_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_LOG_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"user TEXT,".
+	"action TEXT,".
+	"object TEXT,".	
+	"board TEXT,".
+	"time INTEGER,".
+	"ip TEXT".			
+	
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_pass_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_PASS_TABLE.";") if(table_exists(SQL_PASS_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_PASS_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"token TEXT,".						# On 4chan this would probably be used for checking if Stripe processed a vald payment
+										# Here, its just a bunch of hashed shit
+	"pin INTEGER,".						# A 'randomly' generated pin
+	"ip TEXT,".							# A "serialized" array of the last IPs to log in
+	"lasthit INTEGER,".					# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
+	"lastswitch INTEGER,".				# The last time the user logged on. If 3 months pass without another logon, the pass will be deactivated
+	"timestamp INTEGER,".				# DOB
+	"email TEXT,".						# The owner's email address
+	"approved TINYINT,".				# Whether or not the pass is approved. All passes are manually approved based on post history or something
+	"banned TINYINT".					# Whether or not the pass is banned
+	
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_user_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_USER_TABLE.";") if(table_exists(SQL_USER_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_USER_TABLE." (".
+
+	"user TEXT,".
+	"pass TEXT,".
+	"email TEXT,".
+	"class TEXT,".
+	"lastip TEXT,".
+	"lastdate INTEGER,".
+	"newmsgs TINYINT,".
+	"newreports TINYINT,".
+	"newbanreqs TINYINT".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub initMessageDatabase(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_MESSAGE_TABLE.";") if(table_exists(SQL_MESSAGE_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_MESSAGE_TABLE." (".
+
+	"touser TEXT,".
+	"fromuser TEXT,".
+	"message TEXT,".
+	"num ".get_sql_autoincrement().",".
+	"parent INTEGER,".
+	"timestamp INTEGER,".
+	"lasthit INTEGER,".
+	"wasread TINYINT".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
+}
+
+sub init_report_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_REPORT_TABLE.";") if(table_exists(SQL_REPORT_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_REPORT_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".
+	"postnum INTEGER,".
+	"parent TINYINT,".
+	"board TEXT,".
+	"fromip TEXT,".
+	"timestamp INTEGER,".
+	"vio TINYINT,".
+	"spam TINYINT,".
+	"illegal TINYINT".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
+}
+
+sub init_ban_request_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_BANREQUEST_TABLE.";") if(table_exists(SQL_BANREQUEST_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_BANREQUEST_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".
+	"postnum INTEGER,".
+	"postparent INTEGER,".
+	"board TEXT,".
+	"ip TEXT,".
+	"reason TEXT,".
+	"reason2 TEXT,".
+	"fromuser TEXT,".
+	"timestamp INTEGER".
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
+}
+
+sub init_proxy_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_PROXY_TABLE.";") if(table_exists(SQL_PROXY_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_PROXY_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".	# Entry number, auto-increments
+	"type TEXT,".				# Type of entry (black, white, etc)
+	"ip TEXT,".				# IP address
+	"timestamp INTEGER,".			# Age since epoch
+	"date TEXT".				# Human-readable form of date 
+
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub repair_database(){
+	my ($sth,$row,@threads,$thread);
+
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0;") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	while($row=$sth->fetchrow_hashref()) { push(@threads,$row); }
+
+	foreach $thread (@threads){
+		# fix lasthit
+		my ($upd);
+
+		$upd=$dbh->prepare("UPDATE ".SQL_TABLE." SET lasthit=? WHERE parent=?;") or make_error(S_SQLFAIL);
+		$upd->execute($$thread{lasthit},$$thread{num}) or make_error(S_SQLFAIL." ".$dbh->errstr());
+	}
+}
+
+sub get_sql_autoincrement(){
+	return 'INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT' if(SQL_DBI_SOURCE=~/^DBI:mysql:/i);
+	return 'INTEGER PRIMARY KEY' if(SQL_DBI_SOURCE=~/^DBI:SQLite:/i);
+	return 'INTEGER PRIMARY KEY' if(SQL_DBI_SOURCE=~/^DBI:SQLite2:/i);
+
+	make_error(S_SQLCONF); # maybe there should be a sane default case instead?
+}
+
+sub trim_database(){
+	my ($sth,$row,$order);
+
+	if(TRIM_METHOD==0) { $order='num ASC'; }
+	else { $order='lasthit ASC'; }
+
+	if(MAX_AGE) # needs testing
+	{
+		my $mintime=time()-(MAX_AGE)*3600;
+
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 AND timestamp<=$mintime;") or make_error(S_SQLFAIL);
+		$sth->execute() or make_error(S_SQLFAIL);
+
+		while($row=$sth->fetchrow_hashref()){
+			delete_post($$row{num},"",0,ARCHIVE_MODE);
+		}
+	}
+
+	my $threads=count_threads();
+	my ($posts,$size)=count_posts();
+	my $max_threads=(MAX_THREADS or $threads);
+	my $max_posts=(MAX_POSTS or $posts);
+	my $max_size=(MAX_MEGABYTES*1024*1024 or $size);
+
+	while($threads>$max_threads or $posts>$max_posts or $size>$max_size){
+		$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE parent=0 ORDER BY $order LIMIT 1;") or make_error(S_SQLFAIL);
+		$sth->execute() or make_error(S_SQLFAIL);
+
+		if($row=$sth->fetchrow_hashref()){
+			my ($threadposts,$threadsize)=count_posts($$row{num});
+
+			delete_post($$row{num},"",0,ARCHIVE_MODE);
+
+			$threads--;
+			$posts-=$threadposts;
+			$size-=$threadsize;
+		}
+		else { last; } # shouldn't happen
+	}
+}
+
+sub table_exists($){
+	my ($table)=@_;
+	my ($sth);
+
+	return 0 unless($sth=$dbh->prepare("SELECT * FROM ".$table." LIMIT 1;"));
+	return 0 unless($sth->execute());
+	return 1;
+}
+
+sub count_threads(){
+	my ($sth);
+
+	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE parent=0;") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	return ($sth->fetchrow_array())[0];
+}
+
+sub count_posts(;$$){
+	my ($parent,$countimages)=@_;
+	my ($sth,$where);
+
+	$where="WHERE parent=$parent or num=$parent" if($parent);
+	$sth=$dbh->prepare("SELECT count(*),sum(size) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL) unless ($countimages);
+	$sth=$dbh->prepare("SELECT count(*),sum(size),count(image) FROM ".SQL_TABLE." $where;") or make_error(S_SQLFAIL) if ($countimages);
+	$sth->execute() or make_error(S_SQLFAIL);
+
+	return $sth->fetchrow_array();
+}
+
+sub thread_exists($){
+	my ($thread)=@_;
+	my ($sth);
+
+	$sth=$dbh->prepare("SELECT count(*) FROM ".SQL_TABLE." WHERE num=? AND parent=0;") or make_error(S_SQLFAIL);
+	$sth->execute($thread) or make_error(S_SQLFAIL);
+
+	return ($sth->fetchrow_array())[0];
+}
+
+sub get_decoded_hashref($){
+	my ($sth)=@_;
+
+	my $row=$sth->fetchrow_hashref();
+
+	if($row and $has_encode){
+		for my $k (keys %$row) # don't blame me for this shit, I got this from perlunicode.
+		{ defined && /[^\000-\177]/ && Encode::_utf8_on($_) for $row->{$k}; }
+	}
+
+	return $row;
+}
+
+sub get_decoded_arrayref($){
+	my ($sth)=@_;
+
+	my $row=$sth->fetchrow_arrayref();
+
+	if($row and $has_encode){
+		# don't blame me for this shit, I got this from perlunicode.
+		defined && /[^\000-\177]/ && Encode::_utf8_on($_) for @$row;
+	}
+
+	return $row;
 }
 
 sub make_pass_page(){
@@ -3913,23 +3909,4 @@ sub make_pass_list($){
 		banned=>\@banned,
 		unverified=>\@unverified
 	));
-}
-
-sub clear_log($){
-	my ($admin)=@_;
-	my @session = check_password($admin);
-	make_error(S_CLASS) if @session[1] ne 'admin';
-	
-	my $sth=$dbh->prepare("DELETE FROM ".SQL_LOG_TABLE." WHERE board=?;") or make_error(S_SQLFAIL);
-	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
-	
-	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
-}
-
-sub clear_deleted($){
-
-}
-
-sub view_deleted($){
-
 }
