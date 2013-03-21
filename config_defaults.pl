@@ -71,6 +71,9 @@ BEGIN {
 	eval "use constant RECAPTCHA_PRIVATE_KEY => ''" unless(defined &RECAPTCHA_PRIVATE_KEY);
 	eval "use constant RECAPTCHA_PUBLIC_KEY => ''" unless(defined &RECAPTCHA_PUBLIC_KEY);
 	eval "use constant PASS_ENABLED => 0" unless(defined &PASS_ENABLED);
+	eval "use constant ENABLE_LIST => 0" unless(defined &ENABLE_LIST);
+	eval "use constant ENABLE_CATALOG => 1" unless(defined &ENABLE_CATALOG);
+	eval "use constant REWRITTEN_URLS => 0" unless(defined &REWRITTEN_URLS);
 
 	eval "use constant ENABLE_LOAD => 0" unless(defined &ENABLE_LOAD);
 	eval "use constant LOAD_SENDER_SCRIPT => 'sender.pl'" unless(defined &LOAD_SENDER_SCRIPT);

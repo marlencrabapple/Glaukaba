@@ -375,7 +375,7 @@ sub init(){
 		my $comment=$query->param("field4");
 		my $subject=$query->param("field3");
 		my $name=$query->param("field1");
-		my $link=$query->param("field2");P
+		my $link=$query->param("field2");
 		my $trip=$query->param("field1andahalf");
 		edit_post($admin,$num,$comment,$subject,$name,$link,$trip);
 	}
@@ -520,7 +520,7 @@ sub make_report_form($$){
 	my ($num,$board)=@_;
 	
 	make_http_header();
-	print encode_string(REPORT_TEMPLATE->(num=>$num,board=>$board));
+	print encode_string(REPORT_TEMPLATE->(num=>$num,board=>$board,noextra=>1));
 }
 
 sub report($$$){
@@ -623,8 +623,8 @@ sub build_cache(){
 		push @threads,{posts=>[@thread]};
 		
 		# hurray for optimization
-		make_admin_thread_list(@parentposts);
-		make_admin_thread_catalog(@parentposts);
+		make_admin_thread_list(@parentposts) if ENABLE_LIST;
+		make_admin_thread_catalog(@parentposts) if ENABLE_CATALOG;
 
 		my $total=get_page_count(scalar @threads);
 		my @pagethreads;
@@ -1137,7 +1137,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	}
 	else
 	{
-		make_http_forward($noko ? get_rewritten_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",ALTERNATE_REDIRECT);
+		make_http_forward($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",ALTERNATE_REDIRECT);
 	}
 }
 
@@ -1437,7 +1437,7 @@ sub format_comment($){
 		# Normal post citation
 		$line=~s!&gtgt;([0-9]+)!
 			my $res=get_post($1);
-			if($res) { '<a href="'.get_rewritten_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
+			if($res) { '<a href="'.get_reply_link($$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;'.$1.'</a>' }
 			else { "<span class=\"quote\">&gt;&gt;$1</span>"; }
 		!ge;
 		
@@ -3290,16 +3290,14 @@ sub expand_image_filename($){
 
 sub get_reply_link($$){
 	my ($reply,$parent)=@_;
-
-	return expand_filename(RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
-	return expand_filename(RES_DIR.$reply.PAGE_EXT);
-}
-
-sub get_rewritten_reply_link($$){
-	my ($reply,$parent)=@_;
-
-	return expand_filename(RES_DIR.$parent).'#'.$reply if($parent);
-	return expand_filename(RES_DIR.$reply);
+	if(REWRITTEN_URLS){
+		return expand_filename(RES_DIR.$parent).'#'.$reply if($parent);
+		return expand_filename(RES_DIR.$reply);
+	}
+	else{
+		return expand_filename(RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
+		return expand_filename(RES_DIR.$reply.PAGE_EXT);
+	}
 }
 
 sub get_cb_reply_link($$$){

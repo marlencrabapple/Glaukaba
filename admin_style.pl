@@ -8,7 +8,7 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		<if ($session-\>[1] eq 'mod')||($session-\>[1] eq 'admin')>
 			<div class="topNavLeft">
 				<strong>Navigation:&nbsp;&nbsp;</strong>
-				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&admin=<var $admin>'">
+				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&amp;admin=<var $admin>'">
 					<loop BOARDS>
 						<if $public><option value="<var $dir>">/<var $dir>/</option></if>
 					</loop>
@@ -50,7 +50,7 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 		[<a href="<var $self>?task=viewlog&amp;admin=<var $admin>">View Log</a>]
 	</if>
 	[<a href="<var $self>?task=manageusers&amp;admin=<var $admin>"><if $session-\>[1] eq 'admin'>Manage Users</if><if $session-\>[1] ne 'admin'>User List</if></a>]
-	[<a href="<var $self>?task=edituser&amp;admin=<var $admin>&user=<var $session-\>[0]>">Edit Profile</a>]
+	[<a href="<var $self>?task=edituser&amp;admin=<var $admin>&amp;user=<var $session-\>[0]>">Edit Profile</a>]
 	[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">Inbox</a>]
 	[<a id="reportQueueButton" href="<var $self>?task=viewreports&amp;admin=<var $admin>"><const S_REPORTS></a>]
 	[<a href="<var $self>?task=logout&amp;type=admin"><const S_MANALOGOUT></a>]
@@ -84,7 +84,7 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <tr><td><strong>Password </strong></td><td style="text-align: right"><input type="password" name="berra" size="9" value="" /></td></tr>
 <tr><td colspan=2><label><input type="checkbox" name="savelogin" /> Remember me</label></td></tr>
 <tr><td colspan=2><input type="submit" value="Login" /></td></tr>
-</table></tbody>
+</tbody></table>
 </form><br /></div>
 }.NORMAL_FOOT_INCLUDE);
 
@@ -512,7 +512,7 @@ use constant REPORT_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 			<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 			<span class="reflink">
-			<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
+			<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
 			<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
 			}.ADMIN_POST_BUTTONS_TEMPLATE.q{
 		</div>
@@ -641,13 +641,17 @@ use constant COMPOSE_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q
 }.NORMAL_FOOT_INCLUDE);
 
 use constant INBOX_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-<table align="center" id="threadList" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">No.</td><td class="listHead">Message</td><td class="listHead">From</td><td class="listHead">Date</td><td class="listHead">Options</td></thead>
+<table align="center" id="threadList" style="white-space: nowrap; width: auto;">
+<thead><tr>
+<td class="listHead">No.</td><td class="listHead">Message</td><td class="listHead">From</td><td class="listHead">To</td><td class="listHead">Date</td><td class="listHead">Options</td>
+</tr></thead>
 <tbody>
 <loop $messages>
 <tr class="listRow"><td class="listCol"><var $num></td>
 <if !$wasread><td class="listCol"><strong><a href="<var $self>?task=viewmsg&amp;num=<var $num>&amp;admin=<var $admin>"><var truncateComment $message></a></strong></td></if>
 <if $wasread><td><a href="<var $self>?task=viewmsg&amp;num=<var $num>&amp;admin=<var $admin>"><var truncateComment $message></a></td></if>
 <td class="listCol"><var $fromuser></td>
+<td class="listCol"><var $touser></td>
 <td class="listCol"><var make_date($timestamp,tiny)></td>
 <td class="listCol">[<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">Reply</a>]</td></tr>
 </loop>
@@ -662,8 +666,8 @@ use constant VIEW_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <tbody>
 <tr><td class="postBlock">From</td><td><var $fromuser> on <var make_date($timestamp,"tiny")></td></tr>
 <tr><td class="postBlock">Message</td><td><var $message></td></tr>
-</table>
 </tbody>
+</table>
 <hr/>
 </loop>
 [<a href="<var $self>?task=composemsg&amp;replyto=<var $num>&amp;admin=<var $admin>">Reply</a>]
@@ -965,7 +969,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
 					<var $date></label>
 					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
 					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
 					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
@@ -975,7 +979,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				</span>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 				</blockquote>
 			</div>
 			<if $omit><span class="omittedposts">
@@ -992,7 +996,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 						<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
 						<var $date></label>
 						<span class="reflink">
-							<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
+							<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
 							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
 						</span>
 						}.ADMIN_POST_BUTTONS_TEMPLATE.q{
@@ -1016,7 +1020,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 								</if></if></if>
 						<blockquote<if $email=~/aa$/i> class="aa"</if>>
 							<var $comment>
-							<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+							<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 						</blockquote>
 					</div>
 				</div>
@@ -1155,7 +1159,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
 					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
 					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
@@ -1185,7 +1189,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				</span>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 				</blockquote>
 			</div>
 			<if $omit><span class="omittedposts">
@@ -1202,7 +1206,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
 					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
@@ -1243,7 +1247,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 							</if></if></if>
 					<blockquote<if $email=~/aa$/i> class="aa"</if>>
 						<var $comment>
-						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 					</blockquote>
 				</div>
 			</div></if>
@@ -1275,6 +1279,12 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	</loop>
 	</div><br />
 </if>
+<div id="bottomNavStatic" class="staticNav">
+	<div style="float:right">
+		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
+		[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>">Home</a>]
+	</div>
+</div>
 </div>
 }.NORMAL_FOOT_INCLUDE);
 

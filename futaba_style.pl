@@ -29,14 +29,18 @@ var domain = "http://<const DOMAIN>/";
 var boardDir = "<const BOARD_DIR>";
 var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 </script>
+<if !$noextra>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+</if>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
-<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script>
+<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script></if>
 <script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
+<if !$noextra>
 <script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
+</if>
 </head>
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
@@ -88,7 +92,7 @@ var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 </div>
 <div id="topNavStatic" class="staticNav">
 	[<loop BOARDS><a href="http://<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
-	[<loop LINKS><a href="<var $url>"><var $name></a><if !$lastBoard> / </if></loop>]
+	<if LINKS>[<loop LINKS><a href="<var $url>"><var $name></a><if !$lastlink> / </if></loop>]</if>
 	<div style="float:right">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
 		[<a href="http://<const DOMAIN>">Home</a>]
@@ -133,14 +137,18 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 		</loop>
 		<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
+		<if !$noextra>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+		</if>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
+		<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script></if>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js?<var int(rand(10000))>"></script>
+		<if !$noextra>
 		<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
+		</if>
 		<script>
 			var domain = "http://<var DOMAIN>/";
 			var boardDir = "<var BOARD_DIR>";
@@ -165,6 +173,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 					<strong>General Enhancements</strong><br />
 					<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);" />Comment Expansion</label>: Expands truncated comments<br />
 					<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);" />Thread Expansion</label>: View all replies without changing pages<br />
+					<label class="navOptionsListItem"><input id="fixedNav" type=checkbox onchange="toggleFeature('fixedNav',this.checked);" />Fixed Navigation</label>: Pins navigation to the top of the page even when scrolling<br />
 				</p>
 				<p>
 					<strong>Filtering</strong><br />
@@ -179,6 +188,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 				<p>
 					<strong>Monitoring</strong><br />
 					<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);" />Thread Updater</label>: Get new posts automatically without refreshing the page<br />
+					<label class="navOptionsListItem"><input id="expandFilename" type=checkbox onchange="toggleFeature('expandFilename',this.checked);" />Expand Filenames</label>: Expands an image's filename on mouseover<br />
 				</p>
 				<p>
 					<strong>Posting</strong><br />
@@ -356,12 +366,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
 					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
 					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
-					<if !$thread>[<a href="<var getPrintedReplyLink($num,0)>"><const S_REPLY></a>]</if>
+					<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
@@ -385,7 +395,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				</span>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 					
 					<if SHOW_STAFF_POSTS>
 						<if $capcodereplies\>0>
@@ -416,7 +426,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
 					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
 					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var getPrintedReplyLink($parent,0)>#i<var $num>">No.<var $num></a></if>
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
 					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					</div>
@@ -456,7 +466,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							</if></if></if>
 					<blockquote<if $email=~/aa$/i> class="aa"</if>>
 						<var $comment>
-						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,getPrintedReplyLink($num,$parent))></div></if>
+						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 					</blockquote>
 				</div>
 			</div></if>
@@ -489,14 +499,24 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <div id="forJs" style="display:none"><var BOARD_DIR></div>
 <if !$thread>
 	<div id="pageNumber">
-	<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
-	<if !$prevpage><const S_FIRSTPG></if>
-	<loop $pages>
-		<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
-		<if $current>[<var $page>]</if>
-	</loop>
-	<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
-	<if !$nextpage><const S_LASTPG></if>
+		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
+		<if !$prevpage><const S_FIRSTPG></if>
+		<loop $pages>
+			<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
+			<if $current>[<var $page>]</if>
+		</loop>
+		<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
+		<if !$nextpage><const S_LASTPG></if>
+		<if ENABLE_CATALOG>
+			<div class="catalogLink">
+				<a href="http://<const DOMAIN>/<const BOARD_DIR>/catalog.html">Catalog</a>
+			</div>
+		</if>
+		<if ENABLE_LIST>
+			<div class="catalogLink">
+				<a href="http://<const DOMAIN>/<const BOARD_DIR>/subback.html">Thread List</a>
+			</div>
+		</if>
 	</div>
 </if>
 <div id="bottomNavStatic" class="staticNav">
