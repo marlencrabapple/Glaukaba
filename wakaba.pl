@@ -644,7 +644,9 @@ sub build_cache(){
 
 sub build_cache_page($$@){
 	my ($page,$total,@threads)=@_;
-	my ($filename,$tmpname,$threadindex);
+	my ($filename,$tmpname,$threadindex,$ext);
+	
+	$ext = PAGE_EXT unless REWRITTEN_URLS;
 
 	if($page==0) { $filename=HTML_SELF; }
 	else { $filename=$page.PAGE_EXT; }
@@ -667,16 +669,16 @@ sub build_cache_page($$@){
 				if($$post{staffpost}){
 					# 1=admin, 2=mod, 3=dev, and 4=vip
 					if($$post{staffpost}==1){
-						@staffposts[0].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+						@staffposts[0].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 					}
 					elsif($$post{staffpost}==2){
-						@staffposts[1].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+						@staffposts[1].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 					}
 					elsif($$post{staffpost}==3){
-						@staffposts[2].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+						@staffposts[2].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 					}
 					elsif($$post{staffpost}==4){
-						@staffposts[3].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+						@staffposts[3].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 					}
 					$capcodereplies+=1;
 				}
@@ -729,7 +731,7 @@ sub build_cache_page($$@){
 	my @pages=map +{ page=>$_ },(0..$total-1);
 	foreach my $p (@pages){
 		if($$p{page}==0) { $$p{filename}=expand_filename(HTML_SELF) } # first page
-		else { $$p{filename}=expand_filename($$p{page}.PAGE_EXT) }
+		else { $$p{filename}=expand_filename($$p{page}.$ext) }
 		if($$p{page}==$page) { $$p{current}=1 } # current page, no link
 	}
 
@@ -763,9 +765,10 @@ sub build_cache_page($$@){
 
 sub build_thread_cache($){
 	my ($thread)=@_;
-	my ($sth,$row,$lastpost,$capcodereplies,@thread,@staffposts);
+	my ($sth,$row,$lastpost,$capcodereplies,$ext,@thread,@staffposts);
 	my ($filename,$tmpname);
-
+	
+	$ext = PAGE_EXT unless REWRITTEN_URLS;
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=? OR parent=? ORDER BY num ASC;") or make_error(S_SQLFAIL);
 	$sth->execute($thread,$thread) or make_error(S_SQLFAIL);
 
@@ -777,16 +780,16 @@ sub build_thread_cache($){
 			if(($$post{staffpost}) and ($$post{parent})){
 				# 1=admin, 2=mod, 3=dev, and 4=vip
 				if($$post{staffpost}==1){
-					@staffposts[0].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					@staffposts[0].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 				}
 				elsif($$post{staffpost}==2){
-					@staffposts[1].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					@staffposts[1].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 				}
 				elsif($$post{staffpost}==3){
-					@staffposts[2].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					@staffposts[2].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 				}
 				elsif($$post{staffpost}==4){
-					@staffposts[3].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
+					@staffposts[3].= " <a class=\"postlink\" href=\"http://".DOMAIN."/".BOARD_DIR."/res/".$$post{parent}.$ext."#".$$post{num}."\">&gt;&gt;".$$post{num}."</a>";
 				}
 				$capcodereplies+=1;
 			}
@@ -3302,10 +3305,16 @@ sub get_reply_link($$){
 
 sub get_cb_reply_link($$$){
 	my ($board,$reply,$parent)=@_;
-
-	return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
-	return expand_filename("../$board/".RES_DIR.$parent).'#'.$reply if($parent);
-	return expand_filename("../$board/".RES_DIR.$reply);
+	if(REWRITTEN_URLS){
+		return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
+		return expand_filename("../$board/".RES_DIR.$parent).'#'.$reply if($parent);
+		return expand_filename("../$board/".RES_DIR.$reply);
+	}
+	else{
+		return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
+		return expand_filename("../$board/".RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
+		return expand_filename("../$board/".RES_DIR.$reply.PAGE_EXT);
+	}
 }
 
 sub get_page_count(;$){

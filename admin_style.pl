@@ -596,7 +596,10 @@ use constant REGISTER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant MANAGE_USERS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-	<table align="center" id="threadList" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">Username</td><td class="listHead">Email</td><td class="listHead">Class</td><td class="listHead">Last Session</td><td class="listHead">Options</td></thead>
+	<table align="center" id="threadList" style="white-space: nowrap; width: auto;">
+	<thead>
+	<tr><td class="listHead">Username</td><td class="listHead">Email</td><td class="listHead">Class</td><td class="listHead">Last Session</td><td class="listHead">Options</td></tr>
+	</thead>
 	<tbody>
 	<loop $users>
 		<tr class="listRow"><td class="listCol"><var $user></td><td class="listCol"><var $email></td><td><var $class></td><td class="listCol"><if $session-\>[1] eq 'admin'><var $lastip> on </if><var make_date($lastdate,tiny)></td><td class="listCol">
@@ -874,13 +877,15 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<table id="threadList" align="center" style="white-space: nowrap; width: auto;">
 		<tbody>
 			<thead>
-				<td class="listHead">Active</td>
-				<td class="listHead">Public Reason</td>
-				<td class="listHead">Details</td>
-				<td class="listHead">By</td>
-				<td class="listHead">Date</td>
-				<td class="listHead">Expiration</td>
-				<td class="listHead">Options</td>
+				<tr>
+					<td class="listHead">Active</td>
+					<td class="listHead">Public Reason</td>
+					<td class="listHead">Details</td>
+					<td class="listHead">By</td>
+					<td class="listHead">Date</td>
+					<td class="listHead">Expiration</td>
+					<td class="listHead">Options</td>
+				</tr>
 			</thead>
 			<loop $bans>
 			<tr class="listRow">
@@ -910,7 +915,10 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	</table>
 </fieldset>
 <fieldset><legend>Ban Requests</legend>
-	<table id="threadList" align="center" style="white-space: nowrap; width: auto;"><tbody><thead><td class="listHead">Reason</td><td class="listHead">By</td><td class="listHead">Date</td><td class="listHead">Options</td></thead>
+	<table id="threadList" align="center" style="white-space: nowrap; width: auto;">
+	<thead>
+	<tr><td class="listHead">Reason</td><td class="listHead">By</td><td class="listHead">Date</td><td class="listHead">Options</td></tr>
+	</thead>
 	<tbody>
 	<loop $requested>
 	<tr class="listRow">

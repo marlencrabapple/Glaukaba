@@ -32,8 +32,8 @@ var social = 0;
 <if SOCIAL==1>social = 1</if>
 </script>
 <if !$noextra>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 </if>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
@@ -142,8 +142,8 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		</loop>
 		<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 		<if !$noextra>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 		</if>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
@@ -237,8 +237,8 @@ use constant CONTENT_HEAD_INCLUDE => q{
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 		</loop>
 		<link href="http://<var DOMAIN>/css/othercontent.css" type="text/css" rel="stylesheet" />
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>>"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
@@ -517,12 +517,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<if !$nextpage><const S_LASTPG></if>
 		<if ENABLE_CATALOG>
 			<div class="catalogLink">
-				<a href="http://<const DOMAIN>/<const BOARD_DIR>/catalog.html">Catalog</a>
+				<a href="http://<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a>
 			</div>
 		</if>
 		<if ENABLE_LIST>
 			<div class="catalogLink">
-				<a href="http://<const DOMAIN>/<const BOARD_DIR>/subback.html">Thread List</a>
+				<a href="http://<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a>
 			</div>
 		</if>
 	</div>
