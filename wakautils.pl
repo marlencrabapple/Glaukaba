@@ -1148,12 +1148,9 @@ sub analyze_gif($){
 
 sub make_thumbnail($$$$$$;$){
 	my ($filename,$thumbnail,$nsfw,$width,$height,$quality,$convert)=@_;
-
-	# Imagemagick is only used for NSFW images because of openmp incompatibilities with low resource debian installations
-
 	my $magickname=$filename;
+	
 	$magickname.="[0]" if($magickname=~/\.gif$/);
-
 	$convert="convert" unless($convert);
 	
 	if($nsfw==1){
@@ -1161,34 +1158,33 @@ sub make_thumbnail($$$$$$;$){
 		my $scaledown = int(1*($width/$height));
 		
 		# need to proportionally pixelate somehow
-		`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
-		`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
+		`$convert -background white -scale 5x -scale 500x -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+		#`$convert -background khaki -flatten -quality $quality $thumbnail -fill white -undercolor '#00000080' -pointsize 50 -gravity South -annotate +0+5 ' NSFW ' $thumbnail`;
 		return 1 unless($?);
 	}
-	else{
-		#`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
-		if($filename=~/\.jpg$/){
-			`djpeg $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
-			# could use -scale 1/n
-			return 1 unless($?);
-		}
-		elsif($filename=~/\.png$/){
-			`pngtopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
-			return 1 unless($?);
-		}
-		elsif($filename=~/\.gif$/){
-			`giftopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
-			return 1 unless($?);
-		}
+
+	`$convert -background white -flatten -size ${width}x${height} -geometry ${width}x${height}! -quality $quality $magickname $thumbnail`;
+	return 1 unless($?);
+
+	if($filename=~/\.jpg$/){
+		`djpeg $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
+		# could use -scale 1/n
+		return 1 unless($?);
+	}
+	elsif($filename=~/\.png$/){
+		`pngtopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
+		return 1 unless($?);
+	}
+	elsif($filename=~/\.gif$/){
+		`giftopnm $filename | pnmscale -width $width -height $height | cjpeg -quality $quality > $thumbnail`;
+		return 1 unless($?);
 	}
 
 	# try Mac OS X's sips
-
 	`sips -z $height $width -s formatOptions normal -s format jpeg $filename --out $thumbnail >/dev/null`; # quality setting doesn't seem to work
 	return 1 unless($?);
 
 	# try PerlMagick (it sucks)
-
 	eval 'use Image::Magick';
 	unless($@){
 		my ($res,$magick);

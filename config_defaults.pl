@@ -43,6 +43,7 @@ BEGIN {
 	eval "use constant DEFAULT_STYLE => 'Yotsuba B'" unless(defined &DEFAULT_STYLE);
 	eval "use constant SOCIAL => 0" unless(defined &SOCIAL);
 	eval "use constant ADD_BREAKS => 0" unless(defined &ADD_BREAKS);
+	eval "use constant ENABLE_JSON => 0" unless(defined &ENABLE_JSON);
 
 	eval "use constant MAX_KB => 5000" unless(defined &MAX_KB);
 	eval "use constant MAX_W => 250" unless(defined &MAX_W);

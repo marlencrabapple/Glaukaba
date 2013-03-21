@@ -28,6 +28,8 @@ var sitename = "<const SITE_NAME>";
 var domain = "http://<const DOMAIN>/";
 var boardDir = "<const BOARD_DIR>";
 var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
+var social = 0;
+<if SOCIAL==1>social = 1</if>
 </script>
 <if !$noextra>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
@@ -35,8 +37,8 @@ var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 </if>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
-<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script></if>
-<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
+<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script>
+<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script></if>
 <if !$noextra>
 <script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 <script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
@@ -45,6 +47,7 @@ var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 <if $thread><body class="replypage"></if>
 <if !$thread><body></if>
 <a name="top"></a>
+<if !$noextra>
 <div id="overlay">
 	<div id="navOptionsMenu">
 		<div id="navOptionsTopBar">
@@ -90,6 +93,7 @@ var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 		</div>
 	</div>
 </div>
+</if>
 <div id="topNavStatic" class="staticNav">
 	[<loop BOARDS><a href="http://<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
 	<if LINKS>[<loop LINKS><a href="<var $url>"><var $name></a><if !$lastlink> / </if></loop>]</if>
@@ -142,9 +146,9 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 		</if>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-		<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script></if>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js?<var int(rand(10000))>"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
+		<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script></if>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js"></script>
 		<if !$noextra>
 		<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
@@ -153,11 +157,14 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			var domain = "http://<var DOMAIN>/";
 			var boardDir = "<var BOARD_DIR>";
 			var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
+			var social = 0;
+			<if SOCIAL==1>social = 1</if>
 		</script>
 	</head>
 	<if $thread><body class="replypage"></if>
 	<if !$thread><body></if>
 	<a name="top"></a>
+	<if !$noextra>
 	<div id="overlay">
 		<div id="navOptionsMenu">
 			<div id="navOptionsTopBar">
@@ -203,6 +210,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			</div>
 		</div>
 	</div>
+	</if>
 };
 
 use constant CONTENT_HEAD_INCLUDE => q{
@@ -232,7 +240,7 @@ use constant CONTENT_HEAD_INCLUDE => q{
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>>"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
 		<script>
 			var domain = "http://<var DOMAIN>/";
@@ -549,8 +557,6 @@ use constant REPORT_TEMPLATE => compile_template(q{
 		</style>
 		<loop $stylesheets><link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" /></loop>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>?<var int(rand(10000))>"></script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>?<var int(rand(10000))>"></script>
 	</head>
 	<body>
 		<h3>Reporting Post No.<var $num> on /<var BOARD_DIR>/</h3>
