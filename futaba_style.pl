@@ -635,6 +635,67 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </script>
 }.NORMAL_FOOT_INCLUDE);
 
+use constant SEARCHABLE_CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
+[<a href="http://<const DOMAIN>/<const BOARD_DIR>"><const S_RETURN></a>]
+<div class="listHead" style="margin-top: 5px;">Catalog Mode</div>
+<div id="catalog">
+	<div class="catItem" id="catItem0">
+		<a id="catItemHoverLink0" href="/<const BOARD_DIR>/res/0">
+			<div class="catItemHover" id="catItemHover0" style="width: 150px; height:150px;">
+				<div class="catItemHoverText" style="width: 150px; height: 150px; line-height: 150px;">&gt;&gt;0</div>
+			</div>
+		</a>
+		<a id="catItemImageLink0" href="/<const BOARD_DIR>/res/0">
+			<img src="http://<const DOMAIN>/img/mod.png" class="catImage" style="width: 150px; height: 150px;" />
+		</a>
+		<div class="catComment" id="catItemComment0">
+			<span class="catCounts">R: 0/ I: 0</span><br />
+			<span>Taargus Taargus</span>
+		</div>
+	</div>
+</div>
+<script>
+	var catalog=
+		{
+			"threads": [
+			<loop $threads>
+				{
+					"no":<var $num>,
+					<if $sticky>"sticky":<var $sticky>,</if>
+					<if $permasage>"psage":<var $permasage>,</if>
+					<if $locked>"closed":<var $locked>,</if>
+					"time":<var $timestamp>,
+					<if index($date,"ID")==-1>"now":"<var $date>",</if>
+					<if index($date,"ID")!=-1>
+						"now":"<var substr($date,0,index($date,"ID:")-1)>",
+						"id":"<var substr($date, index($date,"ID:"))>",
+					</if>
+					"name":"<var mahou_inyoufu $name>",
+					"trip":"<var $trip>",
+					<if $email>"email":"<var mahou_inyoufu $email>",</if>
+					"sub":"<var mahou_inyoufu $subject>",
+					"com":"<var mahou_inyoufu $comment>",
+					<if $image>
+						"image":"<var $thumbnail>",
+						"fsize":<var $size>,
+						"md5":"<var $md5>",
+						"w":<var $width>,
+						"h":<var $height>,
+						"tn_w":<var $tn_width>,
+						"tn_h":<var $tn_height>,
+						"filename":"<var $filename>",
+						<if $tn_mask>"spoiler":<var $tnmask>,</if>
+					</if>
+					"postcount":<var $postcount>,
+					"imagecount":<var $imagecount>
+				}<if !$lastthread>,</if>
+			</loop>
+			]
+		};
+</script>
+<script src="http://<var DOMAIN>/js/catalog.js"></script>
+}.NORMAL_FOOT_INCLUDE);
+
 use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 }.NORMAL_FOOT_INCLUDE);

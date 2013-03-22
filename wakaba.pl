@@ -516,6 +516,26 @@ sub make_admin_thread_catalog(@){
 	print_page($filename,CATALOG_TEMPLATE->(threads=>\@threads));
 }
 
+sub make_searchable_catalog(@){
+	my (@rows)=@_;
+	my ($filename,@threads);
+	
+	foreach my $row (@rows){
+		my ($posts,$size,$images)=count_posts($$row{num},1);
+		$$row{'postcount'}=$posts-1; # add post count to hash
+		$$row{'imagecount'}=$images-1; # add image count to hash
+		push @threads,$row;
+	}
+	
+	# json stuff
+	my $lastthread = @threads[(scalar @threads)-1];
+	$$lastthread{lastthread} = 1;
+	
+	$filename = "catalog.html";
+	print_page($filename,SEARCHABLE_CATALOG_TEMPLATE->(threads=>\@threads));
+	
+}
+
 sub make_report_form($$){
 	my ($num,$board)=@_;
 	
@@ -624,7 +644,8 @@ sub build_cache(){
 		
 		# hurray for optimization
 		make_admin_thread_list(@parentposts) if ENABLE_LIST;
-		make_admin_thread_catalog(@parentposts) if ENABLE_CATALOG;
+		make_admin_thread_catalog(@parentposts) if ENABLE_CATALOG==1;
+		make_searchable_catalog(@parentposts) if ENABLE_CATALOG==2;
 
 		my $total=get_page_count(scalar @threads);
 		my @pagethreads;

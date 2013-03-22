@@ -7,6 +7,7 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 	<div class="topNavContainer" id="adminNav">
 		<if ($session-\>[1] eq 'mod')||($session-\>[1] eq 'admin')>
 			<div class="topNavLeft">
+				<span style="vertical-align: middle">
 				<strong>Navigation:&nbsp;&nbsp;</strong>
 				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&amp;admin=<var $admin>'">
 					<loop BOARDS>
@@ -14,13 +15,16 @@ use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 					</loop>
 					<option value="#">Boards</option>
 				</select>
+				</span>
 			</div>
 		</if>
 		<div class="topNavRight">
+			<span style="vertical-align: middle">
 			<if $session-\>[2]>[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">New Messages</a>]</if>
 			<if $session-\>[3]>[<a href="<var $self>?task=viewreports&amp;admin=<var $admin>">New Reports</a>]</if>
 			<if $session-\>[4]>[<a href="<var $self>?task=listrequests&amp;admin=<var $admin>">New Ban Requests</a>]</if>
 			<strong>Logged in as:</strong> <var $session-\>[0]>
+			</span>
 		</div>
 	</div>
 	<div class="logo adminLogo">
