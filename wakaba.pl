@@ -74,7 +74,7 @@ sub init(){
 
 	# check for admin tables
 	init_admin_database() if(!table_exists(SQL_ADMIN_TABLE));
-	initMessageDatabase() if(!table_exists(SQL_MESSAGE_TABLE));
+	init_message_database() if(!table_exists(SQL_MESSAGE_TABLE));
 	init_report_database() if(!table_exists(SQL_REPORT_TABLE));
 	init_ban_request_database()  if(!table_exists(SQL_BANREQUEST_TABLE));
 	init_deleted_database()  if(!table_exists(SQL_DELETED_TABLE));
@@ -486,7 +486,7 @@ sub restart_script($){
 	last FASTCGI;
 }
 
-sub make_admin_thread_list(@){
+sub make_thread_list(@){
 	my (@rows)=@_; # less queries = less load
 	my (@threads,$filename);
 	
@@ -501,7 +501,7 @@ sub make_admin_thread_list(@){
 	print_page($filename,LIST_TEMPLATE->(threads=>\@threads));
 }
 
-sub make_admin_thread_catalog(@){
+sub make_catalog(@){
 	my (@rows)=@_;
 	my ($filename,@threads);
 	
@@ -621,7 +621,12 @@ sub build_cache(){
 
 	if(!$row) # no posts on the board!
 	{
+		my @threads;
+		
 		build_cache_page(0,1); # make an empty page 0
+		print_page("catalog.html",CATALOG_TEMPLATE->(threads=>\@threads)) if ENABLE_CATALOG==1;
+		print_page("catalog.html",SEARCHABLE_CATALOG_TEMPLATE->(threads=>\@threads)) if ENABLE_CATALOG==2;
+		print_page("subback.html",THREAD_LIST_TEMPLATE->(threads=>\@threads)) if ENABLE_LIST;
 	}
 	else
 	{
@@ -643,8 +648,8 @@ sub build_cache(){
 		push @threads,{posts=>[@thread]};
 		
 		# hurray for optimization
-		make_admin_thread_list(@parentposts) if ENABLE_LIST;
-		make_admin_thread_catalog(@parentposts) if ENABLE_CATALOG==1;
+		make_thread_list(@parentposts) if ENABLE_LIST;
+		make_catalog(@parentposts) if ENABLE_CATALOG==1;
 		make_searchable_catalog(@parentposts) if ENABLE_CATALOG==2;
 
 		my $total=get_page_count(scalar @threads);
@@ -2521,6 +2526,8 @@ sub do_nuke_database($$){
 	unlink glob IMG_DIR.'*';
 	unlink glob THUMB_DIR.'*';
 	unlink glob RES_DIR.'*';
+	unlink "catalog.html";
+	unlink "subback.html";
 
 	build_cache();
 	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
@@ -2984,8 +2991,8 @@ sub make_admin_page($$){
 	my @pages=map +{ page=>$_ },(0..$total-1);
 
 	foreach my $p (@pages){
-		if($$p{page}==0) { $$p{filename}=get_script_name()."?admin=$admin&task=viewthreads&page=0" } # first page
-		else { $$p{filename}=get_script_name()."?admin=$admin&task=viewthreads&page=".$$p{page} }
+		if($$p{page}==0) { $$p{filename}=get_script_name()."?admin=$admin&amp;task=viewthreads&amp;page=0" } # first page
+		else { $$p{filename}=get_script_name()."?admin=$admin&amp;task=viewthreads&amp;page=".$$p{page} }
 		if($$p{page}==$page) { $$p{current}=1 } # current page, no link
 	}
 
@@ -3534,7 +3541,7 @@ sub init_user_database(){
 	$sth->execute() or make_error(S_SQLFAIL);
 }
 
-sub initMessageDatabase(){
+sub init_message_database(){
 	my ($sth);
 
 	$sth=$dbh->do("DROP TABLE ".SQL_MESSAGE_TABLE.";") if(table_exists(SQL_MESSAGE_TABLE));

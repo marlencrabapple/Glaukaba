@@ -18,6 +18,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	.userdelete { float: right; text-align: center; white-space: nowrap }
 	.replypage .replylink { display: none }
 	.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+	.recaptchatable { border: none; }
 </style>
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
@@ -232,7 +233,6 @@ use constant CONTENT_HEAD_INCLUDE => q{
 			.replypage .replylink { display: none }
 			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 		</style>
-		<link href="http://<var DOMAIN>/css/global.css" type="text/css" rel="stylesheet" />
 		<loop $stylesheets>
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 		</loop>
@@ -240,7 +240,6 @@ use constant CONTENT_HEAD_INCLUDE => q{
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>>"></script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/logo.js"></script>
 		<script>
 			var domain = "http://<var DOMAIN>/";
@@ -321,7 +320,13 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						</noscript>
 						<if PASS_ENABLED><div class="passNotice">Bypass this CAPTCHA. [<a href="http://<var DOMAIN>/pass/">Learn More</a>]</div></if>
 					</div>
-					<script type="text/javascript">document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");document.getElementById("recaptcha_response_field").removeAttribute("style");document.getElementById("recaptcha_image").setAttribute("style", "border: 1px solid #aaa!important;");document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");</script>
+					<script type="text/javascript">
+						document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");
+						document.getElementById("recaptcha_response_field").removeAttribute("style");
+						document.getElementById("recaptcha_image").setAttribute("style", "border: 1px solid #aaa!important;");
+						document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");
+						document.getElementById("recaptcha_table").setAttribute("style", "border: none!important");
+					</script>
 			</div></if>
 			<if $image_inp><div class="postTableContainer" id="uploadField">
 					<div class="postBlock">File</div>
@@ -504,7 +509,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 </div>
 </form>
-<div id="forJs" style="display:none"><var BOARD_DIR></div>
 <if !$thread>
 	<div id="pageNumber">
 		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
@@ -654,6 +658,7 @@ use constant SEARCHABLE_CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE
 		</div>
 	</div>
 </div>
+<div class="denguses"><var include("include/bottomad.html",1)></div>
 <script>
 	var catalog=
 		{
@@ -726,15 +731,15 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 	</div>
 	<div id="topBox" class="box full red">
 		<div class="boxHeader red">
-			<h2>Get a Glauchan Pass</h2>
+			<h2>Get a <const SITE_NAME> Pass</h2>
 		</div>
 		<div class="boxContent">
-			<p style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px;"><strong>&rarr; Already have a Glauchan pass? <a href="<var $self>?task=passauth">Click here</a> to login. &larr;</strong></p>
+			<p style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px;"><strong>&rarr; Already have a <const SITE_NAME> pass? <a href="<var $self>?task=passauth">Click here</a> to login. &larr;</strong></p>
 			<hr />
-			<p>A Glauchan pass is a feature intended to simplify the posting experience for loyal and quality posters. The Glauchan Pass's main and only feature is the ability to bypass reCAPTCHA, a necessary evil to avoid spam and floods from other imageboard communities. Although inspired by 4chan's pass system, Glauchan Pass is similar only in function. Unlike 4chan Pass, Glauchan Pass costs nothing, and will be compatible across multiple sites running Glaukaba in the future.</p>
-			<p>You will not be able to bypass reCAPTCHA immediately after registering for a Glauchan Pass. After signing up, you will be automatically logged into the pass system, and your posts will be identifiable by your pass, regardless of your IP address. After you've made a minimum of 5 posts while logged in with your pass, a Glauchan moderator or administrator will either approve or deny your pass application. As long as the posts don't break any rules, chances are you will be approved immediately after review.</p>
-			<p>Because Glauchan pass is free, the bases on which it can be revoked are slightly more liberal than those on 4chan. If you get banned or warned for a rule breaking post, chances are you will no longer have a pass once you've served your sentence. Luckily, bans are usually reserved for automated spam and illegal posts. If you bothered applying for a pass, you'll probably find its very hard to get it taken away.</p>
-			<p>Glauchan Passes are valid for an infinite period of time, barring streaks of inactivity greater than 31 days. If you make at least one post on a participating imageboard (only Glauchan for now) every 31 days, your pass will never expire.</p>
+			<p>A <const SITE_NAME> pass is a feature intended to simplify the posting experience for loyal and quality posters. The <const SITE_NAME> Pass's main and only feature is the ability to bypass reCAPTCHA, a necessary evil to avoid spam and floods from other imageboard communities. Although inspired by 4chan's pass system, <const SITE_NAME> Pass is similar only in function. Unlike 4chan Pass, <const SITE_NAME> Pass costs nothing, and will be compatible across multiple sites running <const SITE_NAME> in the future.</p>
+			<p>You will not be able to bypass reCAPTCHA immediately after registering for a <const SITE_NAME> Pass. After signing up, you will be automatically logged into the pass system, and your posts will be identifiable by your pass, regardless of your IP address. After you've made a minimum of 5 posts while logged in with your pass, a <const SITE_NAME> moderator or administrator will either approve or deny your pass application. As long as the posts don't break any rules, chances are you will be approved immediately after review.</p>
+			<p>Because <const SITE_NAME> pass is free, the bases on which it can be revoked are slightly more liberal than those on 4chan. If you get banned or warned for a rule breaking post, chances are you will no longer have a pass once you've served your sentence. Luckily, bans are usually reserved for automated spam and illegal posts. If you bothered applying for a pass, you'll probably find its very hard to get it taken away.</p>
+			<p><const SITE_NAME> Passes are valid for an infinite period of time, barring streaks of inactivity greater than 31 days. If you make at least one post on a participating imageboard (only <const SITE_NAME> for now) every 31 days, your pass will never expire.</p>
 			<p><strong>If you have any issues or find any bugs in our pass system, please post in <a href="http://<const DOMAIN>/meta/">/meta/</a> for support.</strong></p>
 		</div>
 	</div>
@@ -788,15 +793,15 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 			</div>
 			<div class="boxContent">
 				<ol>
-					<li>You understand that the service being offered only allows you to bypass entering a CAPTCHA verification on the Glaucan imageboards while using an authorized device.</li>
+					<li>You understand that the service being offered only allows you to bypass entering a CAPTCHA verification on the <const SITE_NAME> imageboards while using an authorized device.</li>
 					<li>A Pass may be used to authorize multiple devices, but can only be associated with one IP address at a time.</li>
 					<li>Passes are for individual use by the purchaser only.</li>
 					<li>Passes may not be shared, transferred, or sold. Passes that are found to violate this term will be revoked.</li>
-					<li>Posting spam messages, advertising of any kind, or other content that violates United States law to Glauchan will result in immediate revocation of the Pass.</li>
+					<li>Posting spam messages, advertising of any kind, or other content that violates United States law to <const SITE_NAME> will result in immediate revocation of the Pass.</li>
 					<li>You must have browser cookies enabled to use your Pass. JavaScript is optional, but recommended.</li>
 					<li>You must make a minimum of one post every 31 days to keep your pass valid.</li>
-					<li>You agree to abide by the Rules of Glauchan, and understand that failure to do so may result in temporary or permanent suspension of your posting priveleges. If your pass is revoked following a ban, you will not be eligible to apply for a new one.</li>
-					<li>Passes and all related services offered by Glauchan are provided "as is" and without any warranty of any kind. Glauchan makes no guarantee that Passes or the use thereof will be available at any particular time or that the results of using the Pass will meet your requirements.</li>
+					<li>You agree to abide by the Rules of <const SITE_NAME>, and understand that failure to do so may result in temporary or permanent suspension of your posting priveleges. If your pass is revoked following a ban, you will not be eligible to apply for a new one.</li>
+					<li>Passes and all related services offered by <const SITE_NAME> are provided "as is" and without any warranty of any kind. <const SITE_NAME> makes no guarantee that Passes or the use thereof will be available at any particular time or that the results of using the Pass will meet your requirements.</li>
 					<li>These terms are subject to change without notice.</li>
 				</ol>
 			</div>
@@ -811,17 +816,17 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 			<div class="faq">
 				<strong>What exactly does a Pass allow me to do?</strong>
 				<p>
-					A Glauchan Pass allows you to bypass typing a CAPTCHA verification when posting on the Glauchan imageboards.
+					A <const SITE_NAME> Pass allows you to bypass typing a CAPTCHA verification when posting on the <const SITE_NAME> imageboards.
 				</p>
 				<hr />
 				<strong>What doesn't a Pass allow me to do?</strong>
 				<p>
-					A Pass does not confer any special privileges beyond bypassing the CAPTCHA verification. You will still be subject to various post timers and the Rules of Glauchan.
+					A Pass does not confer any special privileges beyond bypassing the CAPTCHA verification. You will still be subject to various post timers and the Rules of <const SITE_NAME>.
 				</p>
 				<hr />
 				<strong>Will other people know I'm using a pass?</strong>
 				<p>
-					No. We at Glauchan believe anonymity is a very valuable thing, and have made sure that using a Glauchan pass will not compromise your outward facing anonymity in any way.
+					No. We at <const SITE_NAME> believe anonymity is a very valuable thing, and have made sure that using a <const SITE_NAME> pass will not compromise your outward facing anonymity in any way.
 				</p>
 				<hr />
 				<strong>How will I receive and use my Pass?</strong>
@@ -841,7 +846,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 				<hr />
 				<strong>What happens if I am banned?</strong>
 				<p>
-					Because there is no monetary value behind a Glauchan Pass, we tend to be a little more liberal when it comes to revoking them. If you end up getting banned, chances are you're a computer, a spammer for hire, or a troll, so barring unique circumstances, a ban will be accompanied by a revokation of your pass.
+					Because there is no monetary value behind a <const SITE_NAME> Pass, we tend to be a little more liberal when it comes to revoking them. If you end up getting banned, chances are you're a computer, a spammer for hire, or a troll, so barring unique circumstances, a ban will be accompanied by a revokation of your pass.
 				</p>
 			</div>
 			</div>
@@ -855,7 +860,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 use constant PASS_SUCCESS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div style="text-align:center">
 <div class="logo">
-<span class="title">Glauchan Pass</span>
+<span class="title"><const SITE_NAME> Pass</span>
 <hr />
 <br />
 </div>
@@ -872,7 +877,7 @@ use constant PASS_SUCCESS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 
 use constant AUTHORIZE_PASS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div class="logo">
-<span class="title">Glauchan Pass</span>
+<span class="title"><const SITE_NAME> Pass</span>
 <hr />
 <br />
 </div>
@@ -899,7 +904,7 @@ use constant AUTHORIZE_PASS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 </form>
 <br />
 <br />
-Don't have a 4chan Pass?<br />
+Don't have a <const SITE_NAME> Pass?<br />
 Click <a href="http://<const DOMAIN>/pass/">here</a> to learn more.
 </if>
 <if $dengus>

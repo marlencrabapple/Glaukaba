@@ -963,10 +963,6 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				<div class="hat"></div>
 				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-					<div style="display:none" class="forJsImgSize">
-						<span><var $width></span>
-						<span><var $height></span>
-					</div>
 					<br />
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
 						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
@@ -1016,7 +1012,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 							<br />
 							<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 							-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-							<div style="display:none" class="forJsImgSize"><span><var $width></span><span><var $height></span>
+							
 							</div><br />
 							<if $thumbnail>
 								<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
@@ -1282,7 +1278,6 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<script type="text/javascript">setDelPass();</script>
 </div>
 </form>
-<div id="forJs" style="display:none"><var BOARD_DIR></div>
 <if !$thread>
 	<div id="pageNumber">
 	<loop $pages>
