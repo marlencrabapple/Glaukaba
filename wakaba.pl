@@ -766,6 +766,7 @@ sub build_cache_page($$@){
 	$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
 
 	print_page($filename,PAGE_TEMPLATE->(
+		threadpage=>1,
 		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
 		image_inp=>ALLOW_IMAGES,
 		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),

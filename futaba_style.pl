@@ -115,6 +115,28 @@ var social = 0;
 	<p class="logoSubtitle"><const SUBTITLE></p>
 	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
+<if !$thread><if $threadpage>
+	<div id="topPageNumber" class="pageNumber">
+		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
+		<if !$prevpage><const S_FIRSTPG></if>
+		<loop $pages>
+			<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
+			<if $current>[<var $page>]</if>
+		</loop>
+		<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit" /></form></if>
+		<if !$nextpage><const S_LASTPG></if>
+		<if ENABLE_CATALOG>
+			<div class="catalogLink">
+				<a href="http://<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a>
+			</div>
+		</if>
+		<if ENABLE_LIST>
+			<div class="catalogLink">
+				<a href="http://<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a>
+			</div>
+		</if>
+	</div>
+</if></if>
 <hr class="postinghr" />
 <if !$admin><div class="denguses"><var include("include/topad.html",1)></div></if>
 };
@@ -266,6 +288,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <div id="content">
 <if $thread>
 	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
+	<if ENABLE_CATALOG>[<a href="http://<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a>]</if>
+	<if ENABLE_LIST>[<a href="http://<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a>]</if>
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div>
 </if>
@@ -510,7 +534,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </div>
 </form>
 <if !$thread>
-	<div id="pageNumber">
+	<div class="pageNumber">
 		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
 		<if !$prevpage><const S_FIRSTPG></if>
 		<loop $pages>
