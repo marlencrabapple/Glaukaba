@@ -1,129 +1,142 @@
 @media only screen and (max-width: 480px){
 	body{
-	font-family:arial,helvetica,sans-serif;
-	font-size:8pt;
-	margin-left:0;
-	margin-right:0;
-	margin-top:5px;
-	padding-left:0px;
-	padding-right:0px;
-	width:100%;
 	}
 	
-	.mobiledenguses{
-	width: 100%;
+	.reply{
+	display: inline-block;
+	width: 90%;
 	margin-left: auto;
 	margin-right: auto;
 	}
-	
-	select{
-	color: #000000;
-	font-size: 8pt;
-	margin: 0;
-	width: 100px;
+	.parentPost{
+	display: inline-block;
+    border: 2px solid #B7C5D9;
+    padding: 0;
+    background: #D6DAF0;
+    color: #000;
+	word-wrap: break-word;
+	white-space: normal;
+	width: 99%;
 	}
 	
-	.logo {
-	font-family:Tahoma,sans-serif;
-	font-size:28px;
-	font-weight:bold;
-	letter-spacing:-2px;
-	margin-top:15px;
-	}
-	
-	img.banner{
-	border:1px solid #34345C;
-	margin:5px 0px 5px 0px;
-	height:50px;
-	width:150px;
-	}
-	
-	.thumbContainer{
-
-	}
 	.thumb{
 	max-width: 100px;
 	max-height: 100px;
-	width:auto!important;
-	height:auto!important;
+	width: auto!important;
+	height: auto!important;
 	}
-	
-	.replyContainer{
-	display:block;
-	width:95%;
-	margin-left: auto;
-	margin-right: auto;
+	.topNavContainer{
+	display:block
 	}
-	.reply{
-	width: 100%;
-	}
-	.parentPost{
-	display:block;
-	width: 100%;
-	background:#D6DAF0;
-	border:1px solid #B7C5D9;
-	margin: 0;
-	}
-	.doubledash{
+
+	#topPageNumber{
 	display:none;
 	}
-
-	#postForm,#qrPostForm{
-	display:table;
-	border-spacing:1px;
+	.postTableContainer{
+	width: 100%
+	}
+	#postForm{
+	width: 100%;
+	display:block;
 	margin-left: auto;
 	margin-right: auto;
-	overflow:hidden;
-	}
-	
-	#field1,#field2,#qrField1,#qrField2{
-	width: 200px;
-	}
-
-	#field3,#qrField3{
-		width: 140px;
-	}
-
-	#field4,#qrField4{
-		width: 200px;
-		height: 90px;
-	}
-
-	#password,#qrPassword{
-		width: 70px;
-	}
-	
-	#captchaPostBlock{
 	display:none;
 	}
 	
-	.mobileParentPostInfo{
+	#postFormToggle{
+display:block;
+text-align: center;
+font-size: 14pt;
+color: #AF0A0F;;
+}
+	
+	#deleteForm {
+	float:none;
+    text-align: right;
+	}
+	#field3{
+	width: auto!important;
 	display: block;
+	}
+	#field3s{
+	width:auto!important;
+	}
+	#password{
+	max-width: 40px;
+	}
+	.postField label{
+	display:block;
+	}
+	
+	.postInput{
+	width: auto!important;
+	}
+	
+	#file{
 	overflow: hidden;
-	border-bottom: 1px solid #B7C5D9;
-	background-color: #C9CDE8;
+	}
+	#uploadField{
+	width: 100%;
+	overflow: hidden;
+	}
+	
+	.postField{
+	width: auto!important;
+	}
+	
+	.rules{
+	width: auto;
+	}
+	.logo img{
+	width: 50%;
+	height: 50%;
+	}
+	.logo{
+	margin-top: 15px;
+	}
+	.title{
+	font-size: 16pt;
+	}
+	#navOptionsMenu{
+	height: 75%;
+	}
+	select{
+	width: 65px;
+	}
+	.replyPostInfo{
 	padding: 5px;
-	margin-right: -5px;
-	margin-left: -5px;
-	margin-top: -5px;
-	margin-bottom: 5px;
+	display: block;
+	background: rgba(109, 172, 192, 0.16);
+	}
+	.topNavContainer  span{
+	vertical-align: middle;
 	}
 
+	.replyPostInfo input{
+		display:none;
+	}
 	.parentPostInfo{
 	display:none;
 	}
-	
-	hr{
-	margin: 10px;
+	.mobileParentPostInfo{
+	padding: 5px;
+	display: block;
+	background: rgba(109, 172, 192, 0.16);
+	margin-bottom: 5px;
 	}
-	
-	#recaptcha_logo, #recaptcha_tagline{
-	display: none!important;
+	.postMenuButton{
+	white-space: nowrap;
 	}
 }
 
 @media only screen and (max-width: 720px){
 	.denguses{
+		display:none;
+	}
+}
+
+@media only screen and (max-width: 1280px){
+	#topPageNumber{
 	display:none;
 	}
 }

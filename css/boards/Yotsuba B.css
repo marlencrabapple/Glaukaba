@@ -53,6 +53,10 @@ border:none!important;
 	word-wrap: break-word;
 	white-space: normal;
 }
+
+#postFormToggle{
+display:none;
+}
 .replyContainer {
     display: block;
 	word-wrap: break-word;
@@ -91,7 +95,6 @@ border:none!important;
 .topNavRight {
     float: right;
     padding: 5px;
-    vertical-align: middle;
 }
 .topNavLeft {
     float: left;
@@ -136,7 +139,7 @@ display:block;
 .adminLogo{
 margin-top: 40px;
 }
-#pageNumber {
+.pageNumber {
     background: #D6DAF0;
     border: none;
     border-bottom: 1px solid #B7C5D9;
@@ -145,8 +148,13 @@ margin-top: 40px;
     padding: 5px 7px;
     display: table;
 }
-#pageNumber a{
+.pageNumber a{
 text-decoration: none;
+}
+#topPageNumber{
+position:absolute;
+left: 10px;
+top: 50px;
 }
 .pageForm { display: inline }
 .theader {
@@ -193,7 +201,6 @@ div.postBlock {
     margin-left: 10px;
 }
 .postSpacer { display: table-cell }
-#postTableContainer { display: table-row }
 #postForm,
 #qrPostForm {
     display: table;
@@ -541,6 +548,7 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
     border: 2px solid #555555;
     border-radius: 3px 3px 3px 3px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+	line-height: 150px;
 }
 .catComment {
     margin-top: 2px;

@@ -23,6 +23,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
 </loop>
+<link rel="stylesheet" href="http://<var DOMAIN>/css/mobile.css">
 <link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 <script>
 var sitename = "<const SITE_NAME>";
@@ -106,7 +107,7 @@ var social = 0;
 <div class="topNavContainer">
 	}.include("include/header.html").q{
 	<div class="topNavRight">
-		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
+		<span>[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]</span>
 	</div>
 </div>
 <div class="logo">
@@ -299,6 +300,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			theme : 'clean'
 		};
 	</script>
+	
+	<a id="postFormToggle" onclick="togglePostForm()" href="javascript:void(0)">
+		<if !$thread>New Thread</if>
+		<if $thread>Reply</if>
+	</a>
+	
 	<form action="<var $self>" method="post" id="post_form" enctype="multipart/form-data">
 		<input type="hidden" name="task" value="post" />
 		<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
@@ -387,6 +394,40 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">
 				<div class="hat"></div>
+				<span class="mobileParentPostInfo">
+					<input type="checkbox" name="delete" value="<var $num>" />
+					<span class="filetitle"><var $subject></span>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+					</span>&nbsp;
+					<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
+					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>Mobile">[<span></span>]</a>
+					<div class="postMenu" id="postMenu<var $num>Mobile">
+						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Delete</span>
+							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+							</div>
+						</div>
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Filter</span>
+							<div class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+							</div>
+						</div>
+						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+					</div>
+				</span>
 				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
 					<br />
@@ -409,7 +450,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
 					<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
-					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
 						<div class="hasSubMenu" onmouseover="showSub(this);">
@@ -465,7 +506,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					</div>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
