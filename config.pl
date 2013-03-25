@@ -9,38 +9,42 @@
 #
 
 # System config
-use constant BOARD_DIR => 'dev';					# This board's directory. Leaving this blank enables single board mode
-use constant NUKE_PASS => 'm4rl3ncr4b4ppl3';					# Password to nuke a board. Change this too, NOW!
-use constant SECRET => 'asdfsadf890a8s0f9809asdf8sd90f8a90z324234lk2j34lk23j4lk234lkj23l4k2j34lsudfiosdufoi2034823094jxckvjlxhdicksmcgee';						# Cryptographic secret. CHANGE THIS to something totally random, and long.
-use constant SQL_TABLE => 'comments';			# Table (NOT DATABASE) used by image board
-use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
-use constant SQL_USER_TABLE => 'users';		# Table used for admin user information
-use constant SQL_PROXY_TABLE => 'proxy';		# Table used for proxy information
-use constant SQL_REPORT_TABLE => 'reports';		# Table used for proxy information
-use constant USE_FASTCGI => 1;
+#use constant BOARD_DIR => '';					# This board's directory. Leaving this blank enables single board mode
+#use constant NUKE_PASS => '';					# Password to nuke a board. Change this too, NOW!
+#use constant SECRET => '';						# Cryptographic secret. CHANGE THIS to something totally random, and long.
+#use constant SQL_TABLE => 'comments';			# Table (NOT DATABASE) used by image board. Please change the value for each board
+
+# None of the options in this block need changing. Just uncomment them. I'll figure out a more elagant way to handle this stuff another day.
+#
+#use constant SQL_ADMIN_TABLE => 'admin';		# Table used for admin information
+#use constant SQL_USER_TABLE => 'users';		# Table used for admin user information
+#use constant SQL_PROXY_TABLE => 'proxy';		# Table used for proxy information
+#use constant SQL_REPORT_TABLE => 'reports';	# Table used for proxy information
+#
+#
+
+#use constant USE_TEMPFILES => 1;				# Set this to 1 under Unix and 0 under Windows! (Use tempfiles when creating pages)
 
 # Page look
-use constant TITLE => '/dev/ - Development Board';						# Name of this image board
-use constant SUBTITLE => 'Leaves emerge from this warehouse';
-use constant SHOWTITLETXT => 1;				# Show TITLE at top (1: yes  0: no)
-use constant SHOWTITLEIMG => 1;				# Show image at top (0: no, 1: single, 2: rotating)
-use constant TITLEIMGSCRIPT => 1;			
-use constant TITLEIMG => 'http://warehouse.glauchan.org/img/banners/1318761274858.jpg';
-use constant FAVICON => 'favicon.ico';			# Favicon.ico file
-use constant HOME => '../';						# Site home directory (up one level by default
-use constant IMAGES_PER_PAGE => 15;				# Images per page
-use constant REPLIES_PER_THREAD => 5;			# Replies shown
+#use constant TITLE => '';						# Name of this image board
+#use constant SUBTITLE => '';
+#use constant SHOWTITLETXT => 1;				# Show TITLE at top (1: yes  0: no)
+#use constant SHOWTITLEIMG => 0;				# Show image at top (0: no, 1: single, 2: rotating)
+#use constant TITLEIMG => '';					# Title image (point to a script file if rotating)
+#use constant FAVICON => 'favicon.ico';			# Favicon.ico file
+#use constant HOME => '../';					# Site home directory (up one level by default
+#use constant IMAGES_PER_PAGE => 15;			# Images per page
+#use constant REPLIES_PER_THREAD => 5;			# Replies shown
 #use constant IMAGE_REPLIES_PER_THREAD => 0;	# Number of image replies per thread to show, set to 0 for no limit.
 #use constant S_ANONAME => 'Anonymous';			# Defines what to print if there is no text entered in the name field
 #use constant S_ANOTEXT => '';					# Defines what to print if there is no text entered in the comment field
 #use constant S_ANOTITLE => '';					# Defines what to print if there is no text entered into subject field
 #use constant SILLY_ANONYMOUS => '';			# Make up silly names for anonymous people (0 or '': don't display, any combination of 'day' or 'board': make names change for each day or board, 'static': static names)
-use constant DEFAULT_STYLE => 'Yotsuba B';		# Title of the default style for the board.
-use constant SOCIAL => 0;						# Disabled by default
-use constant SHOW_STAFF_POSTS => 1;				# Displays a list of staff replies if set to 1
+#use constant DEFAULT_STYLE => 'Yotsuba B';		# Title of the default style for the board.
+#use constant SOCIAL => 0;						# Disabled by default
 
 # Limitations
-use constant MAX_KB => 20000;					# Maximum upload size in KB
+#use constant MAX_KB => 5000;					# Maximum upload size in KB
 #use constant MAX_W => 250;						# Images exceeding this width will be thumbnailed
 #use constant MAX_H => 250;						# Images exceeding this height will be thumbnailed
 #use constant MAX_RES => 9000;					# Maximum topic bumps
@@ -51,12 +55,12 @@ use constant MAX_KB => 20000;					# Maximum upload size in KB
 #use constant MAX_FIELD_LENGTH => 100;			# Maximum number of characters in subject, name, and email
 #use constant MAX_COMMENT_LENGTH => 8192;		# Maximum number of characters in a comment
 #use constant MAX_LINES_SHOWN => 15;			# Max lines shown per post (0 = no limit)
-use constant MAX_IMAGE_WIDTH => 56384;			# Maximum width of image before rejecting
-use constant MAX_IMAGE_HEIGHT => 56384;		# Maximum height of image before rejecting
-use constant MAX_IMAGE_PIXELS => 500000000;		# Maximum width*height of image before rejecting
+#use constant MAX_IMAGE_WIDTH => 16384;			# Maximum width of image before rejecting
+#use constant MAX_IMAGE_HEIGHT => 16384;		# Maximum height of image before rejecting
+#use constant MAX_IMAGE_PIXELS => 50000000;		# Maximum width*height of image before rejecting
 
 # Captcha
-use constant ENABLE_CAPTCHA => '';				# You can choose between built in 'captcha', 'recaptcha', or none at all (default = none)
+#use constant ENABLE_CAPTCHA => '';				# You can choose between built in 'captcha', 'recaptcha', or none at all (default = none)
 #use constant SQL_CAPTCHA_TABLE => 'captcha';	# Use a different captcha table for each board, if you have more than one!
 #use constant CAPTCHA_LIFETIME => 1440;			# Captcha lifetime in seconds
 #use constant CAPTCHA_SCRIPT => 'captcha.pl';
@@ -65,8 +69,8 @@ use constant ENABLE_CAPTCHA => '';				# You can choose between built in 'captcha
 #use constant CAPTCHA_SCALING => 0.15;
 #use constant CAPTCHA_ROTATION => 0.3;
 #use constant CAPTCHA_SPACING => 2.5;
-use constant RECAPTCHA_PRIVATE_KEY => '6Le3MdISAAAAAAwbGXu0kv3YKfUVwptGeRhwaByG';
-use constant RECAPTCHA_PUBLIC_KEY => '6Le3MdISAAAAAEIuZe9yqWV2j9lMNEtUMuWxSMAJ';
+#use constant RECAPTCHA_PRIVATE_KEY => '';
+#use constant RECAPTCHA_PUBLIC_KEY => '';
 
 # Load Balancing
 #use constant ENABLE_LOAD => 0;					# Enable the distribution of image files across multiple hosts (0: no, 1: yes). May not work on a windows host. Do not enable if using STUPID_THUMBNAILING.
@@ -109,18 +113,17 @@ use constant RECAPTCHA_PUBLIC_KEY => '6Le3MdISAAAAAEIuZe9yqWV2j9lMNEtUMuWxSMAJ';
 												#  'sage': don't display ID when user sages, 'link': don't display ID when the user fills out the link field,
 												#  'ip': display user's IP, 'host': display user's host)
 #use constant DISPLAY_ID => 1;					# Display user IDs (0: never, 1: if no email, 2:always)
-use constant EMAIL_ID => 'Heaven';					# ID string to use when DISPLAY_ID is 1 and the user uses an email.
+#use constant EMAIL_ID => 'Heaven';					# ID string to use when DISPLAY_ID is 1 and the user uses an email.
 #use constant TRIPKEY => '!';					# this character is displayed before tripcodes
 #use constant ENABLE_WAKABAMARK => 1;			# Enable WakabaMark formatting. (0: no, 1: yes)
 #use constant APPROX_LINE_LENGTH => 150;		# Approximate line length used by reply abbreviation code to guess at the length of a reply.
 #use constant STUPID_THUMBNAILING => 0;			# Bypass thumbnailing code and just use HTML to resize the image. STUPID, wastes bandwidth. (1: enable, 0: disable)
-use constant ALTERNATE_REDIRECT => 0;			# Use alternate redirect method. (Javascript/meta-refresh instead of HTTP forwards. Needed to run on certain servers, like IIS.)
+#use constant ALTERNATE_REDIRECT => 1;			# Use alternate redirect method. (Javascript/meta-refresh instead of HTTP forwards. Needed to run on certain servers, like IIS.)
 #use constant COOKIE_PATH => 'root';			# Path argument for cookies ('root': cookies apply to all boards on the site, 'current': cookies apply only to this board, 'parent': cookies apply to all boards in the parent directory)
 #use constant FORCED_ANON => 0;					# Force anonymous posting (0: no, 1: yes)
 #use constant SPAM_TRAP => 1;					# Enable the spam trap (empty, hidden form fields that spam bots usually fill out) (0:no, 1:yes)
-use constant SPOILERIMAGE_ENABLED => 1;
-use constant NSFWIMAGE_ENABLED => 1;
-use constant ADD_BREAKS => 0;
+#use constant SPOILERIMAGE_ENABLED => 1;
+#use constant NSFWIMAGE_ENABLED => 0;			# disabled by default because imagemagick causes a lot of trouble
 
 # Internal paths and files - might as well leave this alone.
 #use constant IMG_DIR => 'src/';				# Image directory (needs to be writeable by the script)
@@ -128,7 +131,7 @@ use constant ADD_BREAKS => 0;
 #use constant RES_DIR => 'res/';				# Reply cache directory (needs to be writeable by the script)
 #use constant ARCHIVE_DIR => 'arch/';			# Root of archive directories (all need to be writeable by the script)
 #use constant REDIR_DIR => 'redir/';			# Redir directory, used for redirecting clients when load balancing
-#use constant HTML_SELF => 'index.html';		# Name of main html file
+#use constant HTML_SELF => 'wakaba.html';		# Name of main html file
 #use constant PAGE_EXT => '.html';				# Extension used for board pages after first
 #use constant ERRORLOG => '';					# Writes out all errors seen by user, mainly useful for debugging
 												
@@ -168,7 +171,7 @@ use constant ADD_BREAKS => 0;
 #	png => '.',
 #);
 
-use constant DISPLAY_VERSION => 1;
+#use constant DISPLAY_VERSION => 1;
 
 # no encoding; # Uncomment this if you uncommented the "use encoding" at the top of the file
 
