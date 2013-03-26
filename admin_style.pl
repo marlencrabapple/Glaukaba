@@ -1012,8 +1012,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 							<br />
 							<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 							-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-							
-							</div><br />
+							<br />
 							<if $thumbnail>
 								<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
 									<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
