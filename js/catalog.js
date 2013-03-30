@@ -1,15 +1,20 @@
 //console.log("ur a faget");
 var catItemTemplate=$("#catItem0").clone();
-init();
+var ext=".html";
+init(0,0);
 
-function init(){
+if(noExt==1){
+	ext="";
+}
+
+function init(orderBy, searchTerms){
 	$("#catItem0").remove();
 	$(".catItem").remove();
 	
 	// load json and build catalog items
 	$(catalog.threads).each(function(index){
 		var catItem=$(catItemTemplate).clone();
-		var url=boardPath+"res/"+this.no;
+		var url=boardPath+"res/"+this.no+ext;
 		var sub="";
 		
 		if(!this.image){
@@ -116,16 +121,21 @@ function savePrefs(){
 function loadPrefs(){
 }
 
-function search(){
+function searchThreads(searchString){
+	init(0,string);
+}
+
+function sortThreads(sortBy){
+	init(sortBy,string);
 }
 
 function toggleImageSize(){
 	if(localStorage.getItem("thumbSize")=="large"){
 		localStorage.setItem("thumbSize", "small");
-		init();
+		init(0,0);
 	}
 	else{
 		localStorage.setItem("thumbSize", "large");
-		init();
+		init(0,0);
 	}
 }

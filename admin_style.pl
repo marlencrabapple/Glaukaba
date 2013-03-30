@@ -1173,27 +1173,11 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					</span>&nbsp;
 					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
 					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>
-					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
-					<div class="postMenu" id="postMenu<var $num>">
-						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span class="postMenuItem">Delete</span>
-							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
-							</div>
-						</div>
-						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span class="postMenuItem">Filter</span>
-							<div class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
-							</div>
-						</div>
-						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
-						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
-					</div>
+					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 				</span>
+				<div class="postMenu" id="postMenu<var $num>">
+					<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+				</div>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
@@ -1208,35 +1192,21 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				<div class="reply<if $reported> reportedReply</if>" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
-					<span class="replytitle"><var $subject></span>
-					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
-					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
-					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
-					<a href="javascript:void(0)" onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>',0);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+						<span class="replytitle"><var $subject></span>
+						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+						<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+						<span class="reflink">
+						<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
+						<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
+						}.ADMIN_POST_BUTTONS_TEMPLATE.q{
+						<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					</div>
+					
 					<div class="postMenu" id="postMenu<var $num>">
-						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span class="postMenuItem">Delete</span>
-							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
-							</div>
-						</div>
-						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span class="postMenuItem">Filter</span>
-							<div class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
-							</div>
-						</div>
-						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
+					
 					<if $image><br />
 						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />

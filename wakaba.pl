@@ -56,8 +56,7 @@ if($use_fastcgi){
 }
 else { $query=new CGI; init(); }
 
-sub sig_handler
-{
+sub sig_handler{
 	$use_fastcgi=0;
 }
 
@@ -90,8 +89,8 @@ sub init(){
 	# check for proxy table
 	init_proxy_database() if(!table_exists(SQL_PROXY_TABLE));
 
-	if(!table_exists(SQL_TABLE)) # check for comments table
-	{
+	 # check for comments table
+	if(!table_exists(SQL_TABLE)){
 		init_database();
 		build_cache();
 		make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
@@ -766,7 +765,7 @@ sub build_cache_page($$@){
 	$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
 
 	print_page($filename,PAGE_TEMPLATE->(
-		threadpage=>1,
+		indexpage=>1,
 		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
 		image_inp=>ALLOW_IMAGES,
 		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),
@@ -2207,12 +2206,12 @@ sub make_reports_list($){
 		$$row{totalreports}=$$row{vio}+$$row{spam}+$$row{illegal};
 	}
 	
-	if((scalar @reportedposts) == 0) { push @reportedposts,1 };
-	
-	# fucking magic
-	$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC;";
-	$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
-	$sth->execute(@reportedposts) or make_error($dbh->errstr);
+	if((scalar @reportedposts) != 0){
+		# fucking magic
+		$statement = "SELECT * FROM ".SQL_TABLE." WHERE num IN (" . join( ',', map { "?" } @reportedposts ) . ") ORDER BY num DESC;";
+		$sth=$dbh->prepare($statement) or make_error($dbh->errstr);
+		$sth->execute(@reportedposts) or make_error($dbh->errstr);
+	}
 	
 	$index = 0;
 	
@@ -3000,6 +2999,7 @@ sub make_admin_page($$){
 	make_http_header();
 	
 	print encode_string(ADMIN_PAGE_TEMPLATE->(
+		indexpage=>1,
 		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
 		image_inp=>ALLOW_IMAGES,
 		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),

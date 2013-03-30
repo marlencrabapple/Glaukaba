@@ -5,18 +5,31 @@
 	.reply{
 	display: inline-block;
 	width: 90%;
-	margin-left: auto;
-	margin-right: auto;
+	overflow: hidden;
+	clear:both;
+	text-align: left;
 	}
+	
+	.replyContainer{
+	text-align: center;
+	margin:5px;
+	}
+	
 	.parentPost{
 	display: inline-block;
     border: 2px solid #B7C5D9;
-    padding: 0;
+    padding: 5px;
     background: #D6DAF0;
     color: #000;
 	word-wrap: break-word;
 	white-space: normal;
-	width: 99%;
+	width: 97%;
+	margin-left: -1px;
+	margin-top: 5px;
+	}
+	
+	.doubledash{
+	display:none
 	}
 	
 	.thumb{
@@ -27,6 +40,10 @@
 	}
 	.topNavContainer{
 	display:block
+	}
+	
+	#captchaPostBlock{
+		display:none;
 	}
 
 	#topPageNumber{
@@ -42,6 +59,11 @@
 	margin-right: auto;
 	display:none;
 	}
+	
+	#delpass{
+	width: 50px;
+	}
+	
 	
 	#postFormToggle{
 display:block;
@@ -115,11 +137,15 @@ color: #AF0A0F;;
 	.replyPostInfo input{
 		display:none;
 	}
+	
+	.mobileParentPostInfo input{
+		display:none;
+	}
 	.parentPostInfo{
 	display:none;
 	}
 	.mobileParentPostInfo{
-	padding: 5px;
+	padding: 6px;
 	display: block;
 	background: rgba(109, 172, 192, 0.16);
 	margin-bottom: 5px;

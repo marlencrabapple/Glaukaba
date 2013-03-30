@@ -31,7 +31,9 @@ var domain = "http://<const DOMAIN>/";
 var boardDir = "<const BOARD_DIR>";
 var boardPath = "http://<const DOMAIN>/<const BOARD_DIR>/";
 var social = 0;
-<if SOCIAL==1>social = 1</if>
+<if SOCIAL==1>social = 1;</if>
+var noExt = 0;
+<if REWRITTEN_URLS==1>noExt = 1;</if>
 </script>
 <if !$noextra>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -47,7 +49,8 @@ var social = 0;
 </if>
 </head>
 <if $thread><body class="replypage"></if>
-<if !$thread><body></if>
+<if $indexpage><body class="indexpage"></if>
+<if !$indexpage><if !$thread><body></if></if>
 <a name="top"></a>
 <if !$noextra>
 <div id="overlay">
@@ -116,7 +119,7 @@ var social = 0;
 	<p class="logoSubtitle"><const SUBTITLE></p>
 	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
-<if !$thread><if $threadpage>
+<if !$thread><if $indexpage>
 	<div id="topPageNumber" class="pageNumber">
 		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit" /></form></if>
 		<if !$prevpage><const S_FIRSTPG></if>
@@ -182,11 +185,14 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 			var boardDir = "<var BOARD_DIR>";
 			var boardPath = "http://<var DOMAIN>/<var BOARD_DIR>/";
 			var social = 0;
-			<if SOCIAL==1>social = 1</if>
+			<if SOCIAL==1>social = 1;</if>
+			var noExt = 0;
+			<if REWRITTEN_URLS==1>noExt = 1;</if>
 		</script>
 	</head>
 	<if $thread><body class="replypage"></if>
-	<if !$thread><body></if>
+	<if $indexpage><body class="indexpage"></if>
+	<if !$indexpage><if !$thread><body></if></if>
 	<a name="top"></a>
 	<if !$noextra>
 	<div id="overlay">
@@ -451,26 +457,28 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</span>&nbsp;
 					<if !$thread>[<a href="<var get_reply_link($num,0)>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
-					<div class="postMenu" id="postMenu<var $num>">
-						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span class="postMenuItem">Delete</span>
-							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
-							</div>
-						</div>
-						<div class="hasSubMenu" onmouseover="showSub(this);">
-							<span class="postMenuItem">Filter</span>
-							<div class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
-							</div>
-						</div>
-						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
-						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
-					</div>
 				</span>
+				
+				<div class="postMenu" id="postMenu<var $num>">
+					<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+					<div class="hasSubMenu" onmouseover="showSub(this);">
+						<span class="postMenuItem">Delete</span>
+						<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+							<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+							<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+						</div>
+					</div>
+					<div class="hasSubMenu" onmouseover="showSub(this);">
+						<span class="postMenuItem">Filter</span>
+						<div class="postMenu subMenu">
+							<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+						</div>
+					</div>
+					<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+					<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+					<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+				</div>
+				
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
 				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
@@ -499,14 +507,14 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="reply" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
-					<span class="replytitle"><var $subject></span>
-					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
-					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
-					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+						<span class="replytitle"><var $subject></span>
+						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+						<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+						<span class="reflink">
+						<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
+						<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
+						<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 					</div>
 					<div class="postMenu" id="postMenu<var $num>">
 						<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
@@ -555,6 +563,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <div class="denguses"><var include("include/bottomad.html",1)></div>
 <if $thread>
 	[<a href="http://<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
+	<if ENABLE_CATALOG>[<a href="http://<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a>]</if>
+	<if ENABLE_LIST>[<a href="http://<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a>]</if>
 	[<a href="#">Top</a>]
 	<a name="bottom"></a>
 </if>
@@ -564,12 +574,11 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<label>[<input type="checkbox" name="fileonly" value="on" /> <const S_DELPICONLY>]</label>
 	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput"/>
 	<input value="<const S_DELETE>" type="submit" class="formButtom" />
-	<input value="Report" type="submit" class="formButtom" />
 	<script type="text/javascript">setDelPass();</script>
 	<div class="styleChanger">
 		Style
-		<select id="styleSelector">
-		<loop $stylesheets><option><var $title></option></loop>
+		<select id="styleSelector" onchange="set_stylesheet(value)">
+			<loop $stylesheets><option value="<var $title>"><var $title></option></loop>
 		</select>
 	</div>
 </div>
