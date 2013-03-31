@@ -1,15 +1,16 @@
-//console.log("ur a faget");
 var catItemTemplate=$("#catItem0").clone();
 var ext=".html";
 init(0,0);
 
-if(noExt==1){
-	ext="";
-}
-
 function init(orderBy, searchTerms){
 	$("#catItem0").remove();
 	$(".catItem").remove();
+	
+	console.log(noExt);
+	
+	if(noExt==1){
+		ext="";
+	}
 	
 	// load json and build catalog items
 	$(catalog.threads).each(function(index){
