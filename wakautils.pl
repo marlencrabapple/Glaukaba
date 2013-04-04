@@ -158,7 +158,7 @@ sub describe_allowed(%){
 
 sub do_wakabamark($;$$){
 	my ($text,$handler,$simplify)=@_;
-	my $res;
+	my ($res,$inblock);
 	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
 
@@ -187,6 +187,39 @@ sub do_wakabamark($;$$){
 			$res.="<br />";
 			shift @lines;
 		}
+		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/) || ($inblock==1)){ # skip code, sjis, and spoiler blocks
+			my $delimiter = $1; # store the stored match before perl throws it away
+			$inblock = 1; # blocks perl from deciding everything and their mom is "normal text"
+			$inblock = 0 if $lines[0]=~/\[\/$delimiter\]/;
+			
+			# the easy part
+			if($delimiter eq "code"){
+				$lines[0]=~s/\[code\]/\<pre class\=\'prettyprint\'\>/g;
+				$lines[0]=~s/\[\/code\]/\<\/pre\>/g;
+			}
+			else{
+				$lines[0]=~s/\[$delimiter\]/\<span class\=\'$delimiter\'\>/g;
+				$lines[0]=~s/\[\/$delimiter\]/\<\/span\>/g;
+			}
+			
+			# detect normal text in same line as special formatted block
+			if(/\[$delimiter\].*\[\/$delimiter\]/){
+				if((/.+\[$delimiter\]/) || (/\[\/$delimiter\].+/)){
+					my @splitstring = split(/(\[$delimiter\].*\[\/$delimiter\]|\[$delimiter\].*)/, $lines[0]);
+					shift @lines;
+					unshift @lines,@splitstring;
+					#make_error(join "<br />",@splitstring);
+				}
+				else{
+					$res.=$lines[0];
+					shift @lines;
+				}
+			}
+			else{
+				$res.=$lines[0]."<br />";
+				shift @lines;
+			}
+		}
 		elsif(/^(1\.|[\*\+\-]) /){ # lists
 			my ($tag,$re,$skip,$html);
 
@@ -214,7 +247,7 @@ sub do_wakabamark($;$$){
 			my @text;
 			my $i = 0;
 			
-			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;)/) { push @text,shift @lines; } # these are wakabamark delimiters i think
+			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
 			else{ $res.=do_spans($handler,@text)."<br />"; }
 		}

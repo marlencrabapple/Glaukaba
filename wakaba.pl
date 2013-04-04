@@ -82,7 +82,7 @@ sub init(){
 
 	if(!table_exists(SQL_USER_TABLE)){
 		init_user_database();
-		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
 		$sth->execute('admin','admin','admin@admin.com','admin') or make_error(S_SQLFAIL);
 	}
 
@@ -291,8 +291,9 @@ sub init(){
 		my $class=$query->param("class");
 		my $email=$query->param("email");
 		my $admin=$query->param("admin");
+		my @boards=$query->param("boards");
 		
-		add_user($admin,$user,$pass,$email,$class);
+		add_user($admin,$user,$pass,$email,$class,@boards);
 	}
 	elsif($task eq 'manageusers'){
 		my $admin=$query->param("admin");
@@ -908,6 +909,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 		}
 		
 		@session = check_password($admin);
+		
+		if(($no_format)&&(@session[1] ne 'admin')){
+			make_error(S_CLASS);
+		}
 	}
 	else
 	{
@@ -1478,39 +1483,6 @@ sub format_comment($){
 
 	# restore >>1 references hidden in code blocks
 	$comment=~s/&gtgt(gt)?;/'&gt;&gt;'.($1?'&gt;':'')/ge;
-	
-	my $blocktag=0;
-	
-	if(ENABLE_WAKABAMARK){
-		# new spoiler code (can't put it in 'do_wakabamark' because of 'do_spans' messing with the order of tags
-		if($comment=~/.*\[spoiler\].*/){
-			$comment=~s/\[spoiler\]*/\<span class\=\'spoiler\'\>/g;
-			$comment=~s/\[\/spoiler\]*/\<\/span\>/g;
-			$comment=~s/\<span class\=\'spoiler\'\>\<br \/\>/\<span class\=\'spoiler\'\>/g;
-			$blocktag=1;
-		}
-		
-		# code tags
-		if($comment=~/.*\[code\].*/){
-			$comment=~s/\[code\]*/\<pre class\=\'prettyprint\'\>/g;
-			$comment=~s/\[\/code\]*/\<\/pre\>/g;
-			$comment=~s/\<pre class\=\'prettyprint\'\>\<br \/\>/\<pre class\=\'prettyprint\'\>/g;
-			$blocktag=1;
-		}
-		
-		# s-jis
-		if($comment=~/.*\[sjis\].*/){
-			$comment=~s/\[sjis\]*/\<span class\=\'aa\'\>/g;
-			$comment=~s/\[\/sjis\]*/\<\/span\>/g;
-			$comment=~s/\<span class\=\'aa\'\>\<br \/\>/\<span class\=\'aa\'\>/g;
-			$blocktag=1;
-		}
-		
-		# fix formatting for above functions
-		if($blocktag==1){
-			$comment=~s/\<br \/\>\<\/span\>/\<\/span\>/g;
-		}
-	}
 
 	return $comment;
 }
@@ -2609,7 +2581,7 @@ sub make_add_user($){
 	my ($admin)=@_;
 	my @session = check_password($admin);
 	
-	make_error(S_CLASS) unless @session[1] eq "admin"; # lol perl style
+	make_error(S_CLASS) unless @session[1] eq "admin";
 	make_http_header();
 	print encode_string(REGISTER_TEMPLATE->(admin=>$admin,session=>\@session));
 }
@@ -2630,13 +2602,37 @@ sub make_manage_users($){
 	print encode_string(MANAGE_USERS_TEMPLATE->(admin=>$admin,session=>\@session,users=>\@users));
 }
 
-sub add_user($$$$$){
-	my ($admin,$user,$pass,$email,$class)=@_;
+sub make_select_boards($$$$){
+	my ($admin,$user,$pass,$email)=@_;
+	my @session = check_password($admin);
+	make_error(S_CLASS) unless @session[1] eq "admin";
+	
+	make_http_header();
+	print encode_string(SELECT_BOARDS_TEMPLATE->(
+		admin=>$admin,
+		session=>\@session,
+		user=>$user,
+		pass=>$pass,
+		email=>$email
+	));
+	
+	if(!$use_fastcgi and $dbh){
+		$dbh->{Warn}=0;
+		$dbh->disconnect();
+	}
+
+	# delete temp files
+	stop_script();
+}
+
+sub add_user($$$$$;@){
+	my ($admin,$user,$pass,$email,$class,@boards)=@_;
 	my @session = check_password($admin);
 	
 	log_action("adduser",$user,@session);
-	
 	make_error(S_CLASS) unless @session[1] eq "admin";
+	
+	make_select_boards($admin,$user,$pass,$email) if (($class eq 'janitor') && ((scalar @boards)==0));
 	
 	$user=clean_string(decode_string($user,CHARSET));
 	$pass=clean_string(decode_string($pass,CHARSET));
@@ -2645,8 +2641,14 @@ sub add_user($$$$$){
 	make_error("Invalid Class") unless $class=~m/(admin|mod|janitor|vip)/;
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
-	$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
+	if($class ne 'janitor'){
+		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+		$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
+	}
+	else{
+		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+		$sth->execute($user,$pass,$email,$class,@boards) or make_error(S_SQLFAIL);
+	}
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
 }
@@ -3235,6 +3237,12 @@ sub check_password($){
 			@session[4] = $$dengus{newbanreqs};
 			@session[5] = $$dengus{lastdate};
 			
+			# need to split and join with comma before storing in database too
+			
+			#foreach my $board (split($$dengus{board},","){
+			#	make_error("You are not authorized to moderate this board.") unless BOARD_DIR eq $$dengus{board}
+			#}
+			
 			return @session;
 		}
 	}
@@ -3532,6 +3540,7 @@ sub init_user_database(){
 	"pass TEXT,".
 	"email TEXT,".
 	"class TEXT,".
+	"boards TEXT,".
 	"lastip TEXT,".
 	"lastdate INTEGER,".
 	"newmsgs TINYINT,".
