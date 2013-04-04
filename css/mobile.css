@@ -37,9 +37,18 @@
 	max-height: 100px;
 	width: auto!important;
 	height: auto!important;
+	margin: 10px!important;
 	}
 	.topNavContainer{
 	display:block
+	}
+	
+	.longtext{
+	display:inline;
+	}
+	
+	pre.prettyprint{
+	display:block!important;
 	}
 	
 	#captchaPostBlock{
@@ -60,8 +69,8 @@
 	display:none;
 	}
 	
-	#delpass{
-	width: 50px;
+	#delPass{
+	width: 50px!important;
 	}
 	
 	
@@ -71,6 +80,13 @@ text-align: center;
 font-size: 14pt;
 color: #AF0A0F;;
 }
+.filesize{
+display:none;
+}
+blockquote{
+margin: 10px!important;
+}
+
 	
 	#deleteForm {
 	float:none;

@@ -434,9 +434,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<a onmouseover="closeSub(this);" href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 				</div>
-				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-					<br />
+				<if $image>
+					<div class="fileinfo"><span class="filesize"><const S_PICNAME>
+					<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
+						<if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if>
+					</a>
+					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span></div>
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
 						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
 					<if !$thumbnail>
@@ -535,9 +538,17 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
-					<if $image><br />
-						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
+					<if $image>
+						<div class="fileinfo">
+							<span class="filesize">
+								<const S_PICNAME>
+								<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
+									<if !$filename><var get_filename($image)></if>
+									<if $filename><var truncateLine($filename)></if>
+								</a>
+								-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)
+							</span>
+						</div>
 						<if $thumbnail>
 							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
 								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>

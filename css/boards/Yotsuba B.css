@@ -359,7 +359,9 @@ span.spoiler { background: #000 }
 span:hover.spoiler { color: #FFF }
 .rules a,
 .filesize,
-.filesize { text-decoration: none }
+.filesize { text-decoration: none;
+margin-left: 20px;
+margin-right: 10px; }
 .postername,
 .commentpostername {
     color: #117743;
@@ -726,8 +728,9 @@ font-size: smaller;
 
 .longtext{
 word-wrap: break-word;
+white-space: normal;
 display: inline-block;
-max-width: 960px;
+max-width: 800px;
 }
 
 .catalogLink{
