@@ -298,16 +298,22 @@ div.postBlock {
     font-weight: bold;
 }
 blockquote { font-size: 10pt;  }
+
 pre.prettyprint {
-    display: block;
+    display: inline-block;
     background-color: #F1F1F1;
     border: medium none !important;
     max-width: 600px;
+	max-height: 400px;
     overflow: auto;
     padding: 5px !important;
     font-size: 8pt;
+	word-wrap: normal;
+	vertical-align: middle;
+	-moz-tab-size: 4;
     tab-size: 4;
 }
+
 pre.sqldump {
     display: block;
     background-color: #F1F1F1;

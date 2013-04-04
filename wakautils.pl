@@ -189,7 +189,7 @@ sub do_wakabamark($;$$){
 		}
 		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/) || ($inblock==1)){ # skip code, sjis, and spoiler blocks
 			my $delimiter = $1; # store the stored match before perl throws it away
-			$inblock = 1; # blocks perl from deciding everything and their mom is "normal text"
+			$inblock = 1; # helps block wakabamark from deciding everything and their mom is "normal text"
 			$inblock = 0 if $lines[0]=~/\[\/$delimiter\]/;
 			
 			# the easy part
@@ -216,7 +216,9 @@ sub do_wakabamark($;$$){
 				}
 			}
 			else{
-				$res.=$lines[0]."<br />";
+				my $eol = (/\[$delimiter\]/) ? "" : "<br />";
+				#make_error($lines[0]=~/\[$delimiter\]/);
+				$res.=$lines[0].$eol;
 				shift @lines;
 			}
 		}
@@ -246,10 +248,11 @@ sub do_wakabamark($;$$){
 		else{ # normal text
 			my @text;
 			my $i = 0;
+			my $eol = ((scalar @lines) > 1) ? "<br />" : ""; # get rid of those pesky line breaks at the end of each post
 			
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
-			else{ $res.=do_spans($handler,@text)."<br />"; }
+			else{ $res.=do_spans($handler,@text).$eol; }
 		}
 		$simplify=0;
 	}

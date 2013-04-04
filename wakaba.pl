@@ -1489,8 +1489,7 @@ sub format_comment($){
 
 sub simple_format($@){
 	my ($comment,$handler)=@_;
-	return join "<br />",map
-	{
+	return join "<br />",map{
 		my $line=$_;
 
 		# make URLs into links
