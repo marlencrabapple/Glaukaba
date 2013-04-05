@@ -200,7 +200,7 @@ sub do_wakabamark($;$$){
 				if((/.+\[$delimiter\]/) || (/\[\/$delimiter\].+/)){
 					my @splitstring = split(/(\[$delimiter\].*\[\/$delimiter\]|\[$delimiter\].*)/, $lines[0]);
 					$splitstring[scalar @splitstring].= ($splitstring[scalar @splitstring]=~/\[\/$delimiter\]/) ? "<br />" : "";
-					$addedlines = scalar @splitstring - 1;
+					$addedlines = scalar @splitstring;
 					shift @lines;
 					unshift @lines,@splitstring;
 				}
@@ -211,8 +211,9 @@ sub do_wakabamark($;$$){
 			}
 			else{
 				my $eol = (/\[$delimiter\]/) ? "" : "<br />";
-				my $bol = ((/^\[$delimiter\]$/) && ($totallines > scalar @lines)) ? "<br />" : ""; # gets around some tricky conditional stuff later on
-				$res.=$bol.$lines[0].$eol;
+				#my $bol = ((/^\[$delimiter\]$/) && ($totallines > scalar @lines)) ? "<br />" : ""; # gets around some tricky conditional stuff later on
+				#$res.=$bol.$lines[0].$eol;
+				$res.=$lines[0].$eol;
 				shift @lines;
 			}
 		}
@@ -241,7 +242,7 @@ sub do_wakabamark($;$$){
 		}
 		else{ # normal text
 			my @text;
-			my $eol = (((scalar @lines) > 1) && ($lines[1]!~/\[(code|spoiler|sjis)\].+/) && ($addedlines==0) && ($lines[0]!~/<br \/>/)) ? "<br />" : ""; # get rid of those pesky line breaks at the end of each post
+			my $eol = (((scalar @lines) > 1) && ($lines[1]!~/\[(code|spoiler|sjis)\].+/) && ($addedlines==-1) && ($lines[0]!~/<br \/>/)) ? "<br />" : ""; # get rid of those pesky line breaks at the end of each post
 			
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
