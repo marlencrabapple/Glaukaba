@@ -159,11 +159,10 @@ sub describe_allowed(%){
 sub do_wakabamark($;$$){
 	my ($text,$handler,$simplify)=@_;
 	my ($res,$inblock,$addedlines);
+	my $emptyline=1;
 	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
 	my $totallines= scalar @lines;
-	
-	$addedlines--;
 
 	while(defined($_=$lines[0])){
 		# glaukaba's SUPERIOR adaptation of wordwrap2
@@ -185,10 +184,12 @@ sub do_wakabamark($;$$){
 			}
 		}
 		
-		# convert empty lines to line breaks
-		if(/^\s*$/){
-			$res.="<br />";
-			shift @lines;
+		$addedlines--;
+		
+		# skip continuous empty lines
+		if(/^.{0}$/){
+			my $i=0;
+			while($lines[0]=~/^.{0}$/) { $res.=($i==0) ? "<br />" : ""; shift @lines; $i++; }
 		}
 		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/) || ($inblock==1)){ # skip code, sjis, and spoiler blocks
 			my $delimiter = $1; # scope is just a state of mind
@@ -200,9 +201,13 @@ sub do_wakabamark($;$$){
 				if((/.+\[$delimiter\]/) || (/\[\/$delimiter\].+/)){
 					my @splitstring = split(/(\[$delimiter\].*\[\/$delimiter\]|\[$delimiter\].*)/, $lines[0]);
 					$splitstring[scalar @splitstring].= ($splitstring[scalar @splitstring]=~/\[\/$delimiter\]/) ? "<br />" : "";
-					$addedlines = scalar @splitstring;
+					$addedlines = (scalar @splitstring);
 					shift @lines;
 					unshift @lines,@splitstring;
+				}
+				elsif($addedlines<=1){
+					$res.=$lines[0]."<br />";
+					shift @lines;
 				}
 				else{
 					$res.=$lines[0];
@@ -242,11 +247,12 @@ sub do_wakabamark($;$$){
 		}
 		else{ # normal text
 			my @text;
-			my $eol = (((scalar @lines) > 1) && ($lines[1]!~/\[(code|spoiler|sjis)\].+/) && ($addedlines==-1) && ($lines[0]!~/<br \/>/)) ? "<br />" : ""; # get rid of those pesky line breaks at the end of each post
+			my $eol = (((scalar @lines) > 1) && ($addedlines<=1)) ? "<br />" : ""; # get rid of those pesky line breaks at the end of each post
 			
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
 			else{ $res.=do_spans($handler,@text).$eol; }
+			$emptyline--;
 		}
 		$simplify=0;
 	}
