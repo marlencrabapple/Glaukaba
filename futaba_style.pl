@@ -17,7 +17,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	.reply .filesize { margin-left: 20px }
 	.userdelete { float: right; text-align: center; white-space: nowrap }
 	.replypage .replylink { display: none }
-	.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+	.sjis { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 	.recaptchatable { border: none; }
 </style>
 <loop $stylesheets>

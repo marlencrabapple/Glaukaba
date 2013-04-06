@@ -92,79 +92,6 @@ use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 </form><br /></div>
 }.NORMAL_FOOT_INCLUDE);
 
-use constant POST_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-<form action="<var $self>" method="post">
-<input type="hidden" name="task" value="delete" />
-<input type="hidden" name="admin" value="<var $admin>" />
-
-<div class="delbuttons">
-<input type="submit" value="<const S_MPDELETE>" />
-<input type="submit" name="archive" value="<const S_MPARCHIVE>" />
-<input type="reset" value="<const S_MPRESET>" />
-[<label><input type="checkbox" name="fileonly" value="on" /><const S_MPONLYPIC></label>]
-</div>
-
-<table align="center" style="white-space: nowrap"><tbody>
-<tr class="managehead"><const S_MPTABLE></tr>
-
-<loop $posts>
-	<if !$parent><tr class="managehead"><th colspan="6"></th></tr></if>
-	<tr class="row<var $rowtype>">
-		<if !$image><td></if>
-		<if $image><td rowspan="2"></if>
-		<label><input type="checkbox" name="delete" value="<var $num>" /><strong class="admNum"><var $num></strong>&nbsp;&nbsp;</label><if !$parent><a onclick="togglePostMenu('postMenu<var $num>','postMenuButton<var $num>');" href="javascript:void(0)" class="postMenuButton" id="postMenuButton<var $num>">[ <span></span> ]</a><div class="postMenu" id="postMenu<var $num>">
-			<a class="postMenuItem" href="javascript:void(0)">Move</a>
-			<a class="postMenuItem" href="http://<var DOMAIN>/<var BOARD_DIR>/wakaba.pl?admin=<var $admin>&task=stickdatshit&num=<var $num>&jimmies=<if $sticky==1>rustled</if><if !$sticky>unrustled</if>">Toggle Sticky</a>
-			<a class="postMenuItem" href="http://<var DOMAIN>/<var BOARD_DIR>/wakaba.pl?admin=<var $admin>&task=permasage&num=<var $num>&jimmies=<if $permasage==1>rustled</if><if !$permasage>unrustled</if>">Toggle Permasage</a>
-			<a class="postMenuItem" href="http://<var DOMAIN>/<var BOARD_DIR>/wakaba.pl?admin=<var $admin>&task=lockthread&num=<var $num>&jimmies=<if $locked==1>rustled</if><if !$locked>unrustled</if>">Toggle Lock</a>
-		</div></if></td>
-		<td><var make_date($timestamp,"tiny")></td>
-		<td><var clean_string(substr $subject,0,20)></td>
-		<td><strong><var $name></strong><var $trip></td>
-		<td><var clean_string(substr $comment,0,30)></td>
-		<td><if $session-\>[1] ne 'janitor'><var dec_to_dot($ip)></if><if $session-\>[1] eq 'janitor'>ID: <var make_id_code($ip,$time,$email)></if>[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>"><const S_MPDELETEALL></a>]<if $session-\>[1] ne 'janitor'>[<a href="<var $self>?admin=<var $admin>&amp;task=addip&amp;type=ipban&amp;ip=<var $ip>" onclick="return do_ban(this)"><const S_MPBAN></a>]</if></td>
-	</tr>
-	<if $image>
-		<tr class="row<var $rowtype>">
-		<td colspan="6"><small>
-		<const S_PICNAME><a href="<var expand_filename(clean_path($image))>"><var clean_string($image)></a>
-		(<var $size> B, <var $width>x<var $height>)&nbsp; MD5: <var $md5>
-		</small></td></tr>
-	</if>
-</loop>
-
-</tbody></table>
-
-<div class="delbuttons">
-<input type="submit" value="<const S_MPDELETE>" />
-<input type="submit" name="archive" value="<const S_MPARCHIVE>" />
-<input type="reset" value="<const S_MPRESET>" />
-[<label><input type="checkbox" name="fileonly" value="on" /><const S_MPONLYPIC></label>]
-</div>
-
-</form>
-
-<br /><div class="postarea">
-
-<if $session-\>[1] ne 'janitor'>
-<form action="<var $self>" method="post">
-<input type="hidden" name="task" value="deleteall" />
-<input type="hidden" name="admin" value="<var $admin>" />
-<table><tbody>
-<tr><td class="postBlock"><const S_BANIPLABEL></td><td><input type="text" name="ip" size="24" /></td></tr>
-<tr><td class="postBlock"><const S_BANMASKLABEL></td><td><input type="text" name="mask" size="24" />
-<input type="submit" value="<const S_MPDELETEIP>" /></td></tr>
-</tbody></table></form>
-</if>
-
-</div><br />
-
-<var sprintf S_IMGSPACEUSAGE,int($size/1024)>
-}.NORMAL_FOOT_INCLUDE);
-
-
-
-
 use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div class="dellist"><const S_MANABANS></div>
 
@@ -595,6 +522,22 @@ use constant REGISTER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<option value="mod">Moderator</option>
 			<option value="admin">Administrator</option>
 		</select></td></tr>
+		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+	</tbody></table></form></div>
+}.NORMAL_FOOT_INCLUDE);
+
+use constant SELECT_BOARDS_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
+	<div align="center"><em>Manage <var $user>'s boards.</em></div>
+	<div class="postarea" align="center"><form id="registForm" action="<var $self>" method="post" enctype="multipart/form-data">
+		<table><tbody><input type="hidden" name="task" value="adduser" />
+		<input type="hidden" name="admin" value="<var $admin>" />
+		<input type="hidden" name="user" value="<var $user>" />
+		<input type="hidden" name="pass" value="<var $pass>" />
+		<input type="hidden" name="class" value="janitor" />
+		<input type="hidden" name="email" value="<var $email>" />
+		<loop BOARDS>
+			<label><input type="checkbox" value="<var $dir>" name="boards" />/<var $dir>/ - <var $name></label><br />
+		</loop>
 		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
 	</tbody></table></form></div>
 }.NORMAL_FOOT_INCLUDE);
@@ -1121,21 +1064,24 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<span class="passDesc">(for post and file deletion)</span>
 				</div>
 			</div>
-			<div class="postTableContainer">
-				<div class="postBlock">Options</div>
-				<div class="postField">
-					<label>[<input type="checkbox" name="no_format" value="1" />HTML]</label>
-					<label>[<input type="checkbox" name="capcode" value="1" />Capcode]</label>
-				</div>
-			</div>
-			<if !$thread>
+			<if $session-\>[1] ne 'janitor'>
 				<div class="postTableContainer">
-				<div class="postBlock">Flags</div>
-				<div class="postField">
-				<label>[<input type="checkbox" name="sticky" value="1" />Sticky]</label>
-				<label>[<input type="checkbox" name="locked" value="1" />Lock]</label>
+					<div class="postBlock">Options</div>
+					<div class="postField">
+						<if $session-\>[1] eq 'admin'><label>[<input type="checkbox" name="no_format" value="1" />HTML]</label></if>
+						<label>[<input type="checkbox" name="capcode" value="1" />Capcode]</label>
+					</div>
 				</div>
-			</div>
+				
+				<if !$thread>
+					<div class="postTableContainer">
+					<div class="postBlock">Flags</div>
+					<div class="postField">
+					<label>[<input type="checkbox" name="sticky" value="1" />Sticky]</label>
+					<label>[<input type="checkbox" name="locked" value="1" />Lock]</label>
+					</div>
+				</div>
+				</if>
 			</if>
 		</div>
 	</form>

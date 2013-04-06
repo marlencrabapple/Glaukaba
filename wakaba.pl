@@ -953,7 +953,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	make_error(S_TOOLONG) if(length($name)>MAX_FIELD_LENGTH);
 	make_error(S_TOOLONG) if(length($email)>MAX_FIELD_LENGTH);
 	make_error(S_TOOLONG) if(length($subject)>MAX_FIELD_LENGTH);
-	make_error(S_TOOLONG) if(length($comment)>MAX_COMMENT_LENGTH);
+	make_error(S_TOOLONG) if((length($comment)>MAX_COMMENT_LENGTH) && !$admin);
 
 	# check to make sure the user selected a file, or clicked the checkbox
 	make_error(S_NOPIC) if(!$parent and !$file and !$nofile and !$admin);
