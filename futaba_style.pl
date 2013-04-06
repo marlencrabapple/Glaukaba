@@ -405,7 +405,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="filetitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+					<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+					<span class="date"><var $date></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
@@ -451,7 +452,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<span class="filetitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+					<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+					<span class="date"><var $date></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
@@ -513,7 +515,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<span class="replytitle"><var $subject></span>
 						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-						<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+						<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+						<span class="date"><var $date></span>
 						<span class="reflink">
 						<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
 						<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
@@ -755,11 +758,8 @@ use constant SEARCHABLE_CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE
 					<if $permasage>"psage":<var $permasage>,</if>
 					<if $locked>"closed":<var $locked>,</if>
 					"time":<var $timestamp>,
-					<if index($date,"ID")==-1>"now":"<var $date>",</if>
-					<if index($date,"ID")!=-1>
-						"now":"<var substr($date,0,index($date,"ID:")-1)>",
-						"id":"<var substr($date, index($date,"ID:"))>",
-					</if>
+					"now":"<var $date>",
+					<if $id>"id":"<var $id>",</if>
 					"name":"<var mahou_inyoufu $name>",
 					"trip":"<var $trip>",
 					<if $email>"email":"<var mahou_inyoufu $email>",</if>
@@ -1009,11 +1009,8 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 			<if $locked>"closed":<var $locked>,</if>
 		</if>
 		"time":<var $timestamp>,
-		<if index($date,"ID")==-1>"now":"<var $date>",</if>
-		<if index($date,"ID")!=-1>
-			"now":"<var substr($date,0,index($date,"ID:")-1)>",
-			"id":"<var substr($date, index($date,"ID:"))>",
-		</if>
+		"now":"<var $date>",
+		<if $id>"id":"<var $id>",</if>
 		"name":"<var mahou_inyoufu $name>",
 		"trip":"<var $trip>",
 		<if $email>"email":"<var mahou_inyoufu $email>",</if>
@@ -1051,11 +1048,8 @@ use constant JSON_INDEX_TEMPLATE => compile_template(q{
 						<if $locked>"closed":<var $locked>,</if>
 					</if>
 					"time":<var $timestamp>,
-					<if index($date,"ID")==-1>"now":"<var $date>",</if>
-					<if index($date,"ID")!=-1>
-						"now":"<var substr($date,0,index($date,"ID:")-1)>",
-						"id":"<var substr($date, index($date,"ID:"))>",
-					</if>
+					"now":"<var $date>",
+					<if $id>"id":"<var $id>",</if>
 					"name":"<var mahou_inyoufu $name>",
 					"trip":"<var $trip>",
 					<if $email>"email":"<var mahou_inyoufu $email>",</if>

@@ -893,11 +893,10 @@ sub build_thread_cache_all(){
 
 sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie)=@_;
-	my $parent_res; # defining this earlier for locked threads
+	my ($parent_res,$id,$class,$time,@session,@taargus);
 	
 	# get a timestamp for future use
-	my $time=time();
-	my ($class,@session,@taargus);
+	$time=time();
 
 	# check that the request came in as a POST, or from the command line
 	make_error(S_UNJUST) if($ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST");
@@ -1089,7 +1088,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	my $date=make_date($time,DATE_STYLE);
 
 	# generate ID code if enabled
-	$date.=' ID:'.make_id_code($ip,$time,$email) if(DISPLAY_ID);
+	#$date.=' ID:'.make_id_code($ip,$time,$email) if(DISPLAY_ID);
+	$id = make_id_code($ip,$time,$email) if(DISPLAY_ID);
 
 	# copy file, do checksums, make thumbnail, etc
 	my ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time,$nsfw) if($file);
@@ -1118,8 +1118,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	}
 	
 	# finally, write to the database
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
-	$sth->execute($parent,$time,$lasthit,$numip,
+	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+	$sth->execute($parent,$time,$lasthit,$numip,$id,
 	$date,$name,$trip,$email,$subject,$password,$comment,
 	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask,$class,@taargus[1]) or make_error(S_SQLFAIL);
 
@@ -2628,7 +2628,7 @@ sub add_user($$$$$;@){
 	my ($admin,$user,$pass,$email,$class,@boards)=@_;
 	my @session = check_password($admin);
 	
-	log_action("adduser",$user,@session);
+	log_action("adduser",$user,@session) unless @boards;
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
 	make_select_boards($admin,$user,$pass,$email) if (($class eq 'janitor') && ((scalar @boards)==0));
@@ -2645,7 +2645,8 @@ sub add_user($$$$$;@){
 		$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
 	}
 	else{
-		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,?,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+		my $statement = "INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,".join( ',', map { "?" } @boards ).",NULL,NULL,NULL,NULL,NULL);";
+		my $sth=$dbh->prepare($statement) or make_error(S_SQLFAIL);
 		$sth->execute($user,$pass,$email,$class,@boards) or make_error(S_SQLFAIL);
 	}
 	
@@ -3222,7 +3223,7 @@ sub view_deleted($){
 
 sub check_password($){
 	my ($admin)=@_; # $password is useless now
-	my ($dengus,$sth,@session);
+	my ($dengus,$sth,$board,@session);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
@@ -3235,12 +3236,12 @@ sub check_password($){
 			@session[3] = $$dengus{newreports};
 			@session[4] = $$dengus{newbanreqs};
 			@session[5] = $$dengus{lastdate};
-			
-			# need to split and join with comma before storing in database too
-			
-			#foreach my $board (split($$dengus{board},","){
-			#	make_error("You are not authorized to moderate this board.") unless BOARD_DIR eq $$dengus{board}
-			#}
+			@session[6] = [];
+
+			foreach $board (split(",",$$dengus{boards})){
+				push @{@session[6]},{'board' => $board};
+				make_error("You are not authorized to moderate this board.") unless BOARD_DIR eq $board;
+			}
 			
 			return @session;
 		}
@@ -3399,6 +3400,7 @@ sub init_database(){
 	"timestamp INTEGER,".		# Timestamp in seconds for when the post was created
 	"lasthit INTEGER,".			# Last activity in thread. Must be set to the same value for BOTH the original post and all replies!
 	"ip TEXT,".					# IP number of poster, in integer form!
+	"id TEXT,".					# The poster's ID
 
 	"date TEXT,".				# The date, as a string
 	"name TEXT,".				# Name of the poster

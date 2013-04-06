@@ -211,7 +211,7 @@ sub do_wakabamark($;$$){
 				}
 			}
 			else{
-				my $eol = (($lines[0]!~/\[$delimiter\]/) && ($lines[2]!~/^\[\/$delimiter\]$/)) ? "<br />" : "";
+				my $eol = (($lines[0]!~/\[$delimiter\]/)) ? "<br />" : "";
 				#$eol = (/^\[\/$delimiter\]$/) ? "" : "<br />";
 				#my $bol = ((/^\[$delimiter\]$/) && ($totallines > scalar @lines)) ? "<br />" : ""; # gets around some tricky conditional stuff later on
 				#$res.=$bol.$lines[0].$eol;
@@ -443,8 +443,7 @@ sub escamp($){
 
 sub mahou_inyoufu($){
 	my ($dengus)=@_;
-	$dengus=~s/\n//g;
-	$dengus=~s/\r//g;
+	$dengus=~s/[\n\r]//g;
 	$dengus=~s/\\/\Q\\\E/g;
 	$dengus=~s/\//\\\//g;
 	$dengus=~s/(?<!\\)\"/\\"/g;

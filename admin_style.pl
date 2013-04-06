@@ -5,19 +5,18 @@ BEGIN { require "wakautils.pl" }
 use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 <if $admin>
 	<div class="topNavContainer" id="adminNav">
-		<if ($session-\>[1] eq 'mod')||($session-\>[1] eq 'admin')>
-			<div class="topNavLeft">
-				<span style="vertical-align: middle">
-				<strong>Navigation:&nbsp;&nbsp;</strong>
-				<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&amp;admin=<var $admin>'">
-					<loop BOARDS>
-						<if $public><option value="<var $dir>">/<var $dir>/</option></if>
-					</loop>
-					<option value="#">Boards</option>
-				</select>
-				</span>
-			</div>
-		</if>
+
+		<div class="topNavLeft">
+			<span style="vertical-align: middle">
+			<strong>Navigation:&nbsp;&nbsp;</strong>
+			<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&amp;admin=<var $admin>'">
+				<if $session-\>[1] eq 'janitor'><loop $session-\>[6]><option value="<var $board>">/<var $board>/</option></loop></if>
+				<if $session-\>[1] ne 'janitor'><loop BOARDS><option value="<var $dir>">/<var $dir>/</option></loop></if>
+				<option value="#">Boards</option>
+			</select>
+			</span>
+		</div>
+
 		<div class="topNavRight">
 			<span style="vertical-align: middle">
 			<if $session-\>[2]>[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">New Messages</a>]</if>

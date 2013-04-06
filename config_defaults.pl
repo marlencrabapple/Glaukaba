@@ -19,7 +19,7 @@ BEGIN {
 	eval "use constant SQL_USER_TABLE => 'users'" unless(defined &SQL_USER_TABLE);
 	eval "use constant SQL_MESSAGE_TABLE => 'msgs'" unless(defined &SQL_MESSAGE_TABLE);
 	eval "use constant SQL_PROXY_TABLE => 'proxy'" unless(defined &SQL_PROXY_TABLE);
-	eval "use constant SQL_REPORTS_TABLE => 'reports'" unless(defined &SQL_REPORTS_TABLE);
+	eval "use constant SQL_REPORT_TABLE => 'reports'" unless(defined &SQL_REPORT_TABLE);
 	eval "use constant SQL_BANREQUEST_TABLE => 'banrequests'" unless(defined &SQL_BANREQUEST_TABLE);
 	eval "use constant SQL_DELETED_TABLE => 'deleted'" unless(defined &SQL_DELETED_TABLE);
 	eval "use constant SQL_LOG_TABLE => 'log'" unless(defined &SQL_LOG_TABLE);
@@ -44,6 +44,7 @@ BEGIN {
 	eval "use constant SOCIAL => 0" unless(defined &SOCIAL);
 	eval "use constant ADD_BREAKS => 0" unless(defined &ADD_BREAKS);
 	eval "use constant ENABLE_JSON => 0" unless(defined &ENABLE_JSON);
+	eval "use constant SHOW_STAFF_POSTS => 0" unless(defined &SHOW_STAFF_POSTS);
 
 	eval "use constant MAX_KB => 5000" unless(defined &MAX_KB);
 	eval "use constant MAX_W => 250" unless(defined &MAX_W);
