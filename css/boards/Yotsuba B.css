@@ -367,6 +367,9 @@ margin-right: 10px; }
     color: #117743;
     font-weight: bold;
 }
+.parentPost .filesize{
+margin-left: 0px;
+}
 .omittedposts,
 .abbrev {
     color: #707070;
