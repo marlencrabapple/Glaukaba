@@ -205,17 +205,14 @@ sub do_wakabamark($;$$){
 					shift @lines;
 					unshift @lines,@splitstring;
 				}
-				elsif($addedlines<=1){
-					$res.=$lines[0]."<br />";
-					shift @lines;
-				}
 				else{
 					$res.=$lines[0];
 					shift @lines;
 				}
 			}
 			else{
-				my $eol = (/\[$delimiter\]/) ? "" : "<br />";
+				my $eol = (($lines[0]!~/\[$delimiter\]/) && ($lines[2]!~/^\[\/$delimiter\]$/)) ? "<br />" : "";
+				#$eol = (/^\[\/$delimiter\]$/) ? "" : "<br />";
 				#my $bol = ((/^\[$delimiter\]$/) && ($totallines > scalar @lines)) ? "<br />" : ""; # gets around some tricky conditional stuff later on
 				#$res.=$bol.$lines[0].$eol;
 				$res.=$lines[0].$eol;
@@ -252,16 +249,15 @@ sub do_wakabamark($;$$){
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
 			else{ $res.=do_spans($handler,@text).$eol; }
-			$emptyline--;
 		}
 		$simplify=0;
 	}
 	
 	# spoilers, sjis, and code tags
 	$res=~s/\[code\]/\<pre class\=\'prettyprint\'\>/g;
-	$res=~s/\[\/code\]/\<\/pre\>/g;
+	$res=~s/(<br \/>)?\[\/code\]/\<\/pre\>/g;
 	$res=~s/\[(spoiler|sjis)\]/\<span class\=\'$1\'\>/g;
-	$res=~s/\[\/(spoiler|sjis)\]/\<\/span\>/g;
+	$res=~s/(<br \/>)?\[\/(spoiler|sjis)\]/\<\/span\>/g;
 	
 	return $res;
 }
