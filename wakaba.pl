@@ -1089,7 +1089,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 
 	# generate ID code if enabled
 	#$date.=' ID:'.make_id_code($ip,$time,$email) if(DISPLAY_ID);
-	$id = make_id_code($ip,$time,$email) if(DISPLAY_ID);
+	$id = make_id_code($ip,$time,$email) if((DISPLAY_ID) && ($capcode!=1));
 
 	# copy file, do checksums, make thumbnail, etc
 	my ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time,$nsfw) if($file);

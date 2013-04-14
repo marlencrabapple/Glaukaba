@@ -1,46 +1,45 @@
 body {
-    background: #EEF2FF url(http://glauchan.org/img/fade-blue.png) top center repeat-x;
-    color: black;
+    background: #FFFFEE url(http://glauchan.org/img/fade.png) top center repeat-x;
+    color: #800000;
 }
-a, a:visited { color: #34345C }
-a.postlink { color: #DD0000 !important }
+a, a:visited { color: #00E; }
+a.postlink { color: #000080!important; }
 a:hover { color: #DD0000 !important }
 .postInput { border: 1px solid #aaa }
-.postInput:focus, #recaptcha_response_field:focus { border: 1px solid #98E }
+.postInput:focus, #recaptcha_response_field:focus { border: 1px solid #EA8!important; }
 .recaptchatable { border: none!important }
 .banner { border: 1px solid #34345C }
 .reply {
-    border: 1px solid #B7C5D9;
+    background-color: #f0e0d6;
+	border: 1px solid #D9BFB7;
     border-left: none;
     border-top: none;
-    background: #D6DAF0;
-    color: #000;
 }
 .reportedReply, .reportedParent { color: #000 }
 .topNavContainer {
-    background: #D6DAF0;
-    border-bottom: 1px solid #B7C5D9;
-    color: black;
+	background-color: #FEDDBA;
+	border-bottom: 1px solid #dcc5b8;
+	color: #800000;
 }
-.logo { color: #AF0A0F }
 .adminLogo { margin-top: 40px }
 .pageNumber {
-    background: #D6DAF0;
-    border-bottom: 1px solid #B7C5D9;
-    border-right: 1px solid #B7C5D9;
-    color: #89A;
+	background: #F0E0D6;
+	border-right: 1px solid #D9BFB7;
+	border-bottom: 1px solid #D9BFB7;
+    color: #B86;
 }
 .theader {
     background: #E04000;
     color: #FFF;
+	font-weight: bold;
+	font-size: larger;
 }
-hr { border-top: 1px solid #B7C5D9 }
+hr { border-top: 1px solid #D9BFB7 }
 .postBlock {
-    background: #98E;
-    border: 1px solid #000;
-    color: #000;
+    background-color: #EA8;
+	color: #800;
+    border: 1px solid #800;
 }
-.footer { color: black }
 .passvalid {
     background: #E04000;
     color: #fff;
@@ -70,7 +69,7 @@ hr { border-top: 1px solid #B7C5D9 }
     padding: 0;
 }
 .filetitle, .replytitle, .oldpost {
-    color: #0F0C5D;
+    color: #cc1105;
     font-weight: bold;
 }
 .oldpost {
@@ -80,9 +79,10 @@ hr { border-top: 1px solid #B7C5D9 }
 .doubledash { color: #B7C5D9 }
 .thumbnailmsg { color: maroon }
 .highlight {
-    background: #D6BAD0 !important;
-    border-bottom: 1px solid #BA9DBF !important;
-    color: #000;
+    background: #F0C0B0!important;
+	border: 1px solid #D99F91!important;
+	border-left: none!important;
+	border-top: none!important;
 }
 .omittedposts, .abbrev {
     color: #707070;
@@ -92,27 +92,25 @@ hr { border-top: 1px solid #B7C5D9 }
 }
 #navOptionsMenu {
     border: 1px solid rgba(0, 0, 0, .25);
-    background-color: #D6DAF0;
+    background-color: #f0e0d6;
 }
-.navOptionsListItem { color: black }
-.postMenuButton { color: #34345C }
-.postMenu { background-color: #D6DAF0 }
+.postMenuButton { color: #00E }
+.postMenu { background-color: #f0e0d6; }
 .postMenuItem { border-bottom: 1px solid rgba(0, 0, 0, .25) }
-.catComment { color: #000 }
 #recaptcha_response_field:not(:focus) { border: 1px solid #AAA!important }
 .listHead {
-    background: #98E;
+    background: #EA8;
     color: black;
-    border: 4px solid #B7C5D9;
+    border: 4px solid #D9BFB7;
     border-left: none;
     border-top: none;
 }
-.listRow:nth-child(odd) { background-color: #D6DAF0 }
-.listRow:nth-child(even) { background-color: #B7C5D9 }
-.listRow:hover { background: #98B }
+.listRow:nth-child(odd) { background-color: #f0e0d6 }
+.listRow:nth-child(even) { background-color: #D9BFB7 }
+.listRow:hover { background: #F0C0B0 }
 .listPageHeader { background: #EEF2FF url(http://www.glauchan.org/img/fade-blue.png) top center repeat-x }
-.staticNav { color: #89A }
-.staticNav a { color: #34345C }
+.staticNav { color: #B86; }
+.staticNav a { color: #800000; }
 .reportblock {
     color: #000;
     border: 1px solid black;

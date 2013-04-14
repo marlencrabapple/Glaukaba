@@ -20,6 +20,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	.sjis { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 	.recaptchatable { border: none; }
 </style>
+<link rel="stylesheet" href="http://<var DOMAIN>/css/Boards.css">
 <loop $stylesheets>
 <link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
 </loop>
@@ -154,19 +155,20 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<title><if $title><var $title> - </if><const TITLE></title>
 		<link rel="shortcut icon" href="<var expand_filename(FAVICON)>" />
 		<style type="text/css">
-			body { margin: 0; margin-bottom: auto; }
 			form { margin-bottom: 0px }
 			form .trap { display:none }
-			.postarea table { margin: 0px auto; text-align: left }
 			.reflink a { color: inherit; text-decoration: none }
 			.reply .filesize { margin-left: 20px }
 			.userdelete { float: right; text-align: center; white-space: nowrap }
 			.replypage .replylink { display: none }
-			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+			.sjis { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+			.recaptchatable { border: none; }
 		</style>
+		<link rel="stylesheet" href="http://<var DOMAIN>/css/Boards.css">
 		<loop $stylesheets>
-		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
+		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
 		</loop>
+		<link rel="stylesheet" href="http://<var DOMAIN>/css/mobile.css">
 		<link href="http://<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet" />
 		<if !$noextra>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
@@ -175,10 +177,10 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
 		<if !$noextra><script type="text/javascript" src="http://<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script></if>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js"></script>
+		<if $admin><script type="text/javascript" src="http://<var DOMAIN>/js/glaukaba-admin.js"></script></if>
 		<if !$noextra>
-		<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
-		<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
+			<script src="http://<var DOMAIN>/js/jquery.form.js"></script>
+			<script type="text/javascript" src="http://<var DOMAIN>/js/prettify/prettify.js"></script>
 		</if>
 		<script>
 			var domain = "http://<var DOMAIN>/";
@@ -260,8 +262,9 @@ use constant CONTENT_HEAD_INCLUDE => q{
 			.reply .filesize { margin-left: 20px }
 			.userdelete { float: right; text-align: center; white-space: nowrap }
 			.replypage .replylink { display: none }
-			.aa { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
+			.sjis { font-family: Mona,'MS PGothic' !important; font-size: 12pt; }
 		</style>
+		<link href="http://<var DOMAIN>/css/Boards.css" type="text/css" rel="stylesheet" />
 		<loop $stylesheets>
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" />
 		</loop>
@@ -355,7 +358,13 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
 							<input type="hidden" name="recaptcha_response_field" value="manual_challenge" />
 						</noscript>
-						<if PASS_ENABLED><div class="passNotice">Bypass this CAPTCHA. [<a href="http://<var DOMAIN>/pass/">Learn More</a>]</div></if>
+						<if PASS_ENABLED>
+							<div class="passNotice">
+								Bypass this CAPTCHA.
+								[<a href="<if REWRITTEN_URLS>http://<var DOMAIN>/pass/</if><if !REWRITTEN_URLS>http://<var DOMAIN>/<const BOARD_DIR>/wakaba.pl?task=getpass</if>">Learn More</a>]
+								
+							</div>
+						</if>
 					</div>
 					<script type="text/javascript">
 						document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");
@@ -485,9 +494,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				</div>
 				
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
-				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
-					
+					<var $comment>
+					<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 					<if SHOW_STAFF_POSTS>
 						<if $capcodereplies\>0>
 							<span class="capcodeReplies">
@@ -498,7 +506,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							</span>
 						</if>
 					</if>
-					
 				</blockquote>
 			</div>
 			
@@ -630,10 +637,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant ERROR_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
-	<h1 id="errorMessage" style="text-align: center"><var $error><br /><br />
-	<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a><br /><br />
-	</h1>
-	</div>
+	<h1 id="errorMessage" style="text-align: center"><var $error></h1>
+	<h3 style="text-align: center">[<a href="<var escamp($ENV{HTTP_REFERER})>"><const S_RETURN></a>]</h3>
+	<hr />
 }.NORMAL_FOOT_INCLUDE);
 
 use constant REPORT_TEMPLATE => compile_template(q{
@@ -647,8 +653,13 @@ use constant REPORT_TEMPLATE => compile_template(q{
 			body { margin: 0; padding: 8px; margin-bottom: auto;}
 			h3 {margin: 0; margin-bottom: 5px;}
 		</style>
-		<loop $stylesheets><link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" /></loop>
+		<link rel="stylesheet" href="http://<var DOMAIN>/css/Boards.css">
+		<loop $stylesheets>
+			<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="http://<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>" title="<var $title>" />
+		</loop>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
+		<script type="text/javascript" src="http://<var DOMAIN>/js/<var JS_FILE>"></script>
 	</head>
 	<body>
 		<h3>Reporting Post No.<var $num> on /<var BOARD_DIR>/</h3>
@@ -729,7 +740,6 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 use constant SEARCHABLE_CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 [<a href="http://<const DOMAIN>/<const BOARD_DIR>"><const S_RETURN></a>]
-<div class="listHead" style="margin-top: 5px;">Catalog Mode</div>
 <div id="catalog">
 	<div class="catItem" id="catItem0">
 		<a id="catItemHoverLink0" href="/<const BOARD_DIR>/res/0">

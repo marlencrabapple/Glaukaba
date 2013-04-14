@@ -162,7 +162,7 @@ sub do_wakabamark($;$$){
 	my $emptyline=1;
 	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
-	my $totallines= scalar @lines;
+	my $totallines = scalar @lines;
 
 	while(defined($_=$lines[0])){
 		# glaukaba's SUPERIOR adaptation of wordwrap2
@@ -187,9 +187,9 @@ sub do_wakabamark($;$$){
 		$addedlines--;
 		
 		# skip continuous empty lines
-		if(/^.{0}$/){
+		if(/^\s*$/){
 			my $i=0;
-			while($lines[0]=~/^.{0}$/) { $res.=($i==0) ? "<br />" : ""; shift @lines; $i++; }
+			while(($lines[0]=~/^\s*$/)&&(scalar @lines != 0)) { $res.=(($i==0)&&(scalar @lines > 1)) ? "<br />" : ""; shift @lines; $i++; if($i>1000){make_error("Something is very wrong.");}}
 		}
 		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/) || ($inblock==1)){ # skip code, sjis, and spoiler blocks
 			my $delimiter = $1; # scope is just a state of mind
@@ -197,10 +197,11 @@ sub do_wakabamark($;$$){
 			$inblock = 0 if $lines[0]=~/\[\/$delimiter\]/;
 			
 			# detect normal text in same line as special formatted block
-			if(/\[$delimiter\].*\[\/$delimiter\]/){
+			if((/.+\[$delimiter\].*\[\/$delimiter\]/)||(/\[$delimiter\].*\[\/$delimiter\].+/)){
 				if((/.+\[$delimiter\]/) || (/\[\/$delimiter\].+/)){
 					my @splitstring = split(/(\[$delimiter\].*\[\/$delimiter\]|\[$delimiter\].*)/, $lines[0]);
-					$splitstring[scalar @splitstring].= ($splitstring[scalar @splitstring]=~/\[\/$delimiter\]/) ? "<br />" : "";
+					shift @splitstring if $splitstring[0]=~/^\s*$/;
+					$splitstring[(scalar @splitstring) - 1].= (($splitstring[(scalar @splitstring) - 1]=~/\[\/$delimiter\]/)) ? "<br />" : "";
 					$addedlines = (scalar @splitstring);
 					shift @lines;
 					unshift @lines,@splitstring;
@@ -210,8 +211,12 @@ sub do_wakabamark($;$$){
 					shift @lines;
 				}
 			}
+			elsif(($addedlines<1)&&($lines[0]=~/^\[$delimiter\].*\[\/$delimiter\]$/)){
+				$res.=$lines[0]."<br />";
+				shift @lines;
+			}
 			else{
-				my $eol = (($lines[0]!~/\[$delimiter\]/)) ? "<br />" : "";
+				my $eol = (($lines[0]!~/\[$delimiter\]/)&&(scalar @lines > 1)) ? "<br />" : "";
 				#$eol = (/^\[\/$delimiter\]$/) ? "" : "<br />";
 				#my $bol = ((/^\[$delimiter\]$/) && ($totallines > scalar @lines)) ? "<br />" : ""; # gets around some tricky conditional stuff later on
 				#$res.=$bol.$lines[0].$eol;
@@ -244,11 +249,10 @@ sub do_wakabamark($;$$){
 		}
 		else{ # normal text
 			my @text;
-			my $eol = (((scalar @lines) > 1) && ($addedlines<=1)) ? "<br />" : ""; # get rid of those pesky line breaks at the end of each post
 			
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
-			else{ $res.=do_spans($handler,@text).$eol; }
+			else{ my $eol = (((scalar @lines) > 1) && ($addedlines<=1)) ? "<br />" : ""; $res.=do_spans($handler,@text).$eol; }
 		}
 		$simplify=0;
 	}
