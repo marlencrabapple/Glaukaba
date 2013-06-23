@@ -54,7 +54,7 @@ sub abbreviate_html($$$){
  				return undef if (substr $html,pos $html)=~m!^(?:\s*</\w+>)*\s*$!s;
 
 				my $abbrev=substr $html,0,pos $html;
-				while(my $tag=pop @stack) { $abbrev.="</$tag>" }
+				while(my $tag=pop @stack) { $abbrev.="</$tag>" unless $tag eq "br"; }
 
 				return $abbrev;
 			}
@@ -158,11 +158,9 @@ sub describe_allowed(%){
 
 sub do_wakabamark($;$$){
 	my ($text,$handler,$simplify)=@_;
-	my ($res,$inblock,$addedlines);
-	my $emptyline=1;
+	my ($res);
 	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
-	my $totallines = scalar @lines;
 
 	while(defined($_=$lines[0])){
 		# glaukaba's SUPERIOR adaptation of wordwrap2
@@ -170,11 +168,11 @@ sub do_wakabamark($;$$){
 			if(m/[^\s]{100,}/){
 				my $i=0;
 				for(split(/(.{100})/,$lines[0])){
-					if($i==1){ $lines[0]="$_<br />" if $_; }
-					else{ $lines[0].="$_<br />" if $_; }
+					if($i==1){ $lines[0]="$_<br>" if $_; }
+					else{ $lines[0].="$_<br>" if $_; }
 					$i++;
 				}
-				$lines[0]=~s/<br \/>$//;
+				$lines[0]=~s/<br>$//;
 			}
 		}
 		else{
@@ -184,43 +182,34 @@ sub do_wakabamark($;$$){
 			}
 		}
 		
-		$addedlines--;
-		
 		# skip continuous empty lines
 		if(/^\s*$/){
 			my $i=0;
-			while(($lines[0]=~/^\s*$/)&&(scalar @lines != 0)) { $res.=(($i==0)&&(scalar @lines > 1)) ? "<br />" : ""; shift @lines; $i++; if($i>1000){make_error("Something is very wrong.");}}
+			while(($lines[0]=~/^\s*$/)&&(scalar @lines != 0)) { $res.=(($i==0)&&(scalar @lines > 1)) ? "<br>" : ""; shift @lines; $i++; if($i>1000){make_error("Something is very wrong.");}}
 		}
-		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/) || ($inblock==1)){ # skip code, sjis, and spoiler blocks
+		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/)){ # skip code, sjis, and spoiler blocks
 			my $delimiter = $1; # scope is just a state of mind
-			$inblock = 1; # helps block wakabamark from deciding everything and their mom is "normal text"
-			$inblock = 0 if $lines[0]=~/\[\/$delimiter\]/;
 			
 			# detect normal text in same line as special formatted block
 			if((/.+\[$delimiter\].*\[\/$delimiter\]/)||(/\[$delimiter\].*\[\/$delimiter\].+/)){
 				if((/.+\[$delimiter\]/) || (/\[\/$delimiter\].+/)){
 					my @splitstring = split(/(\[$delimiter\].*\[\/$delimiter\]|\[$delimiter\].*)/, $lines[0]);
 					shift @splitstring if $splitstring[0]=~/^\s*$/;
-					$splitstring[(scalar @splitstring) - 1].= (($splitstring[(scalar @splitstring) - 1]=~/\[\/$delimiter\]/)) ? "<br />" : "";
-					$addedlines = (scalar @splitstring);
+					
+					foreach my $string (@splitstring){
+						$res.= $string=~/\[$delimiter\]/ ? $string : do_spans($handler,$string);
+					}
+					
+					$res.="<br>" unless (scalar @lines) <= 1;  
 					shift @lines;
-					unshift @lines,@splitstring;
 				}
 				else{
-					$res.=$lines[0];
+					$res.=do_spans($handler,$lines[0]);
 					shift @lines;
 				}
 			}
-			elsif(($addedlines<1)&&($lines[0]=~/^\[$delimiter\].*\[\/$delimiter\]$/)){
-				$res.=$lines[0]."<br />";
-				shift @lines;
-			}
 			else{
-				my $eol = (($lines[0]!~/\[$delimiter\]/)&&(scalar @lines > 1)) ? "<br />" : "";
-				#$eol = (/^\[\/$delimiter\]$/) ? "" : "<br />";
-				#my $bol = ((/^\[$delimiter\]$/) && ($totallines > scalar @lines)) ? "<br />" : ""; # gets around some tricky conditional stuff later on
-				#$res.=$bol.$lines[0].$eol;
-				$res.=$lines[0].$eol;
+				$res.=do_spans($handler,$lines[0]);
 				shift @lines;
 			}
 		}
@@ -245,30 +234,30 @@ sub do_wakabamark($;$$){
 		elsif(/^&gt;/){ # quoted sections
 			my @quote;
 			while($lines[0]=~/^(&gt;.*)/) { push @quote,$1; shift @lines; }
-			$res.="<span class=\"quote\">".do_spans($handler,@quote)."</span><br />";
+			$res.="<span class=\"quote\">".do_spans($handler,@quote)."</span><br>";
 		}
 		else{ # normal text
 			my @text;
 			
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
-			else{ my $eol = (((scalar @lines) > 1) && ($addedlines<=1)) ? "<br />" : ""; $res.=do_spans($handler,@text).$eol; }
+			else{ my $eol = ((scalar @lines) > 1) ? "<br>" : ""; $res.=do_spans($handler,@text).$eol; }
 		}
 		$simplify=0;
 	}
 	
 	# spoilers, sjis, and code tags
 	$res=~s/\[code\]/\<pre class\=\'prettyprint\'\>/g;
-	$res=~s/(<br \/>)?\[\/code\]/\<\/pre\>/g;
+	$res=~s/(<br>)?\[\/code\]/\<\/pre\>/g;
 	$res=~s/\[(spoiler|sjis)\]/\<span class\=\'$1\'\>/g;
-	$res=~s/(<br \/>)?\[\/(spoiler|sjis)\]/\<\/span\>/g;
+	$res=~s/(<br>)?\[\/(spoiler|sjis)\]/\<\/span\>/g;
 	
 	return $res;
 }
 
 sub do_spans($@){
 	my $handler=shift;
-	return join "<br />",map{
+	return join "<br>",map{
 		my $line=$_;
 		my @hidden;
 
@@ -582,14 +571,16 @@ sub get_http($;$$$){
 	}
 }
 
-sub make_http_forward($;$){
-	my ($location,$alternate_method)=@_;
+sub make_http_forward($;$$){
+	my ($location,$alternate_method,$postdata)=@_;
 
 	if($alternate_method){
+		print "Your-Post: ".$postdata."\n" unless !$postdata;
 		print "Content-Type: text/html\n";
 		print "\n";
 		print "<html><head>";
 		print '<meta http-equiv="refresh" content="0; url='.$location.'" />';
+		print '<script>var yourPost = '.$postdata.';</script>';
 		print '<script type="text/javascript">document.location="'.$location.'";</script>';
 		print '</head><body><a href="'.$location.'">'.$location.'</a></body></html>';
 	}
@@ -598,6 +589,7 @@ sub make_http_forward($;$){
 		print "Status: 303 Go West\n";
 		print "Location: $location\n";
 		print "Content-Type: text/html\n";
+		print "Your-Post: ".$postdata."\n" unless !$postdata;
 		print "\n";
 		print '<html><body><a href="'.$location.'">'.$location.'</a></body></html>';
 	}

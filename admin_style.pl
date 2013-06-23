@@ -5,18 +5,16 @@ BEGIN { require "wakautils.pl" }
 use constant MANAGER_HEAD_INCLUDE => MINIMAL_HEAD_INCLUDE.q{
 <if $admin>
 	<div class="topNavContainer" id="adminNav">
-
 		<div class="topNavLeft">
 			<span style="vertical-align: middle">
 			<strong>Navigation:&nbsp;&nbsp;</strong>
-			<select id="managerBoardList" onchange="window.location = 'http://<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&amp;admin=<var $admin>'">
+			<select id="managerBoardList" onchange="window.location = '//<var DOMAIN>/'+value+'/wakaba.pl?task=mpanel&amp;admin=<var $admin>'">
 				<if $session-\>[1] eq 'janitor'><loop $session-\>[6]><option value="<var $board>">/<var $board>/</option></loop></if>
 				<if $session-\>[1] ne 'janitor'><loop BOARDS><option value="<var $dir>">/<var $dir>/</option></loop></if>
 				<option value="#">Boards</option>
 			</select>
 			</span>
 		</div>
-
 		<div class="topNavRight">
 			<span style="vertical-align: middle">
 			<if $session-\>[2]>[<a href="<var $self>?task=inbox&amp;admin=<var $admin>">New Messages</a>]</if>
@@ -326,7 +324,7 @@ There are zero reported posts!
 </if>
 <loop $posts>
 <div class="reportContainer" id="reportContainer<var $num>">
-	<div class="reportHeader"><strong>Board: </strong><a href="http://<var DOMAIN>/<var BOARD_DIR>/" target="_blank">/<var BOARD_DIR>/</a> No. <var $num> <a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<if $parent><var $parent></if><if !$parent><var $num></if>#<var $num>" target="_blank">[View Full]</a> <strong>Total: </strong><var $totalreports> <strong>Illegal: </strong><var $illegal> <strong>Spam: </strong><var $spam> <strong>Rule: </strong><var $vio></div>
+	<div class="reportHeader"><strong>Board: </strong><a href="//<var DOMAIN>/<var BOARD_DIR>/" target="_blank">/<var BOARD_DIR>/</a> No. <var $num> <a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<if $parent><var $parent></if><if !$parent><var $num></if>#<var $num>" target="_blank">[View Full]</a> <strong>Total: </strong><var $totalreports> <strong>Illegal: </strong><var $illegal> <strong>Spam: </strong><var $spam> <strong>Rule: </strong><var $vio></div>
 	<div class="reportPostHeader">
 		<div style="float:left">
 		<span class="postername"><var $name></span> <span class="postertrip"><var $trip></span>
@@ -451,7 +449,7 @@ use constant REPORT_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
 			<if $thumbnail>
 				<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-					<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+					<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
 			</if>
 			<if !$thumbnail>
 				<if DELETED_THUMBNAIL>
@@ -907,7 +905,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
 					<br />
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
+						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
 					<if !$thumbnail>
 						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
 					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
@@ -921,8 +919,8 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
-					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+					<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+					<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
 					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>				
 					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
@@ -957,7 +955,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 							<br />
 							<if $thumbnail>
 								<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-									<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+									<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
 							</if>
 							<if !$thumbnail>
 								<if DELETED_THUMBNAIL>
@@ -1099,7 +1097,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
 					<br />
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
+						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
 					<if !$thumbnail>
 						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
 					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
@@ -1113,15 +1111,15 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-					<if $sticky><img src="http://<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
-					<if $locked><img src="http://<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+					<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+					<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
 					</span>&nbsp;
 					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
 					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
 				</span>
 				<div class="postMenu" id="postMenu<var $num>">
-					<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+					<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 				</div>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
 				<var $comment>
@@ -1149,7 +1147,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					</div>
 					
 					<div class="postMenu" id="postMenu<var $num>">
-						<a href="http://<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+						<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 					
 					<if $image><br />
@@ -1157,7 +1155,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
 						<if $thumbnail>
 							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="http://<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
 						</if>
 						<if !$thumbnail>
 							<if DELETED_THUMBNAIL>

@@ -121,9 +121,10 @@ sub init(){
 		my $capcode=$query->param("capcode");
 		my $spoiler=$query->param("spoiler");
 		my $nsfw=$query->param("nsfw");
+		my $ajax=$query->param("ajax");
 		my $passcookie=$query->cookie("wakapass");
 
-		post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie);
+		post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax);
 	}
 	elsif($task eq "delete"){
 		my $password=$query->param("password");
@@ -828,6 +829,7 @@ sub build_thread_cache($){
 	$filename=RES_DIR.$thread.PAGE_EXT;
 
 	print_page($filename,PAGE_TEMPLATE->(
+		title=>"No. ".$thread,
 		thread=>$thread,
 		postform=>(ALLOW_TEXT_REPLIES or ALLOW_IMAGE_REPLIES),
 		image_inp=>ALLOW_IMAGE_REPLIES,
@@ -891,8 +893,8 @@ sub build_thread_cache_all(){
 # Posting
 #
 
-sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie)=@_;
+sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax)=@_;
 	my ($parent_res,$id,$class,$time,@session,@taargus);
 	
 	# get a timestamp for future use
@@ -1140,7 +1142,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 
 	# update the individual thread cache
 	my $num;
-	if($parent && !$noko) { build_thread_cache($parent);}
+	if($parent && !$noko && !$ajax) { build_thread_cache($parent);}
 	else # must find out what our new thread number is
 	{
 		if($filename){
@@ -1171,7 +1173,9 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$){
 	}
 	else
 	{
-		make_http_forward($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",ALTERNATE_REDIRECT);
+		my $alt = $ajax == 1 ? 1 : 0; # for requests from the extension
+		my $postdata = "{\"parent\": ".$parent.", \"num\": ".$num."}";
+		make_http_forward($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",$alt,$postdata);
 	}
 }
 
@@ -1489,7 +1493,7 @@ sub format_comment($){
 
 sub simple_format($@){
 	my ($comment,$handler)=@_;
-	return join "<br />",map{
+	return join "<br>",map{
 		my $line=$_;
 
 		# make URLs into links
@@ -2009,7 +2013,7 @@ sub make_sql_dump($){
 
 	make_http_header();
 	print encode_string(SQL_DUMP_TEMPLATE->(admin=>$admin,session=>\@session,
-	database=>join "<br />",map { clean_string($_,1) } @database));
+	database=>join "<br>",map { clean_string($_,1) } @database));
 }
 
 sub make_sql_interface($$$){
@@ -2038,7 +2042,7 @@ sub make_sql_interface($$$){
 
 		make_http_header();
 		print encode_string(SQL_INTERFACE_TEMPLATE->(admin=>$admin,nuke=>$nuke,session=>\@session,
-		results=>join "<br />",map { clean_string($_,1) } @results));
+		results=>join "<br>",map { clean_string($_,1) } @results));
 	}
 	else{
 		make_error(S_CLASS);
@@ -3762,7 +3766,7 @@ sub get_decoded_arrayref($){
 sub make_pass_page(){
 	make_http_header();
 	print encode_string(REGISTER_PASS_TEMPLATE->(
-		dengus=>"asdf"
+		title => SITE_NAME." Pass"
 	));
 }
 
@@ -3828,6 +3832,9 @@ sub add_pass($$$){
 
 sub make_authorize_pass($){
 	my($cookie)=@_;
+	
+	make_error("You are already authorized.") if ($cookie);
+	
 	make_http_header();
 	print encode_string(AUTHORIZE_PASS_TEMPLATE->(
 		dengus=>$cookie

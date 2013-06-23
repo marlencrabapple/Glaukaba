@@ -6,8 +6,6 @@ function init(orderBy, searchTerms){
 	$("#catItem0").remove();
 	$(".catItem").remove();
 	
-	console.log(noExt);
-	
 	if(noExt==1){
 		ext="";
 	}
