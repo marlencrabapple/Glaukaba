@@ -34,8 +34,7 @@
 		overflow: hidden;
 		clear: both;
 		text-align: left;
-		margin-left: auto;
-		margin-right: auto;
+		margin: 0 auto 0 auto;
 		border: none;
 		padding: 0;
 	}
@@ -43,19 +42,16 @@
 	.replyContainer {
 		width: 97%;
 		text-align: center;
-		margin-left: auto;
-		margin-right: auto;
+		margin: 5px auto 0 auto;
 	}
 
 	.parentPost {
 		display: inline-block;
-		padding: 0;
-		background: #D6DAF0;
-		color: #000;
 		word-wrap: break-word;
 		white-space: normal;
 		width: 100%;
 		margin: 0;
+		padding: 0;
 	}
 
 	.doubledash {
@@ -200,8 +196,6 @@
 	.replyPostInfo {
 		padding: 5px;
 		display: block;
-		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
 		clear: both!important;
 	}
 
@@ -224,8 +218,6 @@
 	.mobileParentPostInfo {
 		padding: 5px;
 		display: block;
-		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
 		margin-bottom: 5px;
 		clear: both!important;
 	}
@@ -317,8 +309,6 @@
 	}
 
 	.parentContainer {
-		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
 		padding: 0;
 	}
 
@@ -326,10 +316,6 @@
 		border-radius: 3px;
 		padding: 6px 10px 5px 10px;
 		font-weight: bold;
-		background-color: #D6DAF0;
-		border: 1px solid #B7C5D9;
-		background-image: url(/img/buttonfade-blue.png);
-		background-repeat: repeat-x;
 		text-decoration: none;
 	}
 
@@ -341,7 +327,6 @@
 		clear: both!important;
 		padding: 5px;
 		overflow: hidden;
-		border-top: 1px solid #B7C5D9;
 	}
 
 	.mobilePostReplyLink a {

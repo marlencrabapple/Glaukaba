@@ -91,7 +91,7 @@ var noExt = 0;
 <if REWRITTEN_URLS==1>noExt = 1;</if>
 </script>
 <if !$noextra>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 </if>
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="//<var DOMAIN>/js/<var JS_FILE>"></script>
@@ -128,13 +128,13 @@ var noExt = 0;
 </div>
 <if !$thread><if $indexpage>
 	<div id="topPageNumber" class="pageNumber">
-		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit"></form></if>
+		<if $prevpage><button onclick="location.href='<var $prevpage>'"><const S_PREV></button></if>
 		<if !$prevpage><const S_FIRSTPG></if>
 		<loop $pages>
 			<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
 			<if $current>[<var $page>]</if>
 		</loop>
-		<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit"></form></if>
+		<if $nextpage><button onclick="location.href='<var $nextpage>'"><const S_NEXT></button></if>
 		<if !$nextpage><const S_LASTPG></if>
 		<if ENABLE_CATALOG>
 			<div class="catalogLink">
@@ -176,8 +176,9 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		</loop>
 		<link rel="stylesheet" href="//<var DOMAIN>/css/mobile.css">
 		<link href="//<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet">
+		<link rel="stylesheet" href="//<var DOMAIN>/css/manage.css">
 		<if !$noextra>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		</if>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="//<var DOMAIN>/js/<var JS_FILE>"></script>
@@ -201,7 +202,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 	<if $indexpage><body class="indexpage"></if>
 	<if !$indexpage><if !$thread><body></if></if>
 	<a id="top"></a>
-};
+}.BOARD_OPTIONS;
 
 use constant CONTENT_HEAD_INCLUDE => q{
 <!DOCTYPE html>
@@ -227,7 +228,7 @@ use constant CONTENT_HEAD_INCLUDE => q{
 		<link rel="<if !$default>alternate </if>stylesheet" type="text/css" href="//<var DOMAIN><var CSS_DIR><var substr($filename,rindex($filename,'/')+1)>">
 		</loop>
 		<link href="//<var DOMAIN>/css/othercontent.css" type="text/css" rel="stylesheet">
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="//<var DOMAIN>/js/logo.js"></script>
 		<script>
@@ -418,7 +419,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<div class="fileinfo"><span class="filesize"><const S_PICNAME>
 					<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
 						<if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-					- (<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span></div>
+					- (<var int($size/1024)> KB, <var $width>x<var $height>)</span></div>
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
 						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb"></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb"></if></a></if>
 					<if !$thumbnail>
@@ -538,7 +539,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
 									<if !$filename><var get_filename($image)></a></if>
 									<if $filename><var truncateLine($filename)></a></if>
-								- (<em><var int($size/1024)> KB, <var $width>x<var $height></em>)
+								- (<var int($size/1024)> KB, <var $width>x<var $height>)
 							</span>
 						</div>
 						<if $thumbnail>
@@ -597,13 +598,13 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 </form>
 <if !$thread>
 	<div class="pageNumber">
-		<if $prevpage><form class="pageForm" method="get" action="<var $prevpage>"><input value="<const S_PREV>" type="submit"></form></if>
+		<if $prevpage><button onclick="location.href='<var $prevpage>'"><const S_PREV></button></if>
 		<if !$prevpage><const S_FIRSTPG></if>
 		<loop $pages>
 			<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
 			<if $current>[<var $page>]</if>
 		</loop>
-		<if $nextpage><form class="pageForm" method="get" action="<var $nextpage>"><input value="<const S_NEXT>" type="submit"></form></if>
+		<if $nextpage><button onclick="location.href='<var $nextpage>'"><const S_NEXT></button></if>
 		<if !$nextpage><const S_LASTPG></if>
 		<if ENABLE_CATALOG>
 			<div class="catalogLink">

@@ -1,47 +1,43 @@
 body {
-    background: #EEF2FF url(../../img/fade-blue.png) top center repeat-x;
-    color: black;
+	color: #c5c8c6;
+	/*background: rgb(29,31,33) url('../../img/Yotsuba D BG.png') bottom right no-repeat fixed;
+	background-size: auto 50%;*/
+	background: rgb(29,31,33);
 }
-a, a:visited { color: #34345C }
-a.postlink { color: #DD0000 !important }
+a, a:visited { color: #81a2be!important; }
+a.postlink { color: #81a2be !important }
 a:hover { color: #DD0000 !important }
 .postInput { border: 1px solid #aaa }
 .postInput:focus, #recaptcha_response_field:focus { border: 1px solid #98E }
 .recaptchatable { border: none!important }
 .banner { border: 1px solid #34345C }
 .reply {
-    border: 1px solid #B7C5D9;
-    border-left: none;
-    border-top: none;
-    background: #D6DAF0;
-    color: #000;
+   background-color: #282a2e;
+	border: 1px solid #282a2e;
 }
 .topNavContainer {
-    background: #D6DAF0;
-    border-bottom: 1px solid #B7C5D9;
-    color: black;
+    background: #282a2e;
+    border-bottom: 1px solid #1F2023;
 }
-.logo { color: #AF0A0F }
+.logo { color: #c5c8c6 }
 .adminLogo { margin-top: 40px }
 .pageNumber {
-    background: #D6DAF0;
-    border-bottom: 1px solid #B7C5D9;
-    border-right: 1px solid #B7C5D9;
-    color: #89A;
+    background: #282a2e;
+    border: 1px solid #111;
 }
 .theader {
-    background: #E04000;
+    background: #282a2e;
     color: #FFF;
-	font-size:larger;
 	font-weight:bold;
+	padding: 2px 0;
+	font-size: larger;
+	color: #c5c8c6;
 }
-hr { border-top: 1px solid #B7C5D9 }
+hr { border-top: 1px solid #282a2e; }
 .postBlock {
-    background: #98E;
+    background: #282a2e;
     border: 1px solid #000;
-    color: #000;
 }
-.footer { color: black }
 .passvalid {
     background: #E04000;
     color: #fff;
@@ -71,7 +67,7 @@ hr { border-top: 1px solid #B7C5D9 }
     padding: 0;
 }
 .filetitle, .replytitle, .oldpost {
-    color: #0F0C5D;
+    color: #b294bb;
     font-weight: bold;
 }
 .oldpost {
@@ -93,13 +89,11 @@ hr { border-top: 1px solid #B7C5D9 }
 }
 #navOptionsMenu {
     border: 1px solid rgba(0, 0, 0, .25);
-    background-color: #D6DAF0;
+    background-color: #282a2e;
 }
-.navOptionsListItem { color: black }
 .postMenuButton { color: #34345C }
-.postMenu { background-color: #D6DAF0 }
+.postMenu { background-color: #171819 }
 .postMenuItem { border-bottom: 1px solid rgba(0, 0, 0, .25) }
-.catComment { color: #000 }
 #recaptcha_response_field:not(:focus) { border: 1px solid #AAA!important }
 .listHead {
     background: #98E;
@@ -122,34 +116,47 @@ hr { border-top: 1px solid #B7C5D9 }
 .reportstats { border: 1px solid black }
 .reportright { border: 1px solid black }
 .catalogLink { border-left: 1px solid #B7C5D9 }
+.quote{
+color:#b5bd68;
+}
+.postername, .commentpostername {
+    color: #c5c8c6;
+    font-weight: bold;
+}
+.postertrip { color: #c5c8c6 }
+#overlay {
+background:rgba(255,255,255,0.3);
+}
 
 @media only screen and (max-width: 480px){
+	body{
+		background: #0D131E;
+	}
 	.parentPost{
-		background: #D6DAF0;
-		color: #000;
+		background: #282a2e;
 	}
 	.replyPostInfo {
-		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
+		border-bottom: 1px solid #1F2023;
+		background-color: #1F2023;
 	}
 	.mobileParentPostInfo {
-		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
+		border-bottom: 1px solid #1F2023;
+		background-color: #1F2023;
 	}
 	.parentContainer {
-		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
+		border-bottom: 1px solid #1F2023;
+		background-color: #1F2023;
 		padding: 0;
 	}
 	.button {
-		background-color: #D6DAF0;
-		border: 1px solid #B7C5D9;
-		background-image: -moz-linear-gradient(top, #E7E7F3 0%, #C6C5E2 100%);
-		background-image: -webkit-linear-gradient(top, #E7E7F3 0%, #C6C5E2 100%);
-		background-image: linear-gradient(to bottom, #E7E7F3 0%, #C6C5E2 100%);
+		background-color: #171819;
+		border: 1px solid #091015;
+		background-image: -moz-linear-gradient(top, #1D1F21 0%, #171819 100%);
+		background-image: -webkit-linear-gradient(top, #1D1F21 0%, #171819 100%);
+		background-image: linear-gradient(to bottom, #1D1F21 0%, #171819 100%);
 
 	}
 	.mobilePostReplyLink {
-		border-top: 1px solid #B7C5D9;
+		border-top: 1px solid #1F2023;
 	}
 }

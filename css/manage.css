@@ -1,0 +1,13 @@
+.reportedReply {
+	border: 3px dashed red;
+	background: rgba(255,0,0,0.2);
+	padding:4px;
+	box-sizing: border-box;
+}
+.reportedParent {
+	border: 3px dashed red;
+	display: inline-block;
+	background: rgba(255,0,0,0.2);
+	padding:4px;
+	box-sizing: border-box;
+}

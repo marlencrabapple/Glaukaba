@@ -446,7 +446,7 @@ use constant REPORT_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		</div>
 		<if $image><br />
 			<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-			-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
+			-(<var int($size/1024)> KB, <var $width>x<var $height>)</span><br />
 			<if $thumbnail>
 				<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
 					<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
@@ -1012,33 +1012,43 @@ use constant DELETED_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <div id="content">
 <if $thread>
-	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_RETURN></a>]
+<div class="desktop threadlinks">
 	[<a href="#bottom">Bottom</a>]
 	<div class="theader"><const S_POSTING></div>
+</div>
+<div class="mobile threadlinks">
+	<a class="button" href="#bottom">Bottom</a>
+</div>
 </if>
-<if $postform><div class="postarea">
-	<form action="<var $self>" method="post" enctype="multipart/form-data">
+<if $postform>
+	<div style="text-align:center">
+	<a id="postFormToggle" class="button" onclick="togglePostForm()" href="javascript:void(0)">
+		<if !$thread>New Thread</if>
+		<if $thread>Reply</if>
+	</a>
+	</div>
+	<form action="<var $self>" method="post" id="post_form" enctype="multipart/form-data">
+		<input type="hidden" name="task" value="post">
 		<input type="hidden" name="admin" value="<var $admin>" />
 		<input type="hidden" name="no_captcha" value="1" />
-		<input type="hidden" name="task" value="post" />
-		<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
-		<if !$image_inp and !$thread and ALLOW_TEXTONLY><input type="hidden" name="nofile" value="1" /></if>
-		<if FORCED_ANON><input type="hidden" name="name" /></if>
-		<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off" /><input type="text" name="link" autocomplete="off" /></div></if>
+		<if $thread><input type="hidden" name="parent" value="<var $thread>"></if>
+		<if !$image_inp and !$thread and ALLOW_TEXTONLY><input type="hidden" name="nofile" value="1"></if>
+		<if FORCED_ANON><input type="hidden" name="name"></if>
+		<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off"><input type="text" name="link" autocomplete="off"></div></if>
 		<div id="postForm">
 			<if !FORCED_ANON><div class="postTableContainer">
 					<div class="postBlock">Name</div>
-					<div class="postField"><input type="text" class="postInput" name="field1" id="field1" /></div>
+					<div class="postField"><input type="text" class="postInput" name="field1" id="field1"></div>
 				</div></if>
 			<div class="postTableContainer">
 				<div class="postBlock">Link</div>
-				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" /></div>
+				<div class="postField"><input type="text" class="postInput" name="field2" id="field2"></div>
 			</div>
 			<div class="postTableContainer">
 				<div class="postBlock">Subject</div>
 				<div class="postField">
-					<input type="text" name="field3" class="postInput" id="field3" />
-					<input type="submit" id="field3s" value="Submit" />
+					<input type="text" name="field3" class="postInput" id="field3">
+					<input type="submit" id="field3s" value="Submit">
 				</div>
 			</div>
 			<div class="postTableContainer">
@@ -1048,10 +1058,10 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<if $image_inp><div class="postTableContainer" id="uploadField">
 					<div class="postBlock">File</div>
 					<div class="postField">
-						<input type="file" name="file" id="file" /><br />
-						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on" />No File]</label></if>
-						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1" />Spoiler]</label></if>
-						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1" />NSFW]</label></if>
+						<input type="file" name="file" id="file"><br>
+						<if $textonly_inp><label>[<input type="checkbox" name="nofile" value="on">No File]</label></if>
+						<if SPOILERIMAGE_ENABLED><label>[<input type="checkbox" name="spoiler" value="1">Spoiler]</label></if>
+						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1">NSFW]</label></if>
 					</div>
 			</div></if>
 			<div class="postTableContainer">
@@ -1062,52 +1072,85 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				</div>
 			</div>
 			<if $session-\>[1] ne 'janitor'>
+			<div class="postTableContainer">
+				<div class="postBlock">Options</div>
+				<div class="postField">
+					<if $session-\>[1] eq 'admin'><label>[<input type="checkbox" name="no_format" value="1" />HTML]</label></if>
+					<label>[<input type="checkbox" name="capcode" value="1" />Capcode]</label>
+				</div>
+			</div>
+			
+			<if !$thread>
 				<div class="postTableContainer">
-					<div class="postBlock">Options</div>
-					<div class="postField">
-						<if $session-\>[1] eq 'admin'><label>[<input type="checkbox" name="no_format" value="1" />HTML]</label></if>
-						<label>[<input type="checkbox" name="capcode" value="1" />Capcode]</label>
-					</div>
+				<div class="postBlock">Flags</div>
+				<div class="postField">
+				<label>[<input type="checkbox" name="sticky" value="1" />Sticky]</label>
+				<label>[<input type="checkbox" name="locked" value="1" />Lock]</label>
 				</div>
-				
-				<if !$thread>
-					<div class="postTableContainer">
-					<div class="postBlock">Flags</div>
-					<div class="postField">
-					<label>[<input type="checkbox" name="sticky" value="1" />Sticky]</label>
-					<label>[<input type="checkbox" name="locked" value="1" />Lock]</label>
-					</div>
-				</div>
-				</if>
+			</div>
+			</if>
 			</if>
 		</div>
 	</form>
-</div>
 <script type="text/javascript">setPostInputs()</script></if>
-<hr class="postinghr" />
+<hr>
 <form id="delform" action="<var $self>" method="post">
-<input type="hidden" name="admin" value="<var $admin>" />
 <loop $threads>
-<if $thread><label>[<input type="checkbox" onchange="expandAllImages();" /> Expand Images ]</label></if>
+<if $thread><label class="desktop">[<input type="checkbox" onchange="expandAllImages();"> Expand Images ]</label></if>
 	<div class="thread"><loop $posts>
 		<if !$parent>
+			<div class="parentContainer">
 			<div class="parentPost<if $reported> reportedParent</if>" id="parent<var $num>">
-				<div class="hat"></div>
-				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-					<br />
+				<div class="mobile mobileParentPostInfo">
+					<input type="checkbox" name="delete" value="<var $num>">
+					<div class="leftblock">
+						<if $subject><span class="filetitle"><var $subject></span></if>
+						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+						<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+					</div>
+					<div class="rightblock">
+						<span class="date"><var $date></span>
+						<span class="reflink">
+							<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
+							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+							<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+							<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+						</span>
+						}.ADMIN_POST_BUTTONS_TEMPLATE.q{
+						<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>Mobile">[<span></span>]</a>
+						<div class="postMenu" id="postMenu<var $num>Mobile">
+							<div class="hasSubMenu" onmouseover="showSub(this);">
+								<span class="postMenuItem">Filter</span>
+								<div class="postMenu subMenu">
+									<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+								</div>
+							</div>
+							<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+							<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+							<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+						</div>
+					</div>
+					<div style="clear:both"></div>
+				</div>
+				<if $image>
+					<div class="fileinfo"><span class="filesize"><const S_PICNAME>
+					<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
+						<if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+					- (<var int($size/1024)> KB, <var $width>x<var $height>)</span></div>
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
+						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb"></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb"></if></a></if>
 					<if !$thumbnail>
-						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
+						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb"></a></if>
 					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
 				<a id="<var $num>"></a>
-				<span class="parentPostInfo">
-					<input type="checkbox" name="delete" value="<var $num>" />
+				<div class="parentPostInfo">
+					<input type="checkbox" name="delete" value="<var $num>">
 					<span class="filetitle"><var $subject></span>
 					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 					<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-					<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
+					<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+					<span class="date"><var $date></span>
 					<span class="reflink">
 					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
 					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
@@ -1117,50 +1160,100 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
 					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>
 					<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
-				</span>
-				<div class="postMenu" id="postMenu<var $num>">
-					<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+					<div class="postMenu" id="postMenu<var $num>">
+						<div class="hasSubMenu" onmouseover="showSub(this);">
+							<span class="postMenuItem">Filter</span>
+							<div class="postMenu subMenu">
+								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+							</div>
+						</div>
+						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+						<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+					</div>
 				</div>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
-				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+					<var $comment>
+					<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+					<if SHOW_STAFF_POSTS>
+						<if $capcodereplies\>0>
+							<br><br>
+							<span class="capcodeReplies">
+								<if $adminreplies><strong>Administrator Replies: </strong><var $adminreplies><br></if>
+								<if $modreplies><strong>Moderator Replies: </strong><var $modreplies><br></if>
+								<if $devreplies><strong>Developer Replies: </strong><var $devreplies><br></if>
+								<if $vipreplies><strong>VIPPER Replies: </strong><var $vipreplies></if>
+							</span>
+						</if>
+					</if>
 				</blockquote>
 			</div>
-			<if $omit><span class="omittedposts">
+			<if !$thread>
+			<div class="mobilePostReplyLink mobile">
+			<if $omit><span class="omittedposts mobile">
+				<if $omitimages><var sprintf S_ABBRIMG_M,$omit,$omitimages></if>
+				<if !$omitimages><var sprintf S_ABBR_M,$omit></if>
+			</span></if>
+				<a class="button" href="<var get_reply_link($num,0)>"><const S_REPLY></a>
+			</div>
+			</if>
+			</div>
+			
+			<if $omit><span class="omittedposts desktop">
 				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
 				<if !$omitimages><var sprintf S_ABBR,$omit></if>
-			</span></if></if>
+			</span></if>
+		</if>
 		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
 				<div class="doubledash">&gt;&gt;</div>
 				<div class="reply<if $reported> reportedReply</if>" id="reply<var $num>">
 					<a id="<var $num>"></a>
-					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>" />
-						<span class="replytitle"><var $subject></span>
-						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-						<var substr($date,0,index($date,"ID:"))><span class="id"><var substr($date, index($date,"ID:"))></span>
-						<span class="reflink">
-						<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
-						<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
-						}.ADMIN_POST_BUTTONS_TEMPLATE.q{
-						<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>">
+						<div class="leftblock">
+							<if $subject><span class="replytitle"><var $subject></span></if>
+							<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+							<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+							<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+						</div>
+						<div class="rightblock">
+							<span class="date"><var $date></span>
+							<span class="reflink">
+							<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
+							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if></span>
+							}.ADMIN_POST_BUTTONS_TEMPLATE.q{
+							<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>">[<span></span>]</a>
+							<div class="postMenu" id="postMenu<var $num>">
+								<div class="hasSubMenu" onmouseover="showSub(this);">
+									<span class="postMenuItem">Filter</span>
+									<div class="postMenu subMenu">
+										<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+									</div>
+								</div>
+								<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+								<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+								<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+							</div>
+						</div>
+						<div style="clear:both"></div>
 					</div>
-					
-					<div class="postMenu" id="postMenu<var $num>">
-						<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
-					</div>
-					
-					<if $image><br />
-						<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-						-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span><br />
+					<if $image>
+						<div class="fileinfo">
+							<span class="filesize">
+								<const S_PICNAME>
+								<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
+									<if !$filename><var get_filename($image)></a></if>
+									<if $filename><var truncateLine($filename)></a></if>
+								- (<var int($size/1024)> KB, <var $width>x<var $height>)
+							</span>
+						</div>
 						<if $thumbnail>
 							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;"></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>"></if></a>
 						</if>
 						<if !$thumbnail>
 							<if DELETED_THUMBNAIL>
 								<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
-								<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb" /></a>
+								<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb"></a>
 							</if>
 							<if !DELETED_THUMBNAIL>
 								<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
@@ -1173,35 +1266,42 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			</div></if>
 		</loop>
 	</div>
-	<hr />
+	<hr>
 </loop>
-
 <if $thread>
-	[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>"><const S_RETURN></a>]
-	[<a href="#">Top</a>]
-	<a name="bottom"></a>
+<div class="desktop threadlinks">
+[<a href="#">Top</a>]
+</div>
+<div class="mobile threadlinks">
+<a class="button" href="#">Top</a>
+<hr>
+</div>
+<a id="bottom"></a>
 </if>
 <div id="deleteForm">
-	<input type="hidden" name="task" value="delete" />
-	Delete Post
-	<label>[<input type="checkbox" name="fileonly" value="on" /> <const S_DELPICONLY>]</label>
-	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput"/>
-	<input value="<const S_DELETE>" type="submit" class="formButtom" />
-	<script type="text/javascript">setDelPass();</script>
+	<div class="styleChanger">
+		Style
+		<select id="styleSelector" onchange="set_stylesheet(value)">
+			<loop $stylesheets><option value="<var $title>"><var $title></option></loop>
+		</select>
+	</div>
 </div>
 </form>
 <if !$thread>
-	<div id="pageNumber">
-	<loop $pages>
-		<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
-		<if $current>[<var $page>]</if>
-	</loop>
-	</div><br />
+	<div class="pageNumber">
+		<if $prevpage><button onclick="location.href='<var $prevpage>'"><const S_PREV></button></if>
+		<if !$prevpage><const S_FIRSTPG></if>
+		<loop $pages>
+			<if !$current>[<a href="<var $filename>"><var $page></a>]</if>
+			<if $current>[<var $page>]</if>
+		</loop>
+		<if $nextpage><button onclick="location.href='<var $nextpage>'"><const S_NEXT></button></if>
+		<if !$nextpage><const S_LASTPG></if>
+	</div>
 </if>
 <div id="bottomNavStatic" class="staticNav">
 	<div style="float:right">
-		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Board Options</a>]
-		[<a href="<var $self>?task=mpanel&amp;admin=<var $admin>">Home</a>]
+		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Settings</a>]
 	</div>
 </div>
 </div>

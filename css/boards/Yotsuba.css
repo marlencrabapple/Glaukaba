@@ -1,5 +1,5 @@
 body {
-    background: #FFFFEE url(http://glauchan.org/img/fade.png) top center repeat-x;
+    background: #FFFFEE url(../../img/fade.png) top center repeat-x;
     color: #800000;
 }
 a, a:visited { color: #00E; }
@@ -15,7 +15,6 @@ a:hover { color: #DD0000 !important }
     border-left: none;
     border-top: none;
 }
-.reportedReply, .reportedParent { color: #000 }
 .topNavContainer {
 	background-color: #FEDDBA;
 	border-bottom: 1px solid #dcc5b8;
@@ -31,8 +30,6 @@ a:hover { color: #DD0000 !important }
 .theader {
     background: #E04000;
     color: #FFF;
-	font-weight: bold;
-	font-size: larger;
 }
 hr { border-top: 1px solid #D9BFB7 }
 .postBlock {
@@ -108,7 +105,7 @@ hr { border-top: 1px solid #D9BFB7 }
 .listRow:nth-child(odd) { background-color: #f0e0d6 }
 .listRow:nth-child(even) { background-color: #D9BFB7 }
 .listRow:hover { background: #F0C0B0 }
-.listPageHeader { background: #EEF2FF url(http://www.glauchan.org/img/fade-blue.png) top center repeat-x }
+.listPageHeader { background: #EEF2FF url(../../img/fade-blue.png) top center repeat-x }
 .staticNav { color: #B86; }
 .staticNav a { color: #800000; }
 .reportblock {
@@ -119,3 +116,35 @@ hr { border-top: 1px solid #D9BFB7 }
 .reportstats { border: 1px solid black }
 .reportright { border: 1px solid black }
 .catalogLink { border-left: 1px solid #B7C5D9 }
+
+@media only screen and (max-width: 480px){
+	.parentPost{
+		background: #f0e0d6;
+	}
+	.replyPostInfo {
+		border-bottom: 1px solid #D9BFB7;
+		background-color: #EAD6CA;
+	}
+	.mobileParentPostInfo {
+		border-bottom: 1px solid #D9BFB7;
+		background-color: #EAD6CA;
+	}
+	.parentContainer {
+		border-bottom: 1px solid #D9BFB7;
+		background-color: #EAD6CA;
+		padding: 0;
+	}
+	.button {
+		background-color: #f0e0d6;
+		border: 1px solid #c0a69d;
+		background-image: -moz-linear-gradient(top, #F7EAE3 0%, #E1D0C5 100%);
+		background-image: -webkit-linear-gradient(top, #F7EAE3 0%, #E1D0C5 100%);
+		background-image: linear-gradient(to bottom, #F7EAE3 0%, #E1D0C5 100%);
+	}
+	a.button{
+		color: #800;
+	}
+	.mobilePostReplyLink {
+		border-top: 1px solid #D9BFB7;
+	}
+}

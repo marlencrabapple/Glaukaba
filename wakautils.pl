@@ -234,7 +234,8 @@ sub do_wakabamark($;$$){
 		elsif(/^&gt;/){ # quoted sections
 			my @quote;
 			while($lines[0]=~/^(&gt;.*)/) { push @quote,$1; shift @lines; }
-			$res.="<span class=\"quote\">".do_spans($handler,@quote)."</span><br>";
+			my $bol = ((scalar @lines) < 1) ? "<br>" : "";
+			$res.=$bol."<span class=\"quote\">".do_spans($handler,@quote)."</span><br>";
 		}
 		else{ # normal text
 			my @text;

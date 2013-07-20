@@ -142,7 +142,7 @@ sub init(){
 	elsif($task eq "admin"){
 		my $user=$query->param("user");
 		my $password=$query->param("berra"); # lol obfuscation
-		my $nexttask=$query->param("nexttask"); # I should delete this
+		my $nexttask=$query->param("nexttask"); # i should delete this
 		my $savelogin=$query->param("savelogin");
 		my $admincookie=$query->cookie("wakaadmin");
 
@@ -3001,6 +3001,11 @@ sub make_admin_page($$){
 		else { $$p{filename}=get_script_name()."?admin=$admin&amp;task=viewthreads&amp;page=".$$p{page} }
 		if($$p{page}==$page) { $$p{current}=1 } # current page, no link
 	}
+	
+	
+	my ($prevpage,$nextpage);
+	$prevpage=$pages[$page-1]{filename} if($page!=0);
+	$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
 
 	make_http_header();
 	
@@ -3010,6 +3015,8 @@ sub make_admin_page($$){
 		image_inp=>ALLOW_IMAGES,
 		textonly_inp=>(ALLOW_IMAGES and ALLOW_TEXTONLY),
 		pages=>\@pages,
+		prevpage=>$prevpage,
+		nextpage=>$nextpage,
 		admin=>$admin,
 		session=>\@session,
 		threads=>\@pagethreads

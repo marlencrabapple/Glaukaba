@@ -60,15 +60,6 @@ display:inline
 .rightblock,.leftblock{
 display:inline
 }
-.reportedReply {
-    background: #FBB;
-    border: 3px dashed red;
-}
-.reportedParent {
-    background: #FBB;
-    border: 3px dashed red;
-    display: inline-block;
-}
 #quickReply {
     top: 0;
     right: 0;
@@ -134,10 +125,12 @@ display:inline
 }
 .pageForm { display: inline }
 .theader {
-    padding: 2px;
     text-align: center;
     width: 100%;
     margin-bottom: 5px;
+	padding: 2px 0;
+	font-size:larger;
+	font-weight:bold;
 }
 .rules {
     font-size: 10px;
