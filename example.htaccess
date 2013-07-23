@@ -17,9 +17,3 @@ Header add Cache-Control "max-age=0; must-revalidate; no-cache"
 Header unset Vary
 </Files>
 </IfModule>
-
-<IfModule mod_rewrite.c>
-RewriteEngine On
-RewriteCond %{HTTP_ACCEPT} application/xhtml\+xml
-RewriteRule \.html$ - [T=application/xhtml+xml;charset=utf-8]
-</IfModule>
