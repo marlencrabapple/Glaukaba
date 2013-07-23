@@ -158,7 +158,7 @@ sub describe_allowed(%){
 
 sub do_wakabamark($;$$){
 	my ($text,$handler,$simplify)=@_;
-	my ($res);
+	my ($res,@handlers);
 	
 	my @lines=split /(?:\r\n|\n|\r)/,$text;
 
@@ -185,7 +185,7 @@ sub do_wakabamark($;$$){
 		# skip continuous empty lines
 		if(/^\s*$/){
 			my $i=0;
-			while(($lines[0]=~/^\s*$/)&&(scalar @lines != 0)) { $res.=(($i==0)&&(scalar @lines > 1)) ? "<br>" : ""; shift @lines; $i++; if($i>1000){make_error("Something is very wrong.");}}
+			while(($lines[0]=~/^\s*$/)&&(scalar @lines != 0)) { $res.=(($i==0)&&(scalar @lines > 1)) ? "<br>" : ""; shift @lines; $i++; if($i>1000){ make_error("Something is very wrong."); }}
 		}
 		elsif((/\[(code|spoiler|sjis)\]/) || (/\[\/(code|spoiler|sjis)\]/)){ # skip code, sjis, and spoiler blocks
 			my $delimiter = $1; # scope is just a state of mind
@@ -234,15 +234,15 @@ sub do_wakabamark($;$$){
 		elsif(/^&gt;/){ # quoted sections
 			my @quote;
 			while($lines[0]=~/^(&gt;.*)/) { push @quote,$1; shift @lines; }
-			my $bol = ((scalar @lines) < 1) ? "<br>" : "";
-			$res.=$bol."<span class=\"quote\">".do_spans($handler,@quote)."</span><br>";
+			my $eol = ((scalar @lines) >= 1) ? "<br>" : "";
+			$res.="<span class=\"quote\">".do_spans($handler,@quote)."</span>".$eol;
 		}
 		else{ # normal text
 			my @text;
 			
 			while($lines[0]!~/^(?:\s*$|1\. |[\*\+\-] |&gt;|\[(code|spoiler|sjis)\]|[^\s]{100,})/) { push @text,shift @lines; } # these are wakabamark delimiters i think
 			if(!defined($lines[0]) and $simplify) { $res.=do_spans($handler,@text) }
-			else{ my $eol = ((scalar @lines) > 1) ? "<br>" : ""; $res.=do_spans($handler,@text).$eol; }
+			else{ my $eol = ((scalar @lines) >= 1) ? "<br>" : ""; $res.=do_spans($handler,@text).$eol; }
 		}
 		$simplify=0;
 	}
@@ -441,7 +441,7 @@ sub mahou_inyoufu($){
 	$dengus=~s/\\/\Q\\\E/g;
 	$dengus=~s/\//\\\//g;
 	$dengus=~s/(?<!\\)\"/\\"/g;
-	$dengus=~s/\t/    /g; # i don't know what I'm doing
+	$dengus=~s/\t/\\t/g; # i don't know what I'm doing
 	return $dengus;
 }
 

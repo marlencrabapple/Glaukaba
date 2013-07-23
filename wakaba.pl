@@ -487,14 +487,12 @@ sub restart_script($){
 	last FASTCGI;
 }
 
-sub make_thread_list(@){
-	my (@rows)=@_; # less queries = less load
+sub make_thread_list($;$){
+	my ($rows,$postcount)=@_;
 	my (@threads,$filename);
 	
-	foreach my $row (@rows){
-		my ($posts,$size)=count_posts($$row{num});
-		$$row{'postcount'}=$posts; # add post count to hash
-		$$row{'threadsize'}=$size; # guess
+	foreach my $row (@$rows){
+		$$row{postcount}=$$postcount{$$row{num}} ? $$postcount{$$row{num}} : 0; # add post count to hash
 		push @threads,$row;
 	}
 	
@@ -502,14 +500,13 @@ sub make_thread_list(@){
 	print_page($filename,LIST_TEMPLATE->(threads=>\@threads));
 }
 
-sub make_catalog(@){
-	my (@rows)=@_;
+sub make_catalog($;$$){
+	my ($rows,$postcount,$imagecount)=@_;
 	my ($filename,@threads);
 	
-	foreach my $row (@rows){
-		my ($posts,$size,$images)=count_posts($$row{num},1);
-		$$row{'postcount'}=$posts-1; # add post count to hash
-		$$row{'imagecount'}=$images-1; # add image count to hash
+	foreach my $row (@$rows){
+		$$row{postcount}=$$postcount{$$row{num}} ? $$postcount{$$row{num}} : 0; # add post count to hash
+		$$row{imagecount}=$$imagecount{$$row{num}} ? $$imagecount{$$row{num}} : 0; # add image count to hash
 		push @threads,$row;
 	}
 	
@@ -517,14 +514,14 @@ sub make_catalog(@){
 	print_page($filename,CATALOG_TEMPLATE->(threads=>\@threads));
 }
 
-sub make_searchable_catalog(@){
-	my (@rows)=@_;
+sub make_searchable_catalog($;$$){
+	my ($rows,$postcount,$imagecount)=@_;
 	my ($filename,@threads);
 	
-	foreach my $row (@rows){
+	foreach my $row (@$rows){
 		my ($posts,$size,$images)=count_posts($$row{num},1);
-		$$row{'postcount'}=$posts-1; # add post count to hash
-		$$row{'imagecount'}=$images-1; # add image count to hash
+		$$row{postcount}=$$postcount{$$row{num}} ? $$postcount{$$row{num}} : 0; # add post count to hash
+		$$row{imagecount}=$$imagecount{$$row{num}} ? $$imagecount{$$row{num}} : 0; # add image count to hash
 		push @threads,$row;
 	}
 	
@@ -634,6 +631,7 @@ sub build_cache(){
 		my (@threads);
 		my @thread=($row);
 		my @parentposts=($row);
+		my ($postcount,$imagecount)={};
 
 		while($row=get_decoded_hashref($sth)){
 			if(!$$row{parent}){
@@ -643,15 +641,17 @@ sub build_cache(){
 			}
 			else
 			{
+				$$postcount{$$row{parent}}+=1;
+				$$imagecount{$$row{parent}}+=1 if ENABLE_CATALOG && $$row{image};
 				push @thread,$row;
 			}
 		}
 		push @threads,{posts=>[@thread]};
-		
+
 		# hurray for optimization
-		make_thread_list(@parentposts) if ENABLE_LIST;
-		make_catalog(@parentposts) if ENABLE_CATALOG==1;
-		make_searchable_catalog(@parentposts) if ENABLE_CATALOG==2;
+		make_thread_list(\@parentposts,$postcount) if ENABLE_LIST;
+		make_catalog(\@parentposts,$postcount,$imagecount) if ENABLE_CATALOG==1;
+		make_searchable_catalog(\@parentposts,$postcount,$imagecount) if ENABLE_CATALOG==2;
 
 		my $total=get_page_count(scalar @threads);
 		my @pagethreads;
@@ -1455,14 +1455,14 @@ sub format_comment($){
 	#$comment=~s/&gt;&gt;([0-9\-]+)/&gtgt;$1/g;
 	$comment=~s/&gt;&gt;(?:&(gt);(\/[A-Za-z0-9-]+\/))?([0-9\-]+)?/&gtgt$1;$2$3/g; # fixed for cross-board linking
 
-	my $handler=sub # fix up >>1 references
-	{
+	# fix up >>1 references
+	my $handler=sub{
 		my $line=shift;
 		
 		# Cross-board post citation
 		$line=~s!&gtgtgt;/([A-Za-z0-9-]+)/([0-9]+)!
 			my $res=get_cb_post($1,$2);
-			if($res) { '<a href="'.get_cb_reply_link($1,$$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;&gt;/'.$1.'/'.$2.'</a>' }
+			if($res) { '<a href="http://'.get_cb_reply_link($1,$$res{num},$$res{parent}).'" onclick="highlight('.$1.')" class="postlink">&gt;&gt;&gt;/'.$1.'/'.$2.'</a>' }
 			else { "<span class=\"quote\">&gt;&gt;&gt;/$1/$2</span>"; }
 		!ge;
 		
@@ -3355,13 +3355,13 @@ sub get_cb_reply_link($$$){
 	my ($board,$reply,$parent)=@_;
 	if(REWRITTEN_URLS){
 		return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
-		return expand_filename("../$board/".RES_DIR.$parent).'#'.$reply if($parent);
-		return expand_filename("../$board/".RES_DIR.$reply);
+		return DOMAIN."/$board/".RES_DIR.$parent.'#'.$reply if($parent);
+		return DOMAIN."/$board/".RES_DIR.$reply;
 	}
 	else{
 		return get_reply_link($reply,$parent) if($board eq SQL_TABLE);
-		return expand_filename("../$board/".RES_DIR.$parent.PAGE_EXT).'#'.$reply if($parent);
-		return expand_filename("../$board/".RES_DIR.$reply.PAGE_EXT);
+		return DOMAIN."/$board/".RES_DIR.$parent.PAGE_EXT.'#'.$reply if($parent);
+		return DOMAIN."/$board/".RES_DIR.$reply.PAGE_EXT;
 	}
 }
 

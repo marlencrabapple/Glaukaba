@@ -6,14 +6,14 @@ function init(orderBy, searchTerms){
 	$("#catItem0").remove();
 	$(".catItem").remove();
 	
-	if(noExt==1){
+	if(sitevars.noext==1){
 		ext="";
 	}
 	
 	// load json and build catalog items
 	$(catalog.threads).each(function(index){
 		var catItem=$(catItemTemplate).clone();
-		var url=boardPath+"res/"+this.no+ext;
+		var url=sitevars.boardpath+"res/"+this.no+ext;
 		var sub="";
 		
 		if(!this.image){
@@ -26,7 +26,7 @@ function init(orderBy, searchTerms){
 				height=250;
 			}
 			
-			noFileImage=domain+"img/nofile.png";
+			noFileImage=sitevars.domain+"img/nofile.png";
 		}
 		else{
 			if(localStorage.getItem("thumbSize")=="small" || localStorage.getItem("thumbSize")==null){
@@ -38,14 +38,14 @@ function init(orderBy, searchTerms){
 				var height=this.tn_h;
 			}
 			
-			thumbUrl=boardPath+this.image;
+			thumbUrl=sitevars.boardpath+this.image;
 		}
 		
 		$(catItem).attr("id","catItem"+this.no);
 		
 		$(catItem).children("#catItemHoverLink0").attr("id","catItemHoverLink"+this.no);
 		$(catItem).children("#catItemHoverLink"+this.no).attr("href",url);
-		//$(catItem).children("#catItemLink"+this.no).attr("href",boardPath+"res/"+this.no);
+		//$(catItem).children("#catItemLink"+this.no).attr("href",sitevars.boardpath+"res/"+this.no);
 		
 		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover0").attr("id","catItemHover"+this.no);
 		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).width(width);

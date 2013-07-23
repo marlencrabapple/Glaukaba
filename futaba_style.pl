@@ -55,6 +55,19 @@ use constant BOARD_OPTIONS => q{
 </if>
 };
 
+use constant SITE_VARS_INCLUDE => q{
+<script>
+var sitevars = {
+	"sitename": "<const SITE_NAME>",
+	"domain": "//<const DOMAIN>/",
+	"boarddir": "<const BOARD_DIR>",
+	"boardpath": "//<const DOMAIN>/<const BOARD_DIR>/",
+	"social": <if SOCIAL>1</if><if !SOCIAL>0</if>,
+	"noext": <if REWRITTEN_URLS>1</if><if !REWRITTEN_URLS>0</if>
+};
+</script>
+};
+
 use constant NORMAL_HEAD_INCLUDE => q{
 <!DOCTYPE html>
 <html>
@@ -80,16 +93,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </loop>
 <link rel="stylesheet" href="//<var DOMAIN>/css/mobile.css">
 <link href="//<var DOMAIN>/css/prettify.css" type="text/css" rel="stylesheet">
-<script>
-var sitename = "<const SITE_NAME>";
-var domain = "//<const DOMAIN>/";
-var boardDir = "<const BOARD_DIR>";
-var boardPath = "//<const DOMAIN>/<const BOARD_DIR>/";
-var social = 0;
-<if SOCIAL==1>social = 1;</if>
-var noExt = 0;
-<if REWRITTEN_URLS==1>noExt = 1;</if>
-</script>
+}.SITE_VARS_INCLUDE.q{
 <if !$noextra>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 </if>
@@ -122,7 +126,7 @@ var noExt = 0;
 </div>
 <div class="logo">
 	<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const TITLE>"></div></if>
-	<span class="title"><const TITLE></span>
+	<h2 class="title"><const TITLE></h2>
 	<p class="logoSubtitle"><const SUBTITLE></p>
 	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
@@ -185,18 +189,10 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<if !$noextra><script type="text/javascript" src="//<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script></if>
 		<if $admin><script type="text/javascript" src="//<var DOMAIN>/js/glaukaba-admin.js"></script></if>
 		<if !$noextra>
-			<script type="text/javascript" src="//<var DOMAIN>/js/prettify/prettify.js"></script>
-			<script type="text/javascript" src="//<var DOMAIN>/js/jquery.jqote2.min.js"></script>
+		<script type="text/javascript" src="//<var DOMAIN>/js/prettify/prettify.js"></script>
+		<script type="text/javascript" src="//<var DOMAIN>/js/jquery.jqote2.min.js"></script>
 		</if>
-		<script>
-			var domain = "//<var DOMAIN>/";
-			var boardDir = "<var BOARD_DIR>";
-			var boardPath = "//<var DOMAIN>/<var BOARD_DIR>/";
-			var social = 0;
-			<if SOCIAL==1>social = 1;</if>
-			var noExt = 0;
-			<if REWRITTEN_URLS==1>noExt = 1;</if>
-		</script>
+		}.SITE_VARS_INCLUDE.q{
 	</head>
 	<if $thread><body class="replypage"></if>
 	<if $indexpage><body class="indexpage"></if>
@@ -231,11 +227,7 @@ use constant CONTENT_HEAD_INCLUDE => q{
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="//<var DOMAIN>/js/logo.js"></script>
-		<script>
-			var domain = "//<var DOMAIN>/";
-			var boardDir = "<var BOARD_DIR>";
-			var boardPath = "//<var DOMAIN>/<var BOARD_DIR>/";
-		</script>
+		}.SITE_VARS_INCLUDE.q{
 	</head>
 	<body class="contentPage">
 	<a id="top"></a>
@@ -329,7 +321,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<div class="passNotice">
 								Bypass this CAPTCHA.
 								[<a href="<if REWRITTEN_URLS>//<var DOMAIN>/pass/</if><if !REWRITTEN_URLS>//<var DOMAIN>/<const BOARD_DIR>/wakaba.pl?task=getpass</if>">Learn More</a>]
-								
 							</div>
 						</if>
 					</div>
@@ -408,8 +399,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 									<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 								</div>
 							</div>
-							<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-							<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+							<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+							<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 							<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 						</div>
 					</div>
@@ -456,8 +447,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 							</div>
 						</div>
-						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 						<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 				</div>
@@ -525,8 +516,8 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 										<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
 									</div>
 								</div>
-								<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-								<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(window.location.hostname,<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+								<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+								<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 								<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 							</div>
 						</div>
@@ -682,7 +673,7 @@ use constant LIST_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		<td class="listHead" style="width:1%">Post No.</td>
 	</tr></thead>
 	<tbody><loop $threads><tr class="listRow">
-		<td class="listCol"><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount-1> <if $postcount\>2 or $postcount==1>replies</if><if $postcount==2>reply</if>]</td>
+		<td class="listCol"><a href="/<var BOARD_DIR>/res/<var $num>"><if $subject><var $subject></a></if><if !$subject><var truncateComment($comment)></a></if>&nbsp;&nbsp;[<var $postcount> <if $postcount\>1 or $postcount==0>replies</if><if $postcount==1>reply</if>]</td>
 		<td class="listCol"><span class="postername"><var $name></span> <span class="postertrip"><var $trip></span></td>
 		<td class="listCol"><var make_date($timestamp,"tiny")></td>
 		<td class="listCol">No.<var $num></td>
@@ -794,8 +785,8 @@ use constant SEARCH_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div class="logo" style="text-align: center; width:800px;margin-left:auto; margin-right:auto;">
-	<span class="title">You (<var dec_to_dot $ip>) have been banned!</span>
-	<br><br><hr>
+	<h2 class="title">You (<var dec_to_dot $ip>) have been banned!</h2>
+	<hr>
 	<div style="float:left; width: 49.1%">
 	<img src="//<var DOMAIN>/img/banned.png"/>
 	</div>
@@ -821,7 +812,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 			<h2>Get a <const SITE_NAME> Pass</h2>
 		</div>
 		<div class="boxContent">
-			<p style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px;"><strong>&rarr; Already have a <const SITE_NAME> pass? <a href="<var $self>?task=passauth">Click here</a> to login. &larr;</strong></p>
+			<p style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px;"><strong>&rarr; Already have a <const SITE_NAME> pass? <a href="<if !REWRITTEN_LINKS><var $self>?task=passauth</if><if REWRITTEN_LINKS><var $self>/pass/auth</if>">Click here</a> to login. &larr;</strong></p>
 			<hr>
 			<p>A <const SITE_NAME> pass is a feature intended to simplify the posting experience for loyal and quality posters. The <const SITE_NAME> Pass's main and only feature is the ability to bypass reCAPTCHA, a necessary evil to avoid spam and floods from other imageboard communities. Although inspired by 4chan's pass system, <const SITE_NAME> Pass is similar only in function. Unlike 4chan Pass, <const SITE_NAME> Pass costs nothing, and will be compatible across multiple sites running <const SITE_NAME> in the future.</p>
 			<p>You will not be able to bypass reCAPTCHA immediately after registering for a <const SITE_NAME> Pass. After signing up, you will be automatically logged into the pass system, and your posts will be identifiable by your pass, regardless of your IP address. After you've made a minimum of 5 posts while logged in with your pass, a <const SITE_NAME> moderator or administrator will either approve or deny your pass application. As long as the posts don't break any rules, chances are you will be approved immediately after review.</p>
@@ -947,7 +938,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 use constant PASS_SUCCESS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div style="text-align:center">
 <div class="logo">
-<span class="title"><const SITE_NAME> Pass</span>
+<h2 class="title"><const SITE_NAME> Pass</h2>
 <hr>
 <br>
 </div>
@@ -964,7 +955,7 @@ use constant PASS_SUCCESS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 
 use constant AUTHORIZE_PASS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 <div class="logo">
-<span class="title"><const SITE_NAME> Pass</span>
+<h2 class="title"><const SITE_NAME> Pass</h2>
 <hr>
 <br>
 </div>

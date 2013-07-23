@@ -37,14 +37,10 @@ margin-right:auto;
 .reply {
     display: table;
     padding: 2px;
-    word-wrap: break-word;
-    white-space: normal;
 }
 #postFormToggle { display: none }
 .replyContainer {
     display: block;
-    word-wrap: break-word;
-    white-space: nowrap;
     margin-bottom: 4px;
     margin-top: 4px;
 }
@@ -101,7 +97,7 @@ display:inline
     font-size: 28px;
     font-weight: bold;
     letter-spacing: -2px;
-    margin-top: 0px;
+    margin:0;
 }
 .logoSubtitle {
     font-size: x-small;
@@ -566,7 +562,6 @@ div#deleteForm input[type="checkbox"] { margin: 1px 2px 1px 2px }
 }
 .listHead {
     background: #98E;
-    color: black;
     font-size: 10pt;
     font-weight: bold;
     line-height: 20px;
@@ -639,9 +634,8 @@ iframe[src="about:blank"] { display: none }
 .capcodeReplies { font-size: smaller }
 .longtext {
     word-wrap: break-word;
-    white-space: normal;
+	word-break: break-all;
     display: inline-block;
-    max-width: 800px;
 }
 .catalogLink {
     border-left: 1px solid #B7C5D9;

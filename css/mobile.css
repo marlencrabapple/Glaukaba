@@ -31,7 +31,6 @@
 	.reply {
 		width: 100%;
 		display: inline-block;
-		overflow: hidden;
 		clear: both;
 		text-align: left;
 		margin: 0 auto 0 auto;
