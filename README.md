@@ -22,8 +22,8 @@ A semi-current version of this software is in use on http://www.glauchan.org and
 
 ## Issues ##
 
-	Single board installations will require a bit of tinkering. Then again, so will any installation.
-	This software has only one known production installation on the entire world wide web, so this software isn't exactly tried and proven.
-	URL rewriting isn't optional yet.
-	SQLite support isn't perfect.
-	FastCGI seems to work, but that's only because I haven't tested it enough to see it not work.
+- Single board installations will require a bit of tinkering. Then again, so will any installation.
+- This software has only one known production installation on the entire world wide web, so this software isn't exactly tried and proven.
+- URL rewriting isn't optional yet.
+- SQLite support isn't perfect.
+- FastCGI seems to work, but that's only because I haven't tested it enough to see it not work.

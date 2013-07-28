@@ -54,12 +54,10 @@ hr { border-top: 1px solid #282a2e; }
     width: 100%;
 }
 .row1 {
-    background: #EEC;
-    color: maroon;
+    background-color: rgb(40, 42, 46);
 }
 .row2 {
-    background: #DDA;
-    color: maroon;
+    background-color: rgb(13, 19, 30);
 }
 .unkfunc {
     color: #789922;
@@ -103,7 +101,7 @@ hr { border-top: 1px solid #282a2e; }
 }
 .listRow:nth-child(even) { background-color: #0D131E }
 .listRow:nth-child(odd) { background-color: #282a2e }
-.listRow:hover { background: #98B }
+.listRow:hover { outline:2px dotted #ccc; }
 /*.listPageHeader { background: #EEF2FF url(../../img/fade-blue.png) top center repeat-x }*/
 .staticNav { color: #89A }
 .staticNav a { color: #34345C }
@@ -126,7 +124,9 @@ color:#b5bd68;
 #overlay {
 background:rgba(255,255,255,0.3);
 }
-
+.sqldump{
+color:black;
+}
 @media only screen and (max-width: 480px){
 	body{
 		background: #0D131E;

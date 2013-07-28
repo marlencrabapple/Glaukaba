@@ -359,11 +359,34 @@
 	.threadlinks>.button {
 		display: inline-block;
 	}
+	
+	a {
+		white-space: normal;
+		word-break: break-all;
+		word-wrap: break-word;
+	}
 
 	.expandedThumb {
 		float: none!important;
 		max-width: none;
 		max-height: none;
+	}
+	
+	.pageNumber{
+	margin:0 auto;
+	text-align:center;
+	}
+	.pageNumber button{
+	/*display:none*/
+	}
+	.catalogLink{
+	display:block;
+	border: none;
+	margin:2px 0;
+	padding:0;
+	}
+	.pageNumber span.no-button{
+	display:none
 	};
 }
 

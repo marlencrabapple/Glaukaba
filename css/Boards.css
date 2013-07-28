@@ -14,6 +14,11 @@ input[type=checkbox] { margin: 3px 3px 3px 4px }
 margin-left:auto;
 margin-right:auto;
 }
+.reply a, .parentPost a{
+white-space:normal;
+word-break: break-all;
+word-wrap: break-word;
+}
 .postInput {
     outline: none;
     padding: 2px 4px 3px;
@@ -217,14 +222,6 @@ div.postBlock {
     color: maroon;
     padding: 0;
     width: 100%;
-}
-.row1 {
-    background: #EEC;
-    color: maroon;
-}
-.row2 {
-    background: #DDA;
-    color: maroon;
 }
 .unkfunc {
     color: #789922;
@@ -656,4 +653,8 @@ height:125px;
 box-sizing:border-box;
 margin: 3px 0 0 20px;
 overflow-x:auto;
+}
+a.postMenuItem{
+word-break: normal;
+word-wrap: normal;
 }
