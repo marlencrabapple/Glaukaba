@@ -35,7 +35,7 @@ This is a list of features I believe make Glaukaba stand out from other free ima
 - Mobile interface
 - Its not Kusaba X
 - Anything you've come to expect after being spoiled by 4chan's new-found interest in improving their site
-A complete list of features can be found at http://onlinebargainshrimptoyourdoor.com/2012/07/22/glaukaba/ and http://www.glauchan.org/meta/res/410
+- A complete list of features can be found at http://onlinebargainshrimptoyourdoor.com/2012/07/22/glaukaba/ and http://www.glauchan.org/meta/res/410
 
 ## Support ##
 Free support is available via email at mrmanager@glauchan.org and on http://www.glauchan.org/meta/res/410
