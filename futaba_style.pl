@@ -112,7 +112,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <a id="top"></a>
 <div id="topNavStatic" class="staticNav">
 	[<loop BOARDS><a href="//<const DOMAIN>/<var $dir>/" title="/<var $dir>/ - <var $name>"><var $dir></a><if !$lastBoard> / </if></loop>]
-	<if LINKS>[<loop LINKS><a href="<var $url>"><var $name></a><if !$lastlink> / </if></loop>]</if>
+	<if LINKS>[<loop LINKS><a href="<var $url>" <if $rel>rel="<var $rel>"</if>><var $name></a><if !$lastlink> / </if></loop>]</if>
 	<div style="float:right">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Settings</a>]
 		[<a href="//<const DOMAIN>">Home</a>]
@@ -126,8 +126,8 @@ use constant NORMAL_HEAD_INCLUDE => q{
 </div>
 <div class="logo">
 	<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const TITLE>"></div></if>
-	<h2 class="title"><const TITLE></h2>
-	<p class="logoSubtitle"><const SUBTITLE></p>
+	<h1 class="title"><const TITLE></h1>
+	<h2 class="logoSubtitle"><const SUBTITLE></h2>
 	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
 <if !$thread><if $indexpage>
@@ -162,7 +162,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 	<head>
 		<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
-		<title><if $title><var $title> - </if><const TITLE></title>
+		<title><if $title><var $title> - </if><if $noboard><const TITLE></if><if !$noboard><const SITE_NAME></if></title>
 		<link rel="shortcut icon" href="<var expand_filename(FAVICON)>">
 		<style type="text/css">
 			form { margin-bottom: 0px }
@@ -206,7 +206,7 @@ use constant CONTENT_HEAD_INCLUDE => q{
 	<head>
 		<meta http-equiv="Content-Type" content="text/html;charset=<const CHARSET>">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
-		<title><if $title><var $title> - </if><const TITLE></title>
+		<title><if $title><var $title> - </if><const SITE_NAME></title>
 		<link rel="shortcut icon" href="<var expand_filename(FAVICON)>">
 		<style type="text/css">
 			body { margin: 0; margin-bottom: auto; }
@@ -804,7 +804,7 @@ use constant BAN_PAGE_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 <div id="doc">
 	<div class="logo">
-		<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const TITLE>"></div></if>
+		<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const SITE_NAME> Pass" title="<const SITE_NAME> Pass"></div></if>
 		<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 	</div>
 	<div id="topBox" class="box full red">
@@ -812,7 +812,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 			<h2>Get a <const SITE_NAME> Pass</h2>
 		</div>
 		<div class="boxContent">
-			<p style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px;"><strong>&rarr; Already have a <const SITE_NAME> pass? <a href="<if !REWRITTEN_LINKS><var $self>?task=passauth</if><if REWRITTEN_LINKS><var $self>/pass/auth</if>">Click here</a> to login. &larr;</strong></p>
+			<h3 style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px; font-weight:normal"><strong>&rarr; Already have a <const SITE_NAME> pass? <a href="<if !REWRITTEN_LINKS><var $self>?task=passauth</if><if REWRITTEN_LINKS>//<const DOMAIN>/pass/auth</if>">Click here</a> to login. &larr;</strong></h3>
 			<hr>
 			<p>A <const SITE_NAME> pass is a feature intended to simplify the posting experience for loyal and quality posters. The <const SITE_NAME> Pass's main and only feature is the ability to bypass reCAPTCHA, a necessary evil to avoid spam and floods from other imageboard communities. Although inspired by 4chan's pass system, <const SITE_NAME> Pass is similar only in function. Unlike 4chan Pass, <const SITE_NAME> Pass costs nothing, and will be compatible across multiple sites running <const SITE_NAME> in the future.</p>
 			<p>You will not be able to bypass reCAPTCHA immediately after registering for a <const SITE_NAME> Pass. After signing up, you will be automatically logged into the pass system, and your posts will be identifiable by your pass, regardless of your IP address. After you've made a minimum of 5 posts while logged in with your pass, a <const SITE_NAME> moderator or administrator will either approve or deny your pass application. As long as the posts don't break any rules, chances are you will be approved immediately after review.</p>

@@ -576,15 +576,23 @@ use constant EDIT_USER_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 }.NORMAL_FOOT_INCLUDE);
 
 use constant COMPOSE_MESSAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-	<div align="center">Compose Message<em></em>
-		<div class="postarea"><form id="changePass" action="<var $self>" method="post" enctype="multipart/form-data">
-		<table><tbody><input type="hidden" name="task" value="sendmsg" />
-		<input type="hidden" name="admin" value="<var $admin>" />
-		<if $parentmsg><input type="hidden" name="replyto" value="<var $parentmsg>" /><tr><td class="postBlock">Reply To</td><td><input type="text" name="replyto" disabled="true" value="<var $parentmsg>" /></td></tr></if>
-		<if !$parentmsg><tr><td class="postBlock">To</td><td><input type="text" name="to" value="<var $to>" size="28" /></td></tr></if>
-		<tr><td class="postBlock">Message</td><td><textarea name="message" cols="48" rows="4"></textarea></td></tr>
-		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
-	</tbody></table></form></div>
+<div align="center">
+	<em>Compose Message</em>
+	<div class="postarea">
+		<form id="changePass" action="<var $self>" method="post" enctype="multipart/form-data">
+			<table>
+				<tbody>
+				<input type="hidden" name="task" value="sendmsg" />
+				<input type="hidden" name="admin" value="<var $admin>" />
+				<if $parentmsg><input type="hidden" name="replyto" value="<var $parentmsg>" /><tr><td class="postBlock">Reply To</td><td><input type="text" name="replyto" disabled="true" value="<var $parentmsg>" /></td></tr></if>
+				<if !$parentmsg><tr><td class="postBlock">To</td><td><input type="text" name="to" value="<var $to>" size="28" /></td></tr></if>
+				<tr><td class="postBlock">Message</td><td><textarea name="message" cols="48" rows="4"></textarea></td></tr>
+				<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
+				</tbody>
+			</table>
+		</form>
+	</div>
+</div>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant INBOX_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{

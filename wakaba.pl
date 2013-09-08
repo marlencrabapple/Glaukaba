@@ -765,8 +765,11 @@ sub build_cache_page($$@){
 	my ($prevpage,$nextpage);
 	$prevpage=$pages[$page-1]{filename} if($page!=0);
 	$nextpage=$pages[$page+1]{filename} if($page!=$total-1);
+	
+	my $pagetitle = $page != 0 ? 'Page '.$page : undef;
 
 	print_page($filename,PAGE_TEMPLATE->(
+		title=>$pagetitle,
 		indexpage=>1,
 		postform=>(ALLOW_TEXTONLY or ALLOW_IMAGES),
 		image_inp=>ALLOW_IMAGES,
@@ -2068,6 +2071,9 @@ sub dismiss_remort($$){
 	
 	$sth=$dbh->prepare("DELETE FROM ".SQL_REPORT_TABLE." WHERE postnum=? AND board=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num,BOARD_DIR) or make_error(S_SQLFAIL);
+	
+	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET newreports=0") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=viewreports",ALTERNATE_REDIRECT);
 }
@@ -3773,7 +3779,8 @@ sub get_decoded_arrayref($){
 sub make_pass_page(){
 	make_http_header();
 	print encode_string(REGISTER_PASS_TEMPLATE->(
-		title => SITE_NAME." Pass"
+		title => SITE_NAME." Pass",
+		noboard => 1
 	));
 }
 
@@ -3833,7 +3840,9 @@ sub add_pass($$$){
 	make_http_header();
 	print encode_string(PASS_SUCCESS_TEMPLATE->(
 		pin=>$pin,
-		token=>$token
+		token=>$token,
+		title => SITE_NAME." Pass",
+		noboard => 1
 	));
 }
 

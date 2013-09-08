@@ -305,6 +305,9 @@ span:hover.spoiler { color: #FFF }
     clear: both;
     display: table-cell;
 }
+.omittedposts a{
+	text-decoration:none;
+}
 .adminName { color: red }
 .adminTrip { color: red }
 .adminCap {
@@ -628,7 +631,7 @@ iframe[src="about:blank"] { display: none }
     margin: 0px 5px;
     padding: 0;
 }
-.capcodeReplies { font-size: smaller }
+.capcodeReplies > a, .capcodeReplies > strong { font-size: smaller }
 .longtext {
     word-wrap: break-word;
 	word-break: break-all;
