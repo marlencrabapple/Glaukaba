@@ -1,403 +1,444 @@
 @media only screen and (max-width: 480px) {
-	body {
-		margin: 0 0px 0 0;
-	}
+  body {
+    margin: 0 0px 0 0;
+  }
 
-	#delform hr {
-		margin: 20px 0 20px 0;
-	}
+  #delform hr {
+    margin: 20px 0 20px 0;
+  }
 
-	#delform hr:last-child {
-		margin: 20px 0 0 0!important;
-	}
+  #delform hr:last-child {
+    margin: 20px 0 0 0!important;
+  }
 
-	#deleteForm  > .formButton input {
-		margin: 2px;
-		padding: 2px 6px 3px;
-	}
-	
-	#deleteForm{
-		display: none;
-	}
+  #deleteForm  > .formButton input {
+    margin: 2px;
+    padding: 2px 6px 3px;
+  }
 
-	.desktop {
-		display: none;
-	}
+  #deleteForm {
+    display: none;
+  }
 
-	.mobile {
-		display: block;
-	}
+  .desktop {
+    display: none;
+  }
 
-	.reply {
-		width: 100%;
-		display: inline-block;
-		clear: both;
-		text-align: left;
-		margin: 0 auto 0 auto;
-		border: none;
-		padding: 0;
-	}
+  .mobile {
+    display: block;
+  }
 
-	.replyContainer {
-		width: 97%;
-		text-align: center;
-		margin: 5px auto 0 auto;
-	}
+  .reply {
+    width: 100%;
+    display: inline-block;
+    clear: both;
+    text-align: left;
+    margin: 0 auto 0 auto;
+    border: none;
+    padding: 0;
+  }
 
-	.parentPost {
-		display: inline-block;
-		word-wrap: break-word;
-		white-space: normal;
-		width: 100%;
-		margin: 0;
-		padding: 0;
-	}
+  .replyContainer {
+    width: 97%;
+    text-align: center;
+    margin: 5px auto 0 auto;
+  }
 
-	.doubledash {
-		display: none;
-	}
+  .parentPost {
+    display: inline-block;
+    word-wrap: break-word;
+    white-space: normal;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
 
-	.thumb {
-		max-width: 100px;
-		max-height: 100px;
-		width: auto!important;
-		height: auto!important;
-		margin: 10px!important;
-	}
+  .doubledash {
+    display: none;
+  }
 
-	.topNavContainer {
-		display: block;
-	}
+  .thumb {
+    max-width: 100px;
+    max-height: 100px;
+    width: auto!important;
+    height: auto!important;
+    margin: 10px!important;
+  }
 
-	.longtext {
-		display: inline;
-	}
+  .topNavContainer {
+    display: block;
+  }
 
-	pre.prettyprint {
-		display: block!important;
-	}
+  .longtext {
+    display: inline;
+  }
 
-	#captchaPostBlock {
-		display: none;
-	}
+  pre.prettyprint {
+    display: block!important;
+  }
 
-	#topPageNumber {
-		display: none;
-	}
+  #captchaPostBlock {
+    display: none;
+  }
 
-	.postTableContainer {
-		width: 100%;
-	}
+  #topPageNumber {
+    display: none;
+  }
 
-	#postForm {
-		margin-left: auto;
-		margin-right: auto;
-		display: none;
-	}
+  .postrow {
+    width: 100%;
+  }
 
-	#delPass {
-		width: 45px!important;
-	}
+  #postForm {
+    margin-top: 5px;
+    display: none;
+    width: 300px;
+  }
 
-	#postFormToggle {
-		display: inline-block;
-		width: auto;
-		text-align: center;
-	}
+  #delPass {
+    text-align: center;
+  }
 
-	.filesize {
-		display: none;
-	}
+  #postFormToggle {
+    display: inline-block;
+    width: auto;
+    text-align: center;
+  }
 
-	blockquote {
-		margin: 10px!important;
-	}
+  .filesize {
+    display: none;
+  }
 
-	#deleteForm {
-		float: none;
-		text-align: right;
-	}
+  blockquote {
+    margin: 10px!important;
+  }
 
-	#field3 {
-		display: block;
-	}
+  #deleteForm {
+    float: none;
+    text-align: right;
+  }
 
-	#field3s {
-		width: auto!important;
-	}
+  #field3 {
+    width: 157px !important;
+    margin: 0;
+  }
 
-	#password {
-		max-width: 40px;
-	}
+  #field3s {
+    width: 61px;
+  }
 
-	.postField label {
-		display: block;
-		width: 70px;
-	}
+  #password {
+    max-width: 40px;
+  }
 
-	#file {
-		overflow: hidden;
-	}
+  .postField label {
+    display: block;
+  }
 
-	#uploadField {
-		width: 100%;
-		overflow: hidden;
-	}
+  #file {
+    overflow: hidden;
+    width: 220px;
+  }
 
-	.postField {
-		width: auto!important;
-	}
+  #uploadField {
+    overflow: hidden;
+  }
 
-	.postBlock {
-		width: 60px!important;
-	}
+  .logo img {
+    width: 150px;
+    height: 50px;
+  }
 
-	.rules {
-		width: auto;
-	}
+  .logo {
+    margin-top: 25px;
+  }
 
-	.logo img {
-		width: 50%;
-		height: 50%;
-	}
+  .title {
+    font-size: 16pt;
+  }
 
-	.logo {
-		margin-top: 25px;
-	}
+  #navOptionsMenu {
+    height: 70%;
+    width: 80%;
+  }
 
-	.title {
-		font-size: 16pt;
-	}
-
-	#navOptionsMenu {
-		height: 75%;
-	}
-
-	.topNavContainer select {
+  .topNavContainer select {
 	/*width: 65px;*/
-		margin: 0;
-		font-size: 11px;
-	}
+    margin: 0;
+    font-size: 11px;
+  }
 
-	.topNavLeft,.topNavRight {
-		padding: 5px 0 5px 0;
-		font-size: 11px;
-	}
+  .topNavLeft,.topNavRight {
+    padding: 5px 0 5px 0;
+    font-size: 11px;
+  }
 
-	.topNavLeft {
-		padding-left: 5px;
-	}
+  .topNavLeft {
+    padding-left: 5px;
+  }
 
-	.topNavRight {
-		padding-right: 5px;
-	}
+  .topNavRight {
+    padding-right: 5px;
+  }
 
-	.replyPostInfo {
-		padding: 5px;
-		display: block;
-		clear: both!important;
-	}
+  .replyPostInfo {
+    padding: 5px;
+    display: block;
+    clear: both!important;
+  }
 
-	.topNavContainer  span {
-		vertical-align: middle;
-	}
+  .topNavContainer  span {
+    vertical-align: middle;
+  }
 
-	.replyPostInfo input {
-		display: none;
-	}
+  .replyPostInfo input {
+    display: none;
+  }
 
-	.mobileParentPostInfo input {
-		display: none;
-	}
+  .mobileParentPostInfo input {
+    display: none;
+  }
 
-	.parentPostInfo {
-		display: none;
-	}
+  .parentPostInfo {
+    display: none;
+  }
 
-	.mobileParentPostInfo {
-		padding: 5px;
-		display: block;
-		margin-bottom: 5px;
-		clear: both!important;
-	}
+  .mobileParentPostInfo {
+    padding: 5px;
+    display: block;
+    margin-bottom: 5px;
+    clear: both!important;
+  }
 
-	.postMenuButton {
-		white-space: nowrap;
-		font-style: normal;
-	}
+  .postMenuButton {
+    white-space: nowrap;
+    font-style: normal;
+    display: none;
+  }
 
-	.postMenuButton:after {
-	/*content:'\A' ;
-	white-space: pre;*/;
-	}
-	.postMenu{
-		font-style: normal;
-	}
+  .postMenuButtonMobile {
+    border-radius: 3px;
+    display: inline-block;
+    font-weight: bold;
+    padding: 0 3px;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+  }
 
-	.backlink {
-	}
+  .postMenu {
+    font-style: normal;
+  }
 
-	table#recaptcha_table > tbody > tr:first-child > td:nth-child(2) {
-		display: none;
-	}
+  .backlink {
+  }
 
-	table#recaptcha_table > tbody > tr:first-child > td:nth-child(3) {
-		display: none;
-	}
+  table#recaptcha_table > tbody > tr:first-child > td:nth-child(2) {
+    display: none;
+  }
 
-	table#recaptcha_table > tbody > tr:nth-child(2) > td:nth-child(2) {
-		display: none;
-	}
+  table#recaptcha_table > tbody > tr:first-child > td:nth-child(3) {
+    display: none;
+  }
 
-	#recaptcha_response_field {
-		width: 272px !important;
-		margin-left: 3px;
-		margin-top: -1px;
-		font-size: 10pt !important;
-	}
+  table#recaptcha_table > tbody > tr:nth-child(2) > td:nth-child(2) {
+    display: none;
+  }
 
-	.postField input[type=text],textarea {
-		width: 220px!important;
-	}
+  #postForm #recaptcha_response_field {
+    width: 272px !important;
+    margin-left: 3px!important;
+    margin-top: -5px!important;
+    font-size: 10pt !important;
+  }
 
-	.rules {
-		display: none;
-	}
+  #postForm .postField input[type=text],textarea {
+    width: 220px!important;
+  }
 
-	#recaptcha_image {
-		width: 280px !important;
-	}
+  .colspan {
+    width: 1px;
+  }
 
-	#recaptcha_image > img {
-		width: 280px !important;
-	}
+  .rules {
+    display: none;
+  }
 
-	.recaptcha_image_cell {
-		padding: 0!important;
-	}
+  #postForm #recaptcha_image {
+    width: 280px !important;
+    margin-left: 10px!important;
+  }
 
-	.postField > input {
-		margin: 0;
-	}
+  #postForm #recaptcha_image > img {
+    width: 280px !important;
+  }
 
-	input {
-		margin: 0;
-	}
+  #postForm .recaptcha_image_cell {
+    padding: 0!important;
+  }
 
-	.backlink {
-		font-size: 10px;
-	}
+  .postField > input {
+    margin: 0;
+  }
 
-	.filetitle:after {
-		content: "\A";
-		white-space: pre;
-	}
+  input {
+    margin: 0;
+  }
 
-	.replytitle:after {
-		content: "\A";
-		white-space: pre;
-	}
+  .backlink {
+    font-size: 10px;
+  }
 
-	.leftblock {
-		float: left;
-	}
+  .filetitle:after {
+    content: "\A";
+    white-space: pre;
+  }
 
-	.rightblock {
-		float: right;
-		font-style: italic;
-	}
+  .replytitle:after {
+    content: "\A";
+    white-space: pre;
+  }
 
-	.parentContainer {
-		padding: 0;
-	}
+  .leftblock {
+    float: left;
+  }
 
-	.button {
-		border-radius: 3px;
-		padding: 6px 10px 5px 10px;
-		font-weight: bold;
-		text-decoration: none;
-	}
+  .rightblock {
+    float: right;
+    font-style: italic;
+  }
 
-	.button a {
-		text-decoration: none;
-	}
+  .leftblock > *, .rightblock > * {
+    vertical-align: middle;
+  }
 
-	.mobilePostReplyLink {
-		clear: both!important;
-		padding: 5px;
-		overflow: hidden;
-	}
+  .parentContainer {
+    padding: 0;
+  }
 
-	.mobilePostReplyLink a {
-		float: right;
-	}
+  .button {
+    border-radius: 3px;
+    padding: 6px 10px 5px 10px;
+    font-weight: bold;
+    text-decoration: none;
+  }
 
-	.mobilePostReplyLink > .omittedposts {
-		margin: 0;
-		display: inline;
-		float: left;
-	}
+  .button a {
+    text-decoration: none;
+  }
 
-	.omittedposts em {
-		margin: 0;
-	}
+  .mobilePostReplyLink {
+    clear: both!important;
+    padding: 5px;
+    overflow: hidden;
+  }
 
-	.hidePostButton {
-		margin-right: 3px;
-	}
+  .mobilePostReplyLink a {
+    float: right;
+  }
 
-	.hiddenPostButton {
-		display: inline-block;
-		clear: both;
-	}
+  .mobilePostReplyLink > .omittedposts {
+    margin: 0;
+    display: inline;
+    float: left;
+  }
 
-	.threadlinks {
-		text-align: center;
-		margin-bottom: 5px;
-	}
+  .omittedposts em {
+    margin: 0;
+  }
 
-	.threadlinks>.button {
-		display: inline-block;
-	}
-	
-	a {
-		white-space: normal;
-		word-break: break-all;
-		word-wrap: break-word;
-	}
+  .hidePostButton {
+    margin-right: 3px;
+  }
 
-	.expandedThumb {
-		float: none!important;
-		max-width: none;
-		max-height: none;
-	}
-	
-	.pageNumber{
-	margin:0 auto;
-	text-align:center;
-	}
-	.pageNumber button{
-	/*display:none*/
-	}
-	.catalogLink{
-	display:block;
-	border: none;
-	margin:2px 0;
-	padding:0;
-	}
-	.pageNumber span.no-button{
-	display:none
-	};
+  .hiddenPostButton {
+    display: inline-block;
+    clear: both;
+  }
+
+  .threadlinks {
+    text-align: center;
+    margin-bottom: 5px;
+  }
+
+  .threadlinks>.button {
+    display: inline-block;
+  }
+
+  a {
+    white-space: normal;
+    word-break: break-all;
+    word-wrap: break-word;
+  }
+
+  .expandedThumb {
+    float: none!important;
+    max-width: none;
+    max-height: none;
+  }
+
+  .pageNumber {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .pageNumber button {
+	/*display:none*/;
+  }
+
+  .catalogLink {
+    display: block;
+    border: none;
+    margin: 2px 0;
+    padding: 0;
+  }
+
+  .pageNumber span.no-button {
+    display: none;
+  }
+
+  #bottomNavStatic {
+    padding: 10px 5px 3px 5px;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+  }
+
+  .footer {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    padding: 4px 5px 10px 5px;
+  }
+
+  .cat-controls {
+    float: none;
+    margin-top: 1em;
+  }
+
+  .cat-controls > div {
+    display: block;
+  }
+
+  #qr-form {
+    width: 300px!important;
+    position: absolute;
+    left: 50%;
+    margin-left: -154px;
+    margin-top: 30px;
+  }
+
+  #qr-form > input[type=text], #qr-form > textarea {
+    width: 100%!important;
+  }
 }
 
 @media only screen and (max-width: 720px) {
-	.denguses {
-		display: none;
-	};
+  .denguses {
+    display: none;
+  }
 }
 
 @media only screen and (max-width: 1280px) {
-	#topPageNumber {
-		display: none;
-	};
+  #topPageNumber {
+    display: none;
+  }
 }

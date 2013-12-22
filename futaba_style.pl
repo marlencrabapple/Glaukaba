@@ -62,8 +62,14 @@ var sitevars = {
 	"domain": "//<const DOMAIN>/",
 	"boarddir": "<const BOARD_DIR>",
 	"boardpath": "//<const DOMAIN>/<const BOARD_DIR>/",
+	<if ENABLE_CAPTCHA eq 'recaptcha'>"captcha": 1,</if>
+	<if $textonly_inp>"nofile": 1,</if>
+	<if SPOILERIMAGE_ENABLED>"spoiler": 1,</if>
+	<if NSFWIMAGE_ENABLED>"nsfw": 1,</if>
 	"social": <if SOCIAL>1</if><if !SOCIAL>0</if>,
-	"noext": <if REWRITTEN_URLS>1</if><if !REWRITTEN_URLS>0</if>
+	"noext": <if REWRITTEN_URLS>1</if><if !REWRITTEN_URLS>0</if>,
+	"self": "<var $self>"
+	<if $admin>,"admin": 1</if>
 };
 </script>
 };
@@ -100,7 +106,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="//<var DOMAIN>/js/<var JS_FILE>"></script>
 <if !$noextra><script type="text/javascript" src="//<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script>
-<script type="text/javascript" src="//<var DOMAIN>/js/logo.js"></script></if>
+<if SHOWTITLEIMG == 2><script type="text/javascript" src="<var SHOWTITLEIMG>"></script></if></if>
 <if !$noextra>
 <script type="text/javascript" src="//<var DOMAIN>/js/prettify/prettify.js"></script>
 <script type="text/javascript" src="//<var DOMAIN>/js/jquery.jqote2.min.js"></script>
@@ -111,7 +117,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <if !$indexpage><if !$thread><body></if></if>
 <a id="top"></a>
 <div id="topNavStatic" class="staticNav">
-	[<loop BOARDS><a href="//<const DOMAIN>/<var $dir>/" title="/<var $dir>/ - <var $name>"><var $dir></a><if !$lastBoard> / </if></loop>]
+	[<loop BOARDS><a href="//<const DOMAIN>/<var $dir>/" title="/<var $dir>/ - <var $name>"><var $dir></a><if !$lastboard> / </if></loop>]
 	<if LINKS>[<loop LINKS><a href="<var $url>" <if $rel>rel="<var $rel>"</if>><var $name></a><if !$lastlink> / </if></loop>]</if>
 	<div style="float:right">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Settings</a>]
@@ -128,7 +134,6 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const TITLE>"></div></if>
 	<h1 class="title"><const TITLE></h1>
 	<h2 class="logoSubtitle"><const SUBTITLE></h2>
-	<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
 </div>
 <if !$thread><if $indexpage>
 	<div id="topPageNumber" class="pageNumber">
@@ -274,39 +279,36 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</a>
 	</div>
 	
-	<form action="<var $self>" method="post" id="post_form" enctype="multipart/form-data">
+	<form action="<var $self>" method="post" id="post_form" name="post_form" enctype="multipart/form-data">
 		<input type="hidden" name="task" value="post">
 		<if $thread><input type="hidden" name="parent" value="<var $thread>"></if>
 		<if !$image_inp and !$thread and ALLOW_TEXTONLY><input type="hidden" name="nofile" value="1"></if>
 		<if FORCED_ANON><input type="hidden" name="name"></if>
 		<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off"><input type="text" name="link" autocomplete="off"></div></if>
 		<div id="postForm">
-			<if !FORCED_ANON><div class="postTableContainer">
+			<if !FORCED_ANON><div class="postrow">
 					<div class="postBlock">Name</div>
 					<div class="postField"><input type="text" class="postInput" name="field1" id="field1"></div>
 				</div></if>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Link</div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2"></div>
 			</div>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Subject</div>
 				<div class="postField">
 					<input type="text" name="field3" class="postInput" id="field3">
 					<input type="submit" id="field3s" value="Submit">
 				</div>
 			</div>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Comment</div>
 				<div class="postField"><textarea name="field4" class="postInput" id="field4"></textarea></div>
 			</div>
-			<if ENABLE_CAPTCHA && ENABLE_CAPTCHA ne 'recaptcha'><div class="postBlock"><const S_CAPTCHA></div>
-				<div class="postField">
-					<input type="text" name="captcha" class="field6" size="10">
-					<img alt="" src="<var expand_filename(CAPTCHA_SCRIPT)>?key=<var get_captcha_key($thread)>&amp;dummy=<var $dummy>">
-				</div></if>
-			<if ENABLE_CAPTCHA eq 'recaptcha'><div class="postTableContainer" id="recaptchaContainer">
+			<if ENABLE_CAPTCHA eq 'recaptcha'>
+			  <div class="postrow" id="recaptchaContainer">
 					<div class="postBlock" id="captchaPostBlock"><const S_CAPTCHA></div>
+					<div class="colspan">
 					<div class="postField">
 						<style type="text/css" scoped="scoped">
 							.recaptchatable{background-color:transparent!important;border:none!important;}.recaptcha_image_cell{background-color:transparent!important;padding:0px!important;padding-bottom:3px!important;}#recaptcha_div{height:107px;width:442px;}#recaptcha_challenge_field{width:400px}@media only screen and (min-width: 481px) {.recaptcha_input_area{padding:0!important;}#recaptcha_table tr:first-child{height:auto!important;}#recaptcha_table tr:first-child>td:not(:first-child){padding:0 7px 0 7px!important;}#recaptcha_table tr:last-child td:last-child{padding-bottom:0!important;}#recaptcha_table tr:last-child td:first-child{padding-left:0!important;}#recaptcha_response_field{width:292px;margin-right:0px!important;font-size:10pt!important;}input:-moz-placeholder{color:gray!important;}#recaptcha_image{border:1px solid #aaa!important;}#recaptcha_table tr>td:last-child{display:none!important;}}
@@ -324,6 +326,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							</div>
 						</if>
 					</div>
+					</div>
 					<script type="text/javascript">
 						document.getElementById("recaptcha_response_field").setAttribute("placeholder", "reCAPTCHA Challenge (Required)");
 						document.getElementById("recaptcha_response_field").removeAttribute("style");
@@ -331,8 +334,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						document.getElementById("recaptcha_image").parentNode.parentNode.setAttribute("style", "padding: 0px!important; padding-bottom: 3px!important; height: 57px!important;");
 						document.getElementById("recaptcha_table").setAttribute("style", "border: none!important");
 					</script>
-			</div></if>
-			<if $image_inp><div class="postTableContainer" id="uploadField">
+		  	</div>
+			</if>
+			<if $image_inp><div class="postrow" id="uploadField">
 					<div class="postBlock">File</div>
 					<div class="postField">
 						<input type="file" name="file" id="file"><br>
@@ -341,18 +345,16 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1">NSFW]</label></if>
 					</div>
 			</div></if>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Password</div>
 				<div class="postField">
 					<input type="password" class="postInput" id="password" name="password"/>
 					<span class="passDesc">(for post and file deletion)</span>
 				</div>
 			</div>
-			<div class="postTableContainer">
-				<div class="rules">
-					}.include("include/rules.html").q{
-				</div>
-			</div>
+			<div class="rules">
+       }.include("include/rules.html").q{
+      </div>
 		</div>
 	</form>
 <script type="text/javascript">setPostInputs()</script></if>
@@ -366,25 +368,12 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<div class="thread"><loop $posts>
 		<if !$parent>
 			<div class="parentContainer">
-			<div class="parentPost" id="parent<var $num>">
+			<div class="parentPost post" id="parent<var $num>">
 				<div class="mobile mobileParentPostInfo">
 					<input type="checkbox" name="delete" value="<var $num>">
 					<div class="leftblock">
-						<if $subject><span class="filetitle"><var $subject></span></if>
-						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
-						<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
-					</div>
-					<div class="rightblock">
-						<span class="date"><var $date></span>
-						<span class="reflink">
-							<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
-							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-							<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
-							<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
-						</span>
-						<a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton" id="postMenuButton<var $num>Mobile">[<span></span>]</a>
-						<div class="postMenu" id="postMenu<var $num>Mobile">
+					  <a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton postMenuButtonMobile" id="postMenuButton<var $num>Mobile"><span></span></a>
+					  <div class="postMenu" id="postMenu<var $num>Mobile">
 							<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
 							<div class="hasSubMenu" onmouseover="showSub(this);">
 								<span class="postMenuItem">Delete</span>
@@ -403,6 +392,19 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 							<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 						</div>
+						<if $subject><span class="filetitle"><var $subject></span></if>
+						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
+						<if $id><span class="posterid">(ID: <span class="posteridnum"><var $id></span>)</span></if>
+					</div>
+					<div class="rightblock">
+						<span class="date"><var $date></span>
+						<span class="reflink">
+							<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
+							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+							<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+							<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+						</span>
 					</div>
 					<div style="clear:both"></div>
 				</div>
@@ -486,10 +488,30 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 		</if>
 		<if $parent><div class="replyContainer" id="replyContainer<var $num>">
 				<div class="doubledash">&gt;&gt;</div>
-				<div class="reply" id="reply<var $num>">
+				<div class="reply post" id="reply<var $num>">
 					<a id="<var $num>"></a>
 					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>">
 						<div class="leftblock">
+						   <a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton postMenuButtonMobile" id="postMenuButton<var $num>Mobile"><span></span></a>
+						   <div class="postMenu" id="postMenu<var $num>Mobile">
+							    <a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
+							    <div class="hasSubMenu" onmouseover="showSub(this);">
+								    <span class="postMenuItem">Delete</span>
+								    <div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
+									    <a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
+									    <a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+								    </div>
+							    </div>
+							    <div class="hasSubMenu" onmouseover="showSub(this);">
+								    <span class="postMenuItem">Filter</span>
+								    <div class="postMenu subMenu">
+									    <a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+								    </div>
+							    </div>
+							  <if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
+							  <a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
+							  <a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+						  </div>
 							<if $subject><span class="replytitle"><var $subject></span></if>
 							<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 							<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
@@ -520,6 +542,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 								<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 							</div>
+							
 						</div>
 						<div style="clear:both"></div>
 					</div>
@@ -610,7 +633,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	</div>
 </if>
 <div id="bottomNavStatic" class="staticNav">
-	[<loop BOARDS><a href="//<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastBoard> / </if></loop>]
+	[<loop BOARDS><a href="//<const DOMAIN>/<var $dir>/"><var $dir></a><if !$lastboard> / </if></loop>]
 	<div style="float:right">
 		[<a href="javascript:void(0)" onclick="toggleNavMenu(this,0);">Settings</a>]
 		[<a href="//<const DOMAIN>" title="">Home</a>]
@@ -723,23 +746,63 @@ use constant CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 
 use constant SEARCHABLE_CATALOG_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 [<a href="//<const DOMAIN>/<const BOARD_DIR>"><const S_RETURN></a>]
-<div id="catalog">
-	<div class="catItem" id="catItem0">
-		<a id="catItemHoverLink0" href="/<const BOARD_DIR>/res/0">
-			<div class="catItemHover" id="catItemHover0" style="width: 150px; height:150px;">
-				<div class="catItemHoverText" style="width: 150px; height: 150px; line-height: 150px;">&gt;&gt;0</div>
-			</div>
-		</a>
-		<a id="catItemImageLink0" href="/<const BOARD_DIR>/res/0">
-			<img src="//<const DOMAIN>/img/mod.png" class="catImage" style="width: 150px; height: 150px;">
-		</a>
-		<div class="catComment" id="catItemComment0">
-			<span class="catCounts">R: 0/ I: 0</span><br>
-			<span>Taargus Taargus</span>
-		</div>
-	</div>
+<if ENABLE_CATALOG>[<a href="//<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Refresh</a>]</if>
+[<a href="#bottom">Bottom</a>]
+
+<div class="cat-controls">
+<div>
+Sort By:
+<select onchange="sort_catalog(this.value);">
+<option value="bump">Bump Order</option>
+<option value="creation">Creation Date</option>
+<option value="replies">Reply Count</option>
+<option value="images">Image Count</option>
+</select>
 </div>
+<div>
+Order:
+<select onchange="change_order(this.value);">
+<option value="1">Descending</option>
+<option value="2">Ascending</option>
+</select>
+</div>
+<div>
+Search: <input class="postInput" id="cat-input" type="text" onchange="search_catalog(this.value.toLowerCase());" onkeyup="this.onchange();">
+</div>
+</div>
+
+<br style="clear:both">
+
+<script type="text/x-jqote-template" id="catalog-template">
+<![CDATA[
+<div class="cat-item-container" style="
+	width: <%= this.catitemw + 15 %>px;
+">
+	<div class="cat-item" style="
+		background-image:url(<%= this.image %>);
+		width: <%= this.catitemw %>px;
+		height: <%= this.catitemh %>px;
+	">
+			<a href="<%= this.link %>" class="cat-item-inner" style="
+				line-height:<%= this.noplace %>px;
+			">
+			&gt;&gt;<%= this.no %>
+			</a>
+	</div>
+	<span class="cat-item-count">
+		R: <%= this.postcount %> / I: <%= this.imagecount %>
+	</span>
+	<% if(this.showtext) { %> <span class="cat-item-text" style="width: <%= this.catitemw + 10 %>px"><% if(this.sub) { %><strong><%= this.sub %>:</strong><% } %> <%= this.com %></span> <% } %>
+</div>
+]]>
+</script>
+<div id="catalog"></div>
 <div class="denguses"><var include("include/bottomad.html",1)></div>
+<hr>
+[<a href="//<const DOMAIN>/<const BOARD_DIR>"><const S_RETURN></a>]
+<if ENABLE_CATALOG>[<a href="//<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Refresh</a>]</if>
+[<a href="#">Top</a>]
+<a id="bottom"></a>
 <script>
 	var catalog=
 		{
@@ -827,7 +890,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 			<h2>Apply</h2>
 			</div>
 			<div class="boxContent">
-				<form action="<var $self>" method="post" id="post_form" enctype="multipart/form-data">
+				<form action="<var $self>" method="post" id="post_form" name="post_form" enctype="multipart/form-data">
 					<input type="hidden" name="task" value="addpass">
 					<div class="email">
 						<div class="left">
@@ -963,11 +1026,11 @@ use constant AUTHORIZE_PASS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 	<form action="<var $self>" method="post" enctype="multipart/form-data">
 	<input type="hidden" name="task" value="authpass">
 	<div id="postForm">
-		<div class="postTableContainer">
+		<div class="postrow">
 			<div class="postBlock">Token</div>
 			<div class="postField"><input type="text" class="postInput" style="text-align: center;" name="token" id="token"></div>
 		</div>
-		<div class="postTableContainer">
+		<div class="postrow">
 			<div class="postBlock">Pin</div>
 			<div class="postField"><input type="text" style="text-align: center;" class="postInput" name="pin" id="pin"></div>
 		</div>

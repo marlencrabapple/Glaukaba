@@ -1,140 +1,114 @@
-var catItemTemplate=$("#catItem0").clone();
-var ext=".html";
-init(0,0);
+var ext = sitevars.noext == 1 ? "" : ".html";
+var _catalog = {'threads':[]};
+var direction = 1;
+_catalog.threads = catalog.threads.slice(0);
+init();
 
-function init(orderBy, searchTerms){
-	$("#catItem0").remove();
-	$(".catItem").remove();
+function init() {
+	$('.cat-item-container').remove();
+	set_hover_events();
 	
-	if(sitevars.noext==1){
-		ext="";
-	}
-	
-	// load json and build catalog items
-	$(catalog.threads).each(function(index){
-		var catItem=$(catItemTemplate).clone();
-		var url=sitevars.boardpath+"res/"+this.no+ext;
-		var sub="";
-		
-		if(!this.image){
-			if(localStorage.getItem("thumbSize")=="small" || localStorage.getItem("thumbSize")==null){
-				width=150;
-				height=150;
-			}
-			else{
-				width=250;
-				height=250;
-			}
-			
-			noFileImage=sitevars.domain+"img/nofile.png";
+	$(catalog.threads).each(function(index) {
+		if((this.image === undefined) || (this.image == sitevars.domain + "/img/nofile.png")) {
+			this.image = sitevars.domain + "/img/nofile.png";
+			this.catitemw = 100;
+			this.catitemh = 25;
+			this.noplace = 25;
 		}
-		else{
-			if(localStorage.getItem("thumbSize")=="small" || localStorage.getItem("thumbSize")==null){
-				var width=this.tn_w*.6;
-				var height=this.tn_h*.6;
-			}
-			else{
-				var width=this.tn_w;
-				var height=this.tn_h;
-			}
-			
-			thumbUrl=sitevars.boardpath+this.image;
+		else {
+			this.catitemw = this.tn_w > 125 ? this.tn_w * .6 : this.tn_w;
+			this.catitemh = this.tn_h > 125 ? this.tn_h * .6 : this.tn_h;
+			this.noplace = this.tn_h > 125 ? this.tn_h * .6 : this.tn_h;
 		}
 		
-		$(catItem).attr("id","catItem"+this.no);
+		this.link = sitevars.boardpath + "res/" + this.no + ext;
+		this.showtext = 1;
 		
-		$(catItem).children("#catItemHoverLink0").attr("id","catItemHoverLink"+this.no);
-		$(catItem).children("#catItemHoverLink"+this.no).attr("href",url);
-		//$(catItem).children("#catItemLink"+this.no).attr("href",sitevars.boardpath+"res/"+this.no);
-		
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover0").attr("id","catItemHover"+this.no);
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).width(width);
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).height(height);
-		
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).children(".catItemHoverText").css("line-height",height+"px");
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).children(".catItemHoverText").width(width);
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).children(".catItemHoverText").height(height);
-		$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).children(".catItemHoverText").html("&gt;&gt;"+this.no);
-		
-		$(catItem).children("#catItemImageLink0").attr("id","catItemImageLink"+this.no);
-		$(catItem).children("#catItemImageLink"+this.no).attr("href",url);
-		
-		if(this.image){
-			$(catItem).children("#catItemImageLink"+this.no).children('img').width(width);
-			$(catItem).children("#catItemImageLink"+this.no).children('img').height(height);
-			$(catItem).children("#catItemImageLink"+this.no).children('img').attr("src",thumbUrl);
-		}
-		else{
-			//$(catItem).children("#catItemImageLink"+this.no).children('img').width("");
-			//$(catItem).children("#catItemImageLink"+this.no).children('img').height("");
-			//$(catItem).children("#catItemImageLink"+this.no).children('img').attr("src",thumbUrl);
-			$(catItem).children("#catItemImageLink"+this.no).children('img').remove();
-			$(catItem).children("#catItemImageLink"+this.no).append('<div class="catImageNoThumb"><img src="' +noFileImage+'" alt="No File" /></div>');
-			$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).children(".catItemHoverText").attr("class","catItemHoverTextNoThumb");
-			$(catItem).children("#catItemHoverLink"+this.no).children("#catItemHover"+this.no).attr("class","catItemHoverNoThumb");
-		}
-		
-		$(catItem).children("#catItemComment0").attr("id","catItemComment"+this.no);
-		
-		$(catItem).children("#catItemComment"+this.no).children(".catCounts").html("R: "+this.postcount+"/ I:"+this.imagecount);
-		
-		if(this.sub){
-			if(this.com){
-				sub="<strong>"+this.sub+": </strong>";
-			}
-			else{
-				sub="<strong>"+this.sub+"</strong>";
-			}
-		}
-		
-		$(catItem).children("#catItemComment"+this.no).children("span").last().html(sub + this.com);
-		
-		// hover stuff
-		var postnum=this.no;
-		
-		$(catItem).children("#catItemImageLink"+this.no).children('img').mouseenter(function(){
-			$(catItem).children("#catItemHoverLink"+postnum).children("#catItemHover"+postnum).fadeTo(100, 0.6, function () {
-				$(catItem).children("#catItemHoverLink"+postnum).children("#catItemHover"+postnum).css("visibility", "visible");
-			});
-		});
-		
-		$(catItem).children("#catItemImageLink"+this.no).children('div').mouseenter(function(){
-			$(catItem).children("#catItemHoverLink"+postnum).children("#catItemHover"+postnum).fadeTo(100, 0.6, function () {
-				$(catItem).children("#catItemHoverLink"+postnum).children("#catItemHover"+postnum).css("visibility", "visible");
-			});
-		});
-		
-		$(catItem).mouseleave(function(){
-			$(catItem).children("#catItemHoverLink"+postnum).children("#catItemHover"+postnum).fadeTo(100, 0, function () {
-				$(catItem).children("#catItemHoverLink"+postnum).children("#catItemHover"+postnum).css("visibility", "hidden");
-			});
-		});
-		
-		$("#catalog").append(catItem);
+		$('#catalog').append($('#catalog-template').jqote(this));
 	});
 }
 
-function savePrefs(){
+function set_hover_events() {
+	$('#catalog').on('mouseenter','.cat-item',function() {
+		$(this).children('.cat-item-inner').css('display','block');
+	});
+	
+	$('#catalog').on('mouseout','.cat-item-inner',function() {
+		$('.cat-item-inner').css('display','none');
+	});
 }
 
-function loadPrefs(){
+function change_order(order) {
+	direction = order;
+	catalog.threads.reverse();
+	init();
 }
 
-function searchThreads(searchString){
-	init(0,string);
-}
-
-function sortThreads(sortBy){
-	init(sortBy,string);
-}
-
-function toggleImageSize(){
-	if(localStorage.getItem("thumbSize")=="large"){
-		localStorage.setItem("thumbSize", "small");
-		init(0,0);
+function sort_catalog(sortby) {
+	if(sortby == "replies") {
+		catalog.threads.sort(function(a,b) {
+			if(direction == 1) {
+				return b.postcount - a.postcount;
+			}
+			else {
+				return a.postcount - b.postcount;
+			}
+		});
 	}
-	else{
-		localStorage.setItem("thumbSize", "large");
-		init(0,0);
+	else if(sortby == "images") {
+		catalog.threads.sort(function(a,b) {
+			if(direction == 1) {
+				return b.imagecount - a.imagecount;
+			}
+			else {
+				return a.imagecount - b.imagecount;
+			}
+		});
 	}
+	else if(sortby == "creation") {
+		catalog.threads.sort(function(a,b) {
+			if(direction == 1) {
+				return b.no - a.no;
+			}
+			else {
+				return a.no - b.no;
+			}
+		});
+	}
+	else {
+		if(direction == 1) {
+			catalog.threads = _catalog.threads.slice();
+			search_catalog(document.getElementById('cat-input').value);
+			return;
+		}
+		else {
+			catalog.threads = _catalog.threads.reverse().slice();
+			search_catalog(document.getElementById('cat-input').value);
+			return;
+		}
+	}
+	
+	init();
+}
+
+function search_catalog(qstr) {
+	catalog.threads = [];
+	$(_catalog.threads).each(function(index) {
+		this.com = this.com === undefined ? "" : this.com;
+		this.sub = this.sub === undefined ? "" : this.sub;
+		this.filename = this.filename === undefined ? "" : this.filename;
+		this.name = this.name === undefined ? "" : this.name;
+		this.trip = this.trip === undefined ? "" : this.trip;
+		
+		if(qstr === null) {
+			catalog.threads = _catalog.threads.slice(0);
+			change_order(order);
+			return;
+		}
+		else if((this.com.toLowerCase().indexOf(qstr) != -1) || (this.sub.toLowerCase().indexOf(qstr) != -1) || (this.filename.toLowerCase().indexOf(qstr) != -1) || (this.name.toLowerCase().indexOf(qstr) != -1) || (this.trip.toLowerCase().indexOf(qstr) != -1)) {
+			catalog.threads.push(this);
+		}
+	});
+	
+	init();
 }
