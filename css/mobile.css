@@ -30,7 +30,6 @@
 
   .reply {
     width: 100%;
-    display: inline-block;
     clear: both;
     text-align: left;
     margin: 0 auto 0 auto;
@@ -211,12 +210,10 @@
   }
 
   .postMenuButton {
-    white-space: nowrap;
-    font-style: normal;
     display: none;
   }
 
-  .postMenuButtonMobile {
+  /*.postMenuButtonMobile {
     border-radius: 3px;
     display: inline-block;
     font-weight: bold;
@@ -228,9 +225,32 @@
 
   .postMenu {
     font-style: normal;
+  }*/
+  
+  .mobile-post-menu {
+	display:none;
+	text-align: right;
   }
-
-  .backlink {
+  
+  .mobile-filter-menu {
+	display:none;
+	text-align: right;
+  }
+  .mobile-delete-menu {
+	display:none;
+	text-align: right;
+  }
+  
+  .replyContainer > .mobile-post-menu {
+	padding: 1px 5px 1px 0;
+  }
+  
+  .mobile-post-menu a {
+	line-height: 35px;
+  }
+  
+  .parentContainer > .mobile-post-menu {
+	padding: 2px 5px 0 0;
   }
 
   table#recaptcha_table > tbody > tr:first-child > td:nth-child(2) {
@@ -440,5 +460,8 @@
 @media only screen and (max-width: 1280px) {
   #topPageNumber {
     display: none;
+  }
+  #navOptionsMenu {
+	height: 400px;
   }
 }

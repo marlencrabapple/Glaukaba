@@ -13,6 +13,8 @@ BEGIN {
 	
 	eval "use constant BOARD_DIR => ''" unless(defined BOARD_DIR);
 	eval "use constant USE_CLOUDFLARE => 0" unless(defined &USE_CLOUDFLARE);
+	eval "use constant USE_FASTCGI => 0" unless(defined &USE_FASTCGI);
+	
 	
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
 	eval "use constant SQL_ADMIN_TABLE => 'admin'" unless(defined &SQL_ADMIN_TABLE);
@@ -31,6 +33,7 @@ BEGIN {
 	eval "use constant SHOWTITLETXT => 1" unless(defined &SHOWTITLETXT);
 	eval "use constant SHOWTITLEIMG => 0" unless(defined &SHOWTITLEIMG);
 	eval "use constant TITLEIMG => 'title.jpg'" unless(defined &TITLEIMG);
+	eval "use constant TITLEIMGSCRIPT => ''" unless(defined &TITLEIMGSCRIPT);
 	eval "use constant FAVICON => 'wakaba.ico'" unless(defined &FAVICON);
 	eval "use constant HOME => '../'" unless(defined &HOME);
 	eval "use constant IMAGES_PER_PAGE => 15" unless(defined &IMAGES_PER_PAGE);
@@ -127,6 +130,7 @@ BEGIN {
 	eval "use constant RES_DIR => 'res/'" unless(defined &RES_DIR);
 	eval "use constant ARCHIVE_DIR => 'arch/'" unless (defined &ARCHIVE_DIR);
 	eval "use constant REDIR_DIR => 'redir/'" unless (defined &REDIR_DIR);
+	eval "use constant CSS_DIR => 'css/'" unless (defined &CSS_DIR);
 	eval "use constant HTML_SELF => 'wakaba.html'" unless(defined &HTML_SELF);
 	eval "use constant PAGE_EXT => '.html'" unless(defined &PAGE_EXT);
 	eval "use constant ERRORLOG => ''" unless(defined &ERRORLOG);

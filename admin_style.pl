@@ -651,26 +651,26 @@ use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
 		<if !$image_inp and !$thread and ALLOW_TEXTONLY><input type="hidden" name="nofile" value="1" /></if>
 		<div id="postForm">
-			<if !FORCED_ANON><div class="postTableContainer">
+			<if !FORCED_ANON><div class="postrow">
 				<div class="postBlock">Name</div>
 				<div class="postField"><input type="text" class="postInput" name="field1" id="field1" value="<var decode_string($name,CHARSET,1)>" /></div>
 			</div></if>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Trip</div>
 				<div class="postField"><input type="text" class="postInput" name="field1andahalf" id="field1andahalf" value="<var decode_string($trip,CHARSET,1)>" /></div>
 			</class>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Link</div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" value="<var decode_string($email,CHARSET,1)>" /></div>
 			</div>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Subject</div>
 				<div class="postField">
 					<input type="text" name="field3" class="postInput" value="<var decode_string($subject,CHARSET,1)>" id="field3" />
 					<input type="submit" id="field3s" value="Submit" />
 				</div>
 			</div>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Comment</div>
 				<div class="postField"><textarea name="field4" class="postInput" id="field4"><var decode_string($comment,CHARSET,1)></textarea></div>
 			</div>
@@ -1044,26 +1044,26 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		<if FORCED_ANON><input type="hidden" name="name"></if>
 		<if SPAM_TRAP><div class="trap"><const S_SPAMTRAP><input type="text" name="name"  autocomplete="off"><input type="text" name="link" autocomplete="off"></div></if>
 		<div id="postForm">
-			<if !FORCED_ANON><div class="postTableContainer">
+			<if !FORCED_ANON><div class="postrow">
 					<div class="postBlock">Name</div>
 					<div class="postField"><input type="text" class="postInput" name="field1" id="field1"></div>
 				</div></if>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Link</div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2"></div>
 			</div>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Subject</div>
 				<div class="postField">
 					<input type="text" name="field3" class="postInput" id="field3">
 					<input type="submit" id="field3s" value="Submit">
 				</div>
 			</div>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Comment</div>
 				<div class="postField"><textarea name="field4" class="postInput" id="field4"></textarea></div>
 			</div>
-			<if $image_inp><div class="postTableContainer" id="uploadField">
+			<if $image_inp><div class="postrow" id="uploadField">
 					<div class="postBlock">File</div>
 					<div class="postField">
 						<input type="file" name="file" id="file"><br>
@@ -1072,7 +1072,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 						<if NSFWIMAGE_ENABLED><label>[<input type="checkbox" name="nsfw" value="1">NSFW]</label></if>
 					</div>
 			</div></if>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Password</div>
 				<div class="postField">
 					<input type="password" class="postInput" id="password" name="password"/>
@@ -1080,7 +1080,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 				</div>
 			</div>
 			<if $session-\>[1] ne 'janitor'>
-			<div class="postTableContainer">
+			<div class="postrow">
 				<div class="postBlock">Options</div>
 				<div class="postField">
 					<if $session-\>[1] eq 'admin'><label>[<input type="checkbox" name="no_format" value="1" />HTML]</label></if>
@@ -1089,7 +1089,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			</div>
 			
 			<if !$thread>
-				<div class="postTableContainer">
+				<div class="postrow">
 				<div class="postBlock">Flags</div>
 				<div class="postField">
 				<label>[<input type="checkbox" name="sticky" value="1" />Sticky]</label>

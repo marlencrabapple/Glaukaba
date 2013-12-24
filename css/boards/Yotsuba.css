@@ -116,6 +116,17 @@ hr { border-top: 1px solid #D9BFB7 }
 .reportstats { border: 1px solid black }
 .reportright { border: 1px solid black }
 .catalogLink { border-left: 1px solid #B7C5D9 }
+#qr-form {
+color: #800000;
+background: #F0E0D6;
+border: 1px solid #D9BFB7;
+border-left: none;
+border-top: none;
+}
+.qr-header {
+background: #EEAA88;
+border: 1px solid #880000;
+}
 
 @media only screen and (max-width: 480px){
 	.parentPost{
@@ -131,7 +142,7 @@ hr { border-top: 1px solid #D9BFB7 }
 	}
 	.parentContainer {
 		border-bottom: 1px solid #D9BFB7;
-		background-color: #EAD6CA;
+		background-color: #f0e0d6;
 		padding: 0;
 	}
 	.button {
@@ -146,5 +157,17 @@ hr { border-top: 1px solid #D9BFB7 }
 	}
 	.mobilePostReplyLink {
 		border-top: 1px solid #D9BFB7;
+		background-color: #EAD6CA;
+	}
+	.mobile-post-menu {
+		border-top: 1px solid #D9BFB7;
+		background-color: #EAD6CA;
+	}
+	.postMenuButtonMobile {
+		background-color: #f0e0d6;
+		background-image: -moz-linear-gradient(top, #F7EAE3 0%, #E1D0C5 100%);
+		background-image: -webkit-linear-gradient(top, #F7EAE3 0%, #E1D0C5 100%);
+		background-image: linear-gradient(to bottom, #F7EAE3 0%, #E1D0C5 100%);
+		border: 1px solid ##c0a69d!important;
 	}
 }

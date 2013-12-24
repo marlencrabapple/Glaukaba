@@ -127,6 +127,16 @@ background:rgba(255,255,255,0.3);
 .sqldump{
 color:black;
 }
+#qr-form {
+background-color: #282A2E;
+border: 1px solid #000;
+border-left: none;
+border-top: none;
+color: #C5C8C6;
+}
+.qr-header {
+background: #282A2E;
+}
 @media only screen and (max-width: 480px){
 	body{
 		background: #0D131E;
@@ -144,7 +154,7 @@ color:black;
 	}
 	.parentContainer {
 		border-bottom: 1px solid #1F2023;
-		background-color: #1F2023;
+		background-color: #282a2e;
 		padding: 0;
 	}
 	.button {
@@ -157,5 +167,17 @@ color:black;
 	}
 	.mobilePostReplyLink {
 		border-top: 1px solid #1F2023;
+		background-color: #1F2023;
 	}
+	.mobile-post-menu {
+		border-top: 1px solid #1F2023;
+		background-color: #1F2023;
+	}
+	.postMenuButtonMobile {
+		background-color: #171819;
+		border: 1px solid #091015;
+		background-image: -moz-linear-gradient(top, #1D1F21 0%, #171819 100%);
+		background-image: -webkit-linear-gradient(top, #1D1F21 0%, #171819 100%);
+		background-image: linear-gradient(to bottom, #1D1F21 0%, #171819 100%);
+  }
 }

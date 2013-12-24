@@ -122,11 +122,24 @@ hr { border-top: 1px solid #B7C5D9 }
 .reportstats { border: 1px solid black }
 .reportright { border: 1px solid black }
 .catalogLink { border-left: 1px solid #B7C5D9 }
+#qr-form {
+background-color: #D6DAF0;
+border: 1px solid #B7C5D9;
+border-left: none;
+border-top: none;
+}
+.qr-header {
+background: #98E;
+border: 1px solid #000;
+}
 
 @media only screen and (max-width: 480px){
 	.parentPost{
 		background: #D6DAF0;
 		color: #000;
+	}
+	.replyContainer {
+		background-color: #D6DAF0;
 	}
 	.replyPostInfo {
 		border-bottom: 1px solid #B7C5D9;
@@ -138,7 +151,7 @@ hr { border-top: 1px solid #B7C5D9 }
 	}
 	.parentContainer {
 		border-bottom: 1px solid #B7C5D9;
-		background-color: #c9cde8;
+		background-color: #D6DAF0;
 		padding: 0;
 	}
 	.button {
@@ -147,9 +160,19 @@ hr { border-top: 1px solid #B7C5D9 }
 		background-image: -moz-linear-gradient(top, #E7E7F3 0%, #C6C5E2 100%);
 		background-image: -webkit-linear-gradient(top, #E7E7F3 0%, #C6C5E2 100%);
 		background-image: linear-gradient(to bottom, #E7E7F3 0%, #C6C5E2 100%);
-
 	}
 	.mobilePostReplyLink {
+		background-color: #c9cde8;
 		border-top: 1px solid #B7C5D9;
 	}
+	.mobile-post-menu {
+		border-top: 1px solid #B7C5D9;
+		background-color: #c9cde8;
+	}
+	.postMenuButtonMobile {
+		border: 1px solid #B7C5D9!important;
+		background-image: -moz-linear-gradient(top, #E7E7F3 0%, #C6C5E2 100%);
+		background-image: -webkit-linear-gradient(top, #E7E7F3 0%, #C6C5E2 100%);
+		background-image: linear-gradient(to bottom, #E7E7F3 0%, #C6C5E2 100%);
+  }
 }

@@ -7,48 +7,100 @@ use constant BOARD_OPTIONS => q{
 <div id="overlay">
 	<div id="navOptionsMenu">
 		<div id="navOptionsTopBar">
-			Board Options
+			[<a href="javascript:void(0)" onclick="setTab(1)">Board Options</a>]
+			[<a href="javascript:void(0)" onclick="setTab(2)">Filters</a>]
 		</div>
 		<hr>
-		<div id="navOptionsContent">
-			<p>
-				<strong>Style Options</strong><br>
-				<loop $stylesheets>[<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a>] </loop>
-			</p>
-			<p>
-				<strong>General Enhancements</strong><br>
-				<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);">Comment Expansion</label>: Expands truncated comments<br>
-				<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);">Thread Expansion</label>: View all replies without changing pages<br>
-				<label class="navOptionsListItem"><input id="fixedNav" type=checkbox onchange="toggleFeature('fixedNav',this.checked);">Fixed Navigation</label>: Pins navigation to the top of the page even when scrolling<br>
-			</p>
-			<p>
-				<strong>Filtering</strong><br>
-				<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);">Reply Hiding</label>: Hide replies<br>
-				<label class="navOptionsListItem"><input id="threadHiding" type=checkbox onchange="toggleFeature('threadHiding',this.checked);">Thread Hiding</label>: Hide threads<br>
-				<label class="navOptionsListItem"><input id="anonymize" type=checkbox onchange="toggleFeature('anonymize',this.checked);">Anonymize</label>: Makes everybody anonymous<br>
-			</p>
-			<p>
-				<strong>Image Options</strong><br>
-				<label class="navOptionsListItem"><input id="inlineExpansion" type=checkbox onchange="toggleFeature('inlineExpansion',this.checked);">Inline Expansion</label>: View fullsize images without opening a new window or tab<br>
-				<label class="navOptionsListItem"><input id="reverseImgSearch" type=checkbox onchange="toggleFeature('reverseImgSearch',this.checked);">Reverse Image Search</label>: Insert links to reverse image search engines<br>
-				<textarea id="reverseImgSearchLinks" onchange="toggleFeature('reverseImgSearchLinks',this.value)"></textarea>
-			</p>
-			<p>
-				<strong>Monitoring</strong><br>
-				<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);">Thread Updater</label>: Get new posts automatically without refreshing the page<br>
-				<label class="navOptionsListItem"><input id="expandFilename" type=checkbox onchange="toggleFeature('expandFilename',this.checked);">Expand Filenames</label>: Expands an image's filename on mouseover<br>
-			</p>
-			<p>
-				<strong>Posting</strong><br>
-				<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);">Quick Reply</label>: Reply without reloading the page<br>
-			</p>
-			<p>
-				<strong>Quoting</strong><br>
-				<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);">Quote Previews</label>: Show quoted post on hover<br>
-				<label class="navOptionsListItem"><input id="inlineQuote" type=checkbox onchange="toggleFeature('inlineQuote',this.checked);">Inline Quotes</label>: Show quoted post inline when clicked on<br>
-				<label class="navOptionsListItem"><input id="replyBacklinking" type=checkbox onchange="toggleFeature('replyBacklinking',this.checked);">Post Backlinks</label>: Shows a post's replies in its header<br>
-				<label class="navOptionsListItem"><input id="markPosts" type=checkbox onchange="toggleFeature('markPosts',this.checked);">Mark Replies</label>: Appends "(You)" to all posts linking to yours<br>
-			</p>
+		<div class="navOptionsContent">
+			<div id="optionspage1" class="optionspage">
+				<p>
+					<strong>Style Options</strong><br>
+					<loop $stylesheets>[<a href="javascript:set_stylesheet('<var $title>')" ><var $title></a>] </loop>
+				</p>
+				<p>
+					<strong>General Enhancements</strong><br>
+					<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);">Comment Expansion</label>: Expands truncated comments<br>
+					<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);">Thread Expansion</label>: View all replies without changing pages<br>
+					<label class="navOptionsListItem"><input id="fixedNav" type=checkbox onchange="toggleFeature('fixedNav',this.checked);">Fixed Navigation</label>: Pins navigation to the top of the page even when scrolling<br>
+				</p>
+				<p>
+					<strong>Filtering</strong><br>
+					<label class="navOptionsListItem"><input id="replyHiding" type=checkbox onchange="toggleFeature('replyHiding',this.checked);">Reply Hiding</label>: Hide replies<br>
+					<label class="navOptionsListItem"><input id="threadHiding" type=checkbox onchange="toggleFeature('threadHiding',this.checked);">Thread Hiding</label>: Hide threads<br>
+					<label class="navOptionsListItem"><input id="anonymize" type=checkbox onchange="toggleFeature('anonymize',this.checked);">Anonymize</label>: Makes everybody anonymous<br>
+				</p>
+				<p>
+					<strong>Image Options</strong><br>
+					<label class="navOptionsListItem"><input id="inlineExpansion" type=checkbox onchange="toggleFeature('inlineExpansion',this.checked);">Inline Expansion</label>: View fullsize images without opening a new window or tab<br>
+					<label class="navOptionsListItem"><input id="reverseImgSearch" type=checkbox onchange="toggleFeature('reverseImgSearch',this.checked);">Reverse Image Search</label>: Insert links to reverse image search engines<br>
+					<textarea id="reverseImgSearchLinks" onchange="toggleFeature('reverseImgSearchLinks',this.value)"></textarea>
+				</p>
+				<p>
+					<strong>Monitoring</strong><br>
+					<label class="navOptionsListItem"><input id="threadUpdater" type=checkbox onchange="toggleFeature('threadUpdater',this.checked);">Thread Updater</label>: Get new posts automatically without refreshing the page<br>
+					<label class="navOptionsListItem"><input id="expandFilename" type=checkbox onchange="toggleFeature('expandFilename',this.checked);">Expand Filenames</label>: Expands an image's filename on mouseover<br>
+				</p>
+				<p>
+					<strong>Posting</strong><br>
+					<label class="navOptionsListItem"><input id="qRep" type=checkbox onchange="toggleFeature('qRep',this.checked);">Quick Reply</label>: Reply without reloading the page<br>
+				</p>
+				<p>
+					<strong>Quoting</strong><br>
+					<label class="navOptionsListItem"><input id="quotePreview" type=checkbox onchange="toggleFeature('quotePreview',this.checked);">Quote Previews</label>: Show quoted post on hover<br>
+					<label class="navOptionsListItem"><input id="inlineQuote" type=checkbox onchange="toggleFeature('inlineQuote',this.checked);">Inline Quotes</label>: Show quoted post inline when clicked on<br>
+					<label class="navOptionsListItem"><input id="replyBacklinking" type=checkbox onchange="toggleFeature('replyBacklinking',this.checked);">Post Backlinks</label>: Shows a post's replies in its header<br>
+					<label class="navOptionsListItem"><input id="markPosts" type=checkbox onchange="toggleFeature('markPosts',this.checked);">Mark Replies</label>: Appends "(You)" to all posts linking to yours<br>
+				</p>
+			</div>
+			
+			<div id="optionspage2" class="optionspage">
+				<strong>Current Filters</strong>
+				<table>
+					<tbody class="filter-list">
+						<tr>
+						<th class="listHead">No.</th>
+						<th class="listHead">Type</th>
+						<th class="listHead">Value</th>
+						<th class="listHead">Options</th>
+						</tr>
+						<tr class="filter-default listRow">
+							<td colspan=4><em>No filters.</em></td>
+						</tr>
+					</tbody>
+				</table>
+				[<a href="javascript:void(0)" onclick="$('.add-filter').toggle();document.addfilter.reset();document.addfilter.filternum.value = 0;">Add Filter</a>]
+				<div class="add-filter">
+				<form name="addfilter">
+					<input type="hidden" name="filternum" value="0">
+					<select name="filtertype">
+						<option value="0">Type</option>
+						<option value="name">Name</option>
+						<option value="trip">Trip</option>
+						<option value="subject">Subject</option>
+						<option value="fname">Filename</option>
+						<option value="md5">MD5</option>
+						<option value="com">Comment</option>
+					</select>
+					<input type="text" name="filtervalue" placeholder="Filter Value" class="postInput">
+					<label>[<input type="checkbox" name="regex">Regex]</label>
+					[<a href="javascript:void(0)" onclick="saveFilter()">Save</a>]
+				</form>
+				</div>
+			</div>
+			
+			<script type="text/x-jqote-template" id="filter-row-template">
+				<![CDATA[
+				<tr class="listRow" id="listRow<%= this.num %>">
+					<td class="listCol"><%= this.num %></td>
+					<td class="listCol"><%= this.type %></td>
+					<td class="listCol"><%= this.val %></td>
+					<td class="listCol">
+						[<a href="javascript:void(0)" onclick="editFilter(<%= this.num %>)">Edit</a>]
+						[<a href="javascript:void(0)" onclick="removeFilter(<%= this.num %>)">Remove</a>]
+					</td>
+				</tr>
+				]]>
+			</script>
 		</div>
 	</div>
 </div>
@@ -106,7 +158,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 <script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 <script type="text/javascript" src="//<var DOMAIN>/js/<var JS_FILE>"></script>
 <if !$noextra><script type="text/javascript" src="//<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script>
-<if SHOWTITLEIMG == 2><script type="text/javascript" src="<var SHOWTITLEIMG>"></script></if></if>
+<if SHOWTITLEIMG == 2><script type="text/javascript" src="/js/<var TITLEIMGSCRIPT>"></script></if></if>
 <if !$noextra>
 <script type="text/javascript" src="//<var DOMAIN>/js/prettify/prettify.js"></script>
 <script type="text/javascript" src="//<var DOMAIN>/js/jquery.jqote2.min.js"></script>
@@ -134,6 +186,7 @@ use constant NORMAL_HEAD_INCLUDE => q{
 	<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const TITLE>"></div></if>
 	<h1 class="title"><const TITLE></h1>
 	<h2 class="logoSubtitle"><const SUBTITLE></h2>
+	<if !$noextra><if SHOWTITLEIMG == 2><script type="text/javascript" src="/js/<var TITLEIMGSCRIPT>"></script></if></if>
 </div>
 <if !$thread><if $indexpage>
 	<div id="topPageNumber" class="pageNumber">
@@ -231,7 +284,6 @@ use constant CONTENT_HEAD_INCLUDE => q{
 		<link href="//<var DOMAIN>/css/othercontent.css" type="text/css" rel="stylesheet">
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
-		<script type="text/javascript" src="//<var DOMAIN>/js/logo.js"></script>
 		}.SITE_VARS_INCLUDE.q{
 	</head>
 	<body class="contentPage">
@@ -348,7 +400,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			<div class="postrow">
 				<div class="postBlock">Password</div>
 				<div class="postField">
-					<input type="password" class="postInput" id="password" name="password"/>
+					<input type="password" class="postInput pass-field" id="password" name="password"/>
 					<span class="passDesc">(for post and file deletion)</span>
 				</div>
 			</div>
@@ -372,26 +424,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="mobile mobileParentPostInfo">
 					<input type="checkbox" name="delete" value="<var $num>">
 					<div class="leftblock">
-					  <a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton postMenuButtonMobile" id="postMenuButton<var $num>Mobile"><span></span></a>
-					  <div class="postMenu" id="postMenu<var $num>Mobile">
-							<a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-							<div class="hasSubMenu" onmouseover="showSub(this);">
-								<span class="postMenuItem">Delete</span>
-								<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-									<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-									<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
-								</div>
-							</div>
-							<div class="hasSubMenu" onmouseover="showSub(this);">
-								<span class="postMenuItem">Filter</span>
-								<div class="postMenu subMenu">
-									<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
-								</div>
-							</div>
-							<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-							<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
-							<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
-						</div>
 						<if $subject><span class="filetitle"><var $subject></span></if>
 						<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip> <span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 						<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
@@ -410,7 +442,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				</div>
 				<if $image>
 					<div class="fileinfo"><span class="filesize"><const S_PICNAME>
-					<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
+					<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>" class="filename">
 						<if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
 					- (<var int($size/1024)> KB, <var $width>x<var $height>)</span></div>
 					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
@@ -439,14 +471,19 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<div class="hasSubMenu" onmouseover="showSub(this);">
 							<span class="postMenuItem">Delete</span>
 							<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-								<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>,0);">Post</a>
+								<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>,1);">Image</a>
 							</div>
 						</div>
 						<div class="hasSubMenu" onmouseover="showSub(this);">
 							<span class="postMenuItem">Filter</span>
 							<div class="postMenu subMenu">
-								<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+								<if $name ne 'Anonymous'><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('name','parent<var $num>')">Name</a></if>
+								<if $trip><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('trip','parent<var $num>')">Trip</a></if>
+								<if $subject><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('subject','parent<var $num>')">Subject</a></if>
+								<if $filename><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('fname','parent<var $num>')">Filename</a></if>
+								<if $md5><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('md5','parent<var $num>')">MD5</a></if>
+								<if $comment><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('com','parent<var $num>')">Comment</a></if>
 							</div>
 						</div>
 						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
@@ -479,6 +516,26 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<a class="button" href="<var get_reply_link($num,0)>"><const S_REPLY></a>
 			</div>
 			</if>
+				<div class="mobile-post-menu mobile">
+					<a class="button" href="javascript:void(0)">Report</a>
+					<a class="button delete-button" href="javascript:void(0)">Delete</a>
+					<a class="button" href="javascript:void(0)">Link</a>
+					<a class="button filter-button" href="javascript:void(0)">Filter</a>
+					<div class="mobile-filter-menu">
+						By:
+						<if $name ne 'Anonymous'><a class="button" href="javascript:void(0)" onclick="addFilter('name','parent<var $num>')">Name</a></if>
+						<if $trip><a class="button" href="javascript:void(0)" onclick="addFilter('trip','parent<var $num>')">Trip</a></if>
+						<if $subject><a class="button" href="javascript:void(0)" onclick="addFilter('subject','parent<var $num>')">Subject</a></if>
+						<if $md5><a class="button" href="javascript:void(0)" onclick="addFilter('fname','parent<var $num>')">Filename</a></if>
+						<if $md5><a class="button" href="javascript:void(0)" onclick="addFilter('md5','parent<var $num>')">MD5</a></if>
+						<if $comment><a class="button" href="javascript:void(0)" onclick="addFilter('com','parent<var $num>')">Comment</a></if>
+					</div>
+					<div class="mobile-delete-menu">
+						<a class="button" href="javascript:void(0)" onclick="deletePost(<var $num>,0)">Post</a>
+						<a class="button" href="javascript:void(0)" onclick="deletePost(<var $num>,1)">File Only</a>
+						<input type="password" id="mobile-delpass-<var $num>" class="pass-field postInput">
+					</div>
+				</div>
 			</div>
 			
 			<if $omit><span class="omittedposts desktop">
@@ -492,26 +549,6 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<a id="<var $num>"></a>
 					<div class="replyPostInfo"><input type="checkbox" name="delete" value="<var $num>">
 						<div class="leftblock">
-						   <a href="javascript:void(0)" onclick="togglePostMenu(this);"  class="postMenuButton postMenuButtonMobile" id="postMenuButton<var $num>Mobile"><span></span></a>
-						   <div class="postMenu" id="postMenu<var $num>Mobile">
-							    <a onmouseover="closeSub(this);" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')" class="postMenuItem">Report this post</a>
-							    <div class="hasSubMenu" onmouseover="showSub(this);">
-								    <span class="postMenuItem">Delete</span>
-								    <div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-									    <a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-									    <a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
-								    </div>
-							    </div>
-							    <div class="hasSubMenu" onmouseover="showSub(this);">
-								    <span class="postMenuItem">Filter</span>
-								    <div class="postMenu subMenu">
-									    <a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
-								    </div>
-							    </div>
-							  <if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
-							  <a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
-							  <a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
-						  </div>
 							<if $subject><span class="replytitle"><var $subject></span></if>
 							<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
 							<if !$email><span class="postername"><var $name></span><if $trip> <span class="postertrip"><var $trip></span></if></if>
@@ -528,21 +565,25 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								<div class="hasSubMenu" onmouseover="showSub(this);">
 									<span class="postMenuItem">Delete</span>
 									<div onmouseover="$(this).addClass('focused')" class="postMenu subMenu">
-										<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>);">Post</a>
-										<a class="postMenuItem" href="javascript:void(0);" onclick="deleteImage(<var $num>);">Image</a>
+										<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>,0);">Post</a>
+										<a class="postMenuItem" href="javascript:void(0);" onclick="deletePost(<var $num>,1);">Image</a>
 									</div>
 								</div>
 								<div class="hasSubMenu" onmouseover="showSub(this);">
 									<span class="postMenuItem">Filter</span>
 									<div class="postMenu subMenu">
-										<a class="postMenuItem" href="javascript:void(0);">Not yet implemented</a>
+										<if $name ne 'Anonymous'><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('name','reply<var $num>')">Name</a></if>
+										<if $trip><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('trip','reply<var $num>')">Trip</a></if>
+										<if $subject><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('subject','reply<var $num>')">Subject</a></if>
+										<if $filename><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('fname','reply<var $num>')">Filename</a></if>
+										<if $md5><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('md5','reply<var $num>')">MD5</a></if>
+										<if $comment><a class="postMenuItem" href="javascript:void(0)" onclick="addFilter('com','reply<var $num>')">Comment</a></if>
 									</div>
 								</div>
 								<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
 								<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
 								<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 							</div>
-							
 						</div>
 						<div style="clear:both"></div>
 					</div>
@@ -550,7 +591,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<div class="fileinfo">
 							<span class="filesize">
 								<const S_PICNAME>
-								<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>">
+								<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>" class="filename">
 									<if !$filename><var get_filename($image)></a></if>
 									<if $filename><var truncateLine($filename)></a></if>
 								- (<var int($size/1024)> KB, <var $width>x<var $height>)
@@ -572,6 +613,26 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						<var $comment>
 						<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
 					</blockquote>
+				</div>
+				<div class="mobile-post-menu mobile">
+					<a class="button" href="javascript:void(0)">Report</a>
+					<a class="button delete-button" href="javascript:void(0)">Delete</a>
+					<a class="button" href="javascript:void(0)">Link</a>
+					<a class="button filter-button" href="javascript:void(0)">Filter</a>
+					<div class="mobile-filter-menu">
+						By:
+						<if $name ne 'Anonymous'><a class="button" href="javascript:void(0)" onclick="addFilter('name','reply<var $num>')">Name</a></if>
+						<if $trip><a class="button" href="javascript:void(0)" onclick="addFilter('trip','reply<var $num>')">Trip</a></if>
+						<if $subject><a class="button" href="javascript:void(0)" onclick="addFilter('subject','reply<var $num>')">Subject</a></if>
+						<if $filename><a class="button" href="javascript:void(0)" onclick="addFilter('fname','reply<var $num>')">Filename</a></if>
+						<if $md5><a class="button" href="javascript:void(0)" onclick="addFilter('md5','reply<var $num>')">MD5</a></if>
+						<if $comment><a class="button" href="javascript:void(0)" onclick="addFilter('com','reply<var $num>')">Comment</a></if>
+					</div>
+					<div class="mobile-delete-menu">
+						<a class="button" href="javascript:void(0)" onclick="deletePost(<var $num>,0)">Post</a>
+						<a class="button" href="javascript:void(0)" onclick="deletePost(<var $num>,1)">File Only</a>
+						<input type="password" id="mobile-delpass-<var $num>" class="pass-field postInput">
+					</div>
 				</div>
 			</div></if>
 		</loop>
@@ -599,7 +660,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 	<input type="hidden" name="task" value="delete">
 	Delete Post
 	<label>[<input type="checkbox" name="fileonly" value="on"> <const S_DELPICONLY>]</label>
-	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput"/>
+	<const S_DELKEY><input type="password" name="password" id="delPass" class="postInput pass-field"/>
 	<input value="<const S_DELETE>" type="submit" class="formButtom">
 	<script type="text/javascript">setDelPass();</script>
 	<div class="styleChanger">
@@ -776,7 +837,7 @@ Search: <input class="postInput" id="cat-input" type="text" onchange="search_cat
 <script type="text/x-jqote-template" id="catalog-template">
 <![CDATA[
 <div class="cat-item-container" style="
-	width: <%= this.catitemw + 15 %>px;
+	width: 165px;
 ">
 	<div class="cat-item" style="
 		background-image:url(<%= this.image %>);
@@ -792,7 +853,7 @@ Search: <input class="postInput" id="cat-input" type="text" onchange="search_cat
 	<span class="cat-item-count">
 		R: <%= this.postcount %> / I: <%= this.imagecount %>
 	</span>
-	<% if(this.showtext) { %> <span class="cat-item-text" style="width: <%= this.catitemw + 10 %>px"><% if(this.sub) { %><strong><%= this.sub %>:</strong><% } %> <%= this.com %></span> <% } %>
+	<% if(this.showtext) { %> <span class="cat-item-text" style="width: 165px"><% if(this.sub) { %><strong><%= this.sub %>:</strong><% } %> <%= this.com %></span> <% } %>
 </div>
 ]]>
 </script>
@@ -868,7 +929,7 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 <div id="doc">
 	<div class="logo">
 		<if SHOWTITLEIMG><div id="image"><img src="<const TITLEIMG>" class='banner' alt="<const SITE_NAME> Pass" title="<const SITE_NAME> Pass"></div></if>
-		<if TITLEIMGSCRIPT><script>logoSwitch();</script></if>
+		<if !$noextra><if SHOWTITLEIMG == 2><script type="text/javascript" src="/js/<var TITLEIMGSCRIPT>"></script></if></if>
 	</div>
 	<div id="topBox" class="box full red">
 		<div class="boxHeader red">
