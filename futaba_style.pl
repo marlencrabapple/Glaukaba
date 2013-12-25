@@ -22,6 +22,7 @@ use constant BOARD_OPTIONS => q{
 					<label class="navOptionsListItem"><input id="expandPosts" type=checkbox onchange="toggleFeature('expandPosts',this.checked);">Comment Expansion</label>: Expands truncated comments<br>
 					<label class="navOptionsListItem"><input id="expandThreads" type=checkbox onchange="toggleFeature('expandThreads',this.checked);">Thread Expansion</label>: View all replies without changing pages<br>
 					<label class="navOptionsListItem"><input id="fixedNav" type=checkbox onchange="toggleFeature('fixedNav',this.checked);">Fixed Navigation</label>: Pins navigation to the top of the page even when scrolling<br>
+					<label class="navOptionsListItem"><input id="embedMedia" type=checkbox onchange="toggleFeature('embedMedia',this.checked);">Youtube Embedding</label>: Embeds YouTube and content from other support sites in posts.<br>				
 				</p>
 				<p>
 					<strong>Filtering</strong><br>
