@@ -35,6 +35,7 @@
     margin: 0 auto 0 auto;
     border: none;
     padding: 0;
+    display: inline-block;
   }
 
   .replyContainer {
@@ -467,5 +468,12 @@
   }
   #navOptionsMenu {
 	height: 400px;
+  }
+  #topNavStatic {
+    display:none
+  }
+
+  .topNavContainer {
+    display: block;
   }
 }
