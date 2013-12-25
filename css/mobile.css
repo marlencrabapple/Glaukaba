@@ -63,6 +63,10 @@
     height: auto!important;
     margin: 10px!important;
   }
+  
+  #topNavStatic {
+    display:none
+  }
 
   .topNavContainer {
     display: block;
