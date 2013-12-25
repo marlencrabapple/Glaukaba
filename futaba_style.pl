@@ -518,9 +518,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 			</div>
 			</if>
 				<div class="mobile-post-menu mobile">
-					<a class="button" href="javascript:void(0)">Report</a>
+					<a class="button" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')">Report</a>
 					<a class="button delete-button" href="javascript:void(0)">Delete</a>
-					<a class="button" href="javascript:void(0)">Link</a>
+					<a class="button" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>">Link</a>
 					<a class="button filter-button" href="javascript:void(0)">Filter</a>
 					<div class="mobile-filter-menu">
 						By:
@@ -616,9 +616,9 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					</blockquote>
 				</div>
 				<div class="mobile-post-menu mobile">
-					<a class="button" href="javascript:void(0)">Report</a>
+					<a class="button" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')">Report</a>
 					<a class="button delete-button" href="javascript:void(0)">Delete</a>
-					<a class="button" href="javascript:void(0)">Link</a>
+					<a class="button" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>">Link</a>
 					<a class="button filter-button" href="javascript:void(0)">Filter</a>
 					<div class="mobile-filter-menu">
 						By:
