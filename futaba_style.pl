@@ -1166,7 +1166,7 @@ use constant JSON_INDEX_TEMPLATE => compile_template(q{
 					"name":"<var mahou_inyoufu $name>",
 					<if $trip>"trip":"<var $trip>",</if>
 					<if $email>"email":"<var mahou_inyoufu $email>",</if>
-					<if $sub>"sub":"<var mahou_inyoufu $subject>",</if>
+					<if $subject>"sub":"<var mahou_inyoufu $subject>",</if>
 					<if $comment>"com":"<var mahou_inyoufu $comment>",</if>
 					<if $image>
 						"image":"<var $image>",
