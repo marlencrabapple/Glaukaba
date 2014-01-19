@@ -184,6 +184,91 @@ use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 }.NORMAL_FOOT_INCLUDE);
 
+use constant GENERAL_POSTS_TEMPLATE => q{
+<div class="thread"><loop $posts>
+		<if !$parent>
+			<div class="parentPost" id="parent<var $num>">
+				<div class="hat"></div>
+				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+					<br />
+					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
+						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
+					<if !$thumbnail>
+						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
+					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
+				<a id="<var $num>"></a>
+				<span class="parentPostInfo">
+					<label><input type="checkbox" name="delete" value="<var $num>" />
+					<span class="filetitle"><var $subject></span>
+					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+					<var $date></label>
+					<span class="reflink">
+					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
+					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+					<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
+					<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
+					</span>&nbsp;
+					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>				
+					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
+				</span>
+				<blockquote<if $email=~/aa$/i> class="aa"</if>>
+				<var $comment>
+				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+				</blockquote>
+			</div>
+			<if $omit><span class="omittedposts">
+				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
+				<if !$omitimages><var sprintf S_ABBR,$omit></if>
+			</span></if></if>
+			<if $parent><div class="replyContainer" id="replyContainer<var $num>">
+					<div class="doubledash"></div>
+					<div class="reply" id="reply<var $num>">
+						<a id="<var $num>"></a>
+						<label><input type="checkbox" name="delete" value="<var $num>" />
+						<span class="replytitle"><var $subject></span>
+						<if $email><span class="commentpostername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
+						<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
+						<var $date></label>
+						<span class="reflink">
+							<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
+							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
+						</span>
+						}.ADMIN_POST_BUTTONS_TEMPLATE.q{
+						<if $image>
+							<br />
+							<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
+							-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
+							<br />
+							<if $thumbnail>
+								<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
+									<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
+							</if>
+							<if !$thumbnail>
+								<if DELETED_THUMBNAIL>
+									<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
+									<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb" /></a>
+								</if>
+								<if !DELETED_THUMBNAIL>
+									<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+								</if></if></if>
+						<blockquote<if $email=~/aa$/i> class="aa"</if>>
+							<var $comment>
+							<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
+						</blockquote>
+					</div>
+				</div>
+			</if>
+			<hr />
+		</loop>
+	</div>
+};
+
+use constant GENERAL_POSTS_TEMPLATE_WRAPPER => compile_template(MANAGER_HEAD_INCLUDE.q{
+<strong>Viewing posts for '<em><var $selectby> <var $val></em>'.</strong>
+}.GENERAL_POSTS_TEMPLATE.NORMAL_FOOT_INCLUDE);
+
 use constant PROXY_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 
 <div class="dellist"><const S_MANAPROXY></div>
@@ -717,7 +802,7 @@ use constant PASS_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <strong>Last IP:</strong> '<var $ip>'
 [<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=verify">Verify</a>]
 [<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Ban</a>]
-[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
+[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;val=<var $num>&amp;selectby=passnum">View Posts</a>]
 </p>
 </loop>
 </fieldset>
@@ -733,7 +818,7 @@ use constant PASS_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <strong>Created:</strong> '<var make_date($timestamp,DATE_STYLE)>'
 <strong>IP List:</strong> '<var $ip>'
 [<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Ban</a>]
-[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
+[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;val=<var $num>&amp;selectby=passnum">View Posts</a>]
 </p>
 </loop>
 </fieldset>
@@ -748,7 +833,7 @@ use constant PASS_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <strong>Last Use:</strong> '<var make_date($lasthit,DATE_STYLE)>'
 <strong>Created:</strong> '<var make_date($timestamp,DATE_STYLE)>'
 <strong>IP List:</strong> '<var $ip>'
-[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
+[<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;val=<var $num>&amp;selectby=passnum">View Posts</a>]
 </p>
 </loop>
 </fieldset>
@@ -934,84 +1019,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			</if>
 		</loop>
 	</legend>
-<div class="thread"><loop $posts>
-		<if !$parent>
-			<div class="parentPost" id="parent<var $num>">
-				<div class="hat"></div>
-				<if $image><span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-					-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-					<br />
-					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb" /></if></a></if>
-					<if !$thumbnail>
-						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb" /></a></if>
-					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
-				<a id="<var $num>"></a>
-				<span class="parentPostInfo">
-					<label><input type="checkbox" name="delete" value="<var $num>" />
-					<span class="filetitle"><var $subject></span>
-					<if $email><span class="postername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-					<if !$email><span class="postername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-					<var $date></label>
-					<span class="reflink">
-					<if !$thread><a class="refLinkInner" href="<var get_reply_link($num,0)>#i<var $num>">No.<var $num></a></if>
-					<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-					<if $sticky><img src="//<var DOMAIN>/img/sticky.gif" alt="Stickied"/></if>
-					<if $locked><img src="//<var DOMAIN>/img/closed.gif " alt="Locked"/></if>
-					</span>&nbsp;
-					<if !$thread>[<a href="<var $self>?admin=<var $admin>&amp;task=viewthread&amp;num=<var $num>"><const S_REPLY></a>]</if>				
-					}.ADMIN_POST_BUTTONS_TEMPLATE.q{
-				</span>
-				<blockquote<if $email=~/aa$/i> class="aa"</if>>
-				<var $comment>
-				<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
-				</blockquote>
-			</div>
-			<if $omit><span class="omittedposts">
-				<if $omitimages><var sprintf S_ABBRIMG,$omit,$omitimages></if>
-				<if !$omitimages><var sprintf S_ABBR,$omit></if>
-			</span></if></if>
-			<if $parent><div class="replyContainer" id="replyContainer<var $num>">
-					<div class="doubledash"></div>
-					<div class="reply" id="reply<var $num>">
-						<a id="<var $num>"></a>
-						<label><input type="checkbox" name="delete" value="<var $num>" />
-						<span class="replytitle"><var $subject></span>
-						<if $email><span class="commentpostername"><a href="<var $email>"><var $name></a></span><if $trip><span class="postertrip"><a href="<var $email>"><var $trip></a></span></if></if>
-						<if !$email><span class="commentpostername"><var $name></span><if $trip><span class="postertrip"><var $trip></span></if></if>
-						<var $date></label>
-						<span class="reflink">
-							<if !$thread><a class="refLinkInner" href="<var get_reply_link($parent,0)>#i<var $num>">No.<var $num></a></if>
-							<if $thread><a class="refLinkInner" href="javascript:insert('&gt;&gt;<var $num>')">No.<var $num></a></if>
-						</span>
-						}.ADMIN_POST_BUTTONS_TEMPLATE.q{
-						<if $image>
-							<br />
-							<span class="filesize"><const S_PICNAME><a target="_blank" href="<var expand_image_filename($image)>"><if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-							-(<em><var int($size/1024)> KB, <var $width>x<var $height></em>)</span>
-							<br />
-							<if $thumbnail>
-								<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
-									<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;" /></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" /></if></a>
-							</if>
-							<if !$thumbnail>
-								<if DELETED_THUMBNAIL>
-									<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
-									<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb" /></a>
-								</if>
-								<if !DELETED_THUMBNAIL>
-									<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
-								</if></if></if>
-						<blockquote<if $email=~/aa$/i> class="aa"</if>>
-							<var $comment>
-							<if $abbrev><div class="abbrev"><var sprintf(S_ABBRTEXT,get_reply_link($num,$parent))></div></if>
-						</blockquote>
-					</div>
-				</div>
-			</if>
-			<hr />
-		</loop>
-	</div>
+	}.GENERAL_POSTS_TEMPLATE.q{
 </fieldset>
 }.NORMAL_FOOT_INCLUDE);
 

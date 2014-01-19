@@ -352,6 +352,12 @@ sub init(){
 		my $num=$query->param("num");
 		make_admin_thread($admin,$num);
 	}
+	elsif($task eq 'viewposts') {
+		my $admin=$query->param("admin");
+		my $selectby=$query->param("selectby");
+		my $val=$query->param("val");
+		make_view_posts($admin,$selectby,$val);
+	}
 	elsif($task eq 'ippage'){
 		my $admin=$query->param("admin");
 		my $ip=$query->param("ip");
@@ -1002,9 +1008,9 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		included_fields=>["field1","field2","field3","field4"],
 	) unless $whitelisted;
 	
-	if((!$no_captcha) and (!$response)) {
-		@taargus=has_pass($passcookie);
-		make_error("You must enter a CAPTCHA until your pass is approved by a moderator.") if @taargus[0]==2;
+	if(!$no_captcha) {
+		@taargus = has_pass($passcookie);
+		make_error("You must enter a CAPTCHA until your pass is approved by a moderator.") if @taargus[0] == 2 and !$response;
 	}
 
 	# check captcha
@@ -2264,6 +2270,36 @@ sub make_view_report($$){
 	));
 }
 
+sub make_view_posts($$$) {
+	my ($admin,$selectby,$val) = @_;
+	my ($sth,$row,$validtax,@posts);
+	my @taxes = ('passnum');
+	my @session = check_password($admin);
+	
+	foreach my $tax (@taxes) {
+		$validtax = 1 if $tax eq $selectby;
+	}
+	
+	make_error('Invalid selectby value.') unless $validtax == 1;
+	
+	# this is going to need a ton of changes to support anything other than viewing by pass
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE $selectby=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute($val) or make_error(S_SQLFAIL);
+	
+	while($row = get_decoded_hashref($sth)) {
+		push @posts, $row;
+	}
+	
+	make_http_header();
+	print encode_string(GENERAL_POSTS_TEMPLATE_WRAPPER->( # ha!
+		admin => $admin,
+		selectby => $selectby,
+		val => $val,
+		session => \@session,
+		posts => \@posts
+	));
+}
+
 sub make_ban_page($$$){
 	my ($ip,$num,$admin)=@_;
 	my ($sth,$row,@bans);
@@ -3096,6 +3132,10 @@ sub view_deleted_post($$$){
 	my($sth,@post,$row,$parent);
 	my @session = check_password($admin);
 	
+	if(($board eq 0) or (!$board)) {
+		$board = BOARD_DIR;
+	}
+	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_DELETED_TABLE." WHERE num=? AND board=?;") or make_error($dbh->errstr);
 	$sth->execute($num,$board) or make_error($dbh->errstr);
 	
@@ -3869,8 +3909,9 @@ sub add_pass($$$){
 
 sub make_authorize_pass($){
 	my($cookie)=@_;
+	my @passinfo = split '##', $cookie;
 	
-	make_error("You are already authorized.") if ($cookie);
+	make_error("You are already authorized.") if ($passinfo[2] == 1);
 	
 	make_http_header();
 	print encode_string(AUTHORIZE_PASS_TEMPLATE->(

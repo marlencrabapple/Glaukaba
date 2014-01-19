@@ -16,6 +16,18 @@
 #		name  => "",
 #		dir     => "",
 #		public      => 1
+#		lastboard => 1
+#	}
+#];
+
+# This is completely optional
+
+#use constant LINKS => [
+#	{
+#		name => "@",
+#		url => "https://twitter.com/mysiteofficial",
+#		rel => "me",
+#		lastlink => 1
 #	}
 #];
 
