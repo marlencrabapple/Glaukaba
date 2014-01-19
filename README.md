@@ -2,7 +2,7 @@ Glaukaba
 ========
 
 ## Intro ##
-Glaukaba is a Wakaba fork with many additional features and enhancements. As of July 2013, its stable enough to run without any security or major usability issues when configured properly. Try it out for yourself and let me know.
+Glaukaba is a Wakaba (an imageboard script) fork with many additional features and enhancements. As of July 2013, its stable enough to run without any security or major usability issues when configured properly. Try it out for yourself and let me know.
 
 ## Abridged Setup Guide ##
 1. Create a directory for each board You plan on using, and copy every file (no directories except /include) in Glaukaba's root except for globalconfig.pl and spam.txt into each directory.
@@ -17,7 +17,7 @@ Glaukaba is a Wakaba fork with many additional features and enhancements. As of 
 10. Run wakaba.pl in each board directory from your browser of choice and pray that it works.
 	
 ## Example Installation ##
-A semi-current version (usually a few commits behind) of this software is in use on http://www.glauchan.org and a live demo with a public moderator account will be available at http://sandbox.onlinebargainshrimptoyourdoor.com at some point in the future.
+A semi-current version (usually a few commits behind) of this software is in use on http://www.glauchan.org and a live demo with a public moderator account will be available at http://onlinebargainshrimptoyourdoor.com at some point in the future.
 
 ## Issues ##
 - Single board installations will require a bit of tinkering. Then again, so will any installation.
