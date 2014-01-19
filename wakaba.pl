@@ -425,7 +425,8 @@ sub init(){
 	elsif($task eq 'viewdeletedpost'){
 		my $admin=$query->param("admin");
 		my $num=$query->param("num");
-		view_deleted_post($admin,$num);
+		my $board=$query->param("board");
+		view_deleted_post($admin,$num,$board);
 	}
 	elsif($task eq 'viewlog'){
 		my $admin=$query->param("admin");
@@ -2299,7 +2300,7 @@ sub add_ip_ban($$$){
 		make_error("Invalid ban duration. Select Permanent, Warning, or enter a valid number in the duration field before submitting a ban.");
 	}
 	
-	log_action("ipban",dec_to_dot $ival1."<>".dec_to_dot $ival2,@session);
+	log_action("ipban",$ival1,@session);
 	
 	# get the current time
 	my $time = time();
@@ -2455,7 +2456,7 @@ sub remove_admin_entry($$){
 	my ($sth);
 
 	my @session = check_password($admin);
-	log_action("removeadminentry",$num,@session);
+	log_action("removeadminentry",'#' . $num,@session);
 	
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
@@ -3090,13 +3091,13 @@ sub make_ip_page($$){
 	));
 }
 
-sub view_deleted_post($$){
-	my($admin,$num)=@_;
+sub view_deleted_post($$$){
+	my($admin,$num,$board)=@_;
 	my($sth,@post,$row,$parent);
 	my @session = check_password($admin);
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_DELETED_TABLE." WHERE num=? AND board=?;") or make_error($dbh->errstr);
-	$sth->execute($num,BOARD_DIR) or make_error($dbh->errstr);
+	$sth->execute($num,$board) or make_error($dbh->errstr);
 	
 	while($row=get_decoded_hashref($sth)){
 		push @post,$row;
@@ -3130,7 +3131,7 @@ sub update_ban($$$$$){
 	my($admin,$num,$ip,$reason,$active)=@_;
 	my @session = check_password($admin);
 	
-	log_action("updateban",dec_to_dot $ip,@session);
+	log_action("updateban",$ip,@session);
 	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	
 	if($active==0 or $active==1){
@@ -3188,7 +3189,7 @@ sub log_action($$;@){
 	my ($time,$sth);
 	
 	if(!@session[0]){
-		@session[0]=get_ip(USE_CLOUDFLARE);
+		@session[0]=dot_to_dec(get_ip(USE_CLOUDFLARE));
 	}
 	elsif(!@session[1]){
 		my $admin = @session[0];
@@ -3200,7 +3201,7 @@ sub log_action($$;@){
 
 	$time=time();
 	$sth=$dbh->prepare("INSERT INTO ".SQL_LOG_TABLE." VALUES(null,?,?,?,?,?,?);") or make_error($dbh->errstr);
-	$sth->execute(@session[0],$action,$object,BOARD_DIR,$time,get_ip(USE_CLOUDFLARE)) or make_error($dbh->errstr);
+	$sth->execute(@session[0],$action,$object,BOARD_DIR,$time,dot_to_dec(get_ip(USE_CLOUDFLARE))) or make_error($dbh->errstr);
 }
 
 sub make_view_log($){
@@ -3209,10 +3210,18 @@ sub make_view_log($){
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_LOG_TABLE." WHERE board=? ORDER BY num DESC;") or make_error(S_SQLFAIL);
-	$sth->execute(BOARD_DIR) or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_LOG_TABLE." ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
+		if($$row{object} =~ /^[0-9]+$/) {
+			$$row{object} = dec_to_dot($$row{object})
+		}
+		
+		if($$row{user} =~ /^[0-9]+$/) {
+			$$row{user} = dec_to_dot($$row{user})
+		}
+		
 		push @log,$row;
 	}
 	
@@ -3331,7 +3340,14 @@ sub stop_script(){
 }
 
 sub get_script_name(){
-	return $ENV{SCRIPT_NAME};
+	my($board) = @_;
+	
+	if($board) {
+		return '//' . DOMAIN . "/$board/wakaba.pl";
+	}
+	else{
+		return $ENV{SCRIPT_NAME};
+	}
 }
 
 sub get_secure_script_name(){

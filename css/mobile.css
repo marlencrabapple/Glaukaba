@@ -472,8 +472,10 @@
   #topNavStatic {
     display:none
   }
-
   .topNavContainer {
     display: block;
+  }
+  .logo {
+    margin-top: 35px;
   }
 }

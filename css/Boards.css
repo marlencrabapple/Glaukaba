@@ -957,6 +957,7 @@ width: 50px;
   display: block;
   max-height: 10em;
   overflow-y: hidden;
+  word-wrap: break-word;
 }
 
 .cat-controls {

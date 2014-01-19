@@ -633,9 +633,29 @@ use constant STAFF_LOG_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	[<a href="<var $self>?task=clearlog&amp;admin=<var $admin>">Clear Log</a>]
 	<hr />
 </if>
+<table id="threadList" align="center" style="white-space: nowrap; width: auto;">
+<thead>
+	<tr>
+		<td class="listHead">User</td>
+		<td class="listHead">Action</td>
+		<td class="listHead">Object</td>
+		<td class="listHead">Board</td>
+		<td class="listHead">Date</td>
+	</tr>
+</thead>
+<tbody>
 <loop $log>
-<var $num>: User [<var $user>@<var $ip>] <var $action> <var $object> from /<var $board>/ on <var make_date $time,DATE_STYLE><br />
+	<tr class="listRow">
+		<td class="listCol"><var $user>@<var dec_to_dot $ip></td>
+		<td class="listCol"><var $action></td>
+		<td class="listCol"><var $object></td>
+		<td class="listCol">/<var $board>/</td>
+		<td class="listCol"><var make_date $time,DATE_STYLE></td>
+	</tr>
 </loop>
+<tr><td><br/></td></tr>
+</tbody>
+</table>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
@@ -658,7 +678,7 @@ use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<div class="postrow">
 				<div class="postBlock">Trip</div>
 				<div class="postField"><input type="text" class="postInput" name="field1andahalf" id="field1andahalf" value="<var decode_string($trip,CHARSET,1)>" /></div>
-			</class>
+			</div>
 			<div class="postrow">
 				<div class="postBlock">Link</div>
 				<div class="postField"><input type="text" class="postInput" name="field2" id="field2" value="<var decode_string($email,CHARSET,1)>" /></div>
@@ -696,7 +716,7 @@ use constant PASS_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <strong>Last IP Change:</strong> '<var make_date($lastswitch,DATE_STYLE)>'
 <strong>Last IP:</strong> '<var $ip>'
 [<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=verify">Verify</a>]
-[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Revoke</a>]
+[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Ban</a>]
 [<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
 </p>
 </loop>
@@ -857,7 +877,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 					<if !$active>[<a href="<var $self>?task=updateban&amp;num=<var $num>&amp;active=1&amp;ip=<var $ip>&amp;admin=<var $admin>">Activate</a>]</if>
 					<if $active>[<a href="<var $self>?task=updateban&amp;num=<var $num>&amp;&amp;active=0&amp;ip=<var $ip>&amp;admin=<var $admin>">Deactivate</a>]</if>
 					<a href="<var $self>?task=removeban&amp;num=<var $num>&amp;admin=<var $admin>">[Delete]</a>
-					<if $postnum>[<a href="<var $self>?task=viewdeletedpost&amp;num=<var $postnum>&amp;admin=<var $admin>">View Post</a>]</if>
+					<if $postnum>[<a href="<var $self>?task=viewdeletedpost&amp;num=<var $postnum>&amp;board=<var $board>&amp;admin=<var $admin>">View Post</a>]</if>
 				</td>
 			</tr>
 			</loop>
@@ -880,7 +900,7 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<td class="listCol">[<a href="<var $self>?task=bantemplate&amp;ip=<var $ip>&amp;admin=<var $admin>">Ban</a>]</td></tr>
 	</loop>
 	<tr><td><br/></td></tr>
-	<tbody>
+	</tbody>
 	</table>
 	<div align="center">[<a href="<var $self>?task=dismissrequests&amp;ip=<var $ip>&amp;admin=<var $admin>">Dismiss All</a>]</div>
 </fieldset>
@@ -904,7 +924,16 @@ use constant IP_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 		<tr><td><input type="submit" value="<const S_SUBMIT>" /></td></tr>
 		</tbody></table></form></div>
 </fieldset>
-<fieldset><legend>Posts [<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>">Delete All</a>]</legend>
+<fieldset>
+	<legend>
+		Posts
+		[<a href="<var $self>?admin=<var $admin>&amp;task=deleteall&amp;ip=<var $ip>">Delete All</a>]
+		<loop BOARDS>
+			<if BOARD_DIR ne $dir>
+				[<a href="/<var $dir>/wakaba.pl?task=ippage&ip=<var $ip>&admin=<var $admin>">/<var $dir>/</a>]
+			</if>
+		</loop>
+	</legend>
 <div class="thread"><loop $posts>
 		<if !$parent>
 			<div class="parentPost" id="parent<var $num>">
@@ -1075,7 +1104,7 @@ use constant ADMIN_PAGE_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			<div class="postrow">
 				<div class="postBlock">Password</div>
 				<div class="postField">
-					<input type="password" class="postInput" id="password" name="password"/>
+					<input type="password" class="postInput pass-field" id="password" name="password"/>
 					<span class="passDesc">(for post and file deletion)</span>
 				</div>
 			</div>
