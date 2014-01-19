@@ -4,6 +4,7 @@ use strict;
 
 use Time::Local;
 use Socket;
+use Net::SMTP;
 
 my $has_md5=0;
 eval 'use Digest::MD5 qw(md5)';
@@ -1414,12 +1415,35 @@ sub send_email($$$$){
 	my($to,$from,$subject,$message)=@_;
 	$from=~s/\@www\./\@/;
  	my $sendmail = '/usr/lib/sendmail';
- 	open(MAIL, "|$sendmail -oi -t");
- 		print MAIL "From: $from\n";
- 		print MAIL "To: $to\n";
- 		print MAIL "Subject: $subject\n\n";
- 		print MAIL "$message\n";
- 	close(MAIL);
+ 	
+ 	if(USE_SMTP) {
+		my $smtp = Net::SMTP->new(
+			SMTP_INFO->{host},
+			Port => SMTP_INFO->{port},
+			Debug => 1
+		);
+		
+		make_error('Error connecting to SMTP server.') unless $smtp;
+		
+		$smtp->auth(SMTP_INFO->{user}, SMTP_INFO->{pass});
+		$smtp->mail(SITE_NAME . "<$from>");
+		$smtp->to($to);
+		$smtp->data();
+		$smtp->datasend("From: " . SITE_NAME . " <$from>\n");
+		$smtp->datasend("To: $to\n");
+		$smtp->datasend("Subject: $subject\n\n");
+		$smtp->datasend("$message\n");
+		$smtp->quit;
+	}
+	else {
+		open(MAIL, "|$sendmail -oi -t");
+		print MAIL "From: SITE_NAME <$from>\n";
+		print MAIL "To: $to\n";
+		print MAIL "Subject: $subject\n\n";
+		print MAIL "$message\n";
+		close(MAIL);
+	}
+
 }
 
 sub get_ip($){

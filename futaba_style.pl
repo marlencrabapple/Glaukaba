@@ -121,8 +121,8 @@ var sitevars = {
 	<if NSFWIMAGE_ENABLED>"nsfw": 1,</if>
 	"social": <if SOCIAL>1</if><if !SOCIAL>0</if>,
 	"noext": <if REWRITTEN_URLS>1</if><if !REWRITTEN_URLS>0</if>,
-	"self": "<var $self>"
-	<if $admin>,"admin": 1</if>
+	"self": "<var $self>"<if $admin>,
+	"admin": 1</if>
 };
 </script>
 };
@@ -243,6 +243,7 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<if !$noextra>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		</if>
+		}.SITE_VARS_INCLUDE.q{
 		<script type="text/javascript">var style_cookie="<const STYLE_COOKIE>";</script>
 		<script type="text/javascript" src="//<var DOMAIN>/js/<var JS_FILE>"></script>
 		<if !$noextra><script type="text/javascript" src="//<var DOMAIN>/js/<var EXTRA_JS_FILE>"></script></if>
@@ -251,7 +252,6 @@ use constant MINIMAL_HEAD_INCLUDE => q{
 		<script type="text/javascript" src="//<var DOMAIN>/js/prettify/prettify.js"></script>
 		<script type="text/javascript" src="//<var DOMAIN>/js/jquery.jqote2.min.js"></script>
 		</if>
-		}.SITE_VARS_INCLUDE.q{
 	</head>
 	<if $thread><body class="replypage"></if>
 	<if $indexpage><body class="indexpage"></if>
@@ -306,17 +306,19 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <if $thread>
 <div class="desktop threadlinks">
 	[<a href="//<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
+	[<a href="javascript:void(0)" class="gallerylink">Gallery Mode</a>]
 	<if ENABLE_CATALOG>[<a href="//<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a>]</if>
 	<if ENABLE_LIST>[<a href="//<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a>]</if>
 	[<a href="#bottom">Bottom</a>]
-	<div class="theader"><const S_POSTING></div>
 </div>
 <div class="mobile threadlinks">
 	<a href="//<var DOMAIN>/<var BOARD_DIR>" class="button"><const S_RETURN></a>
+	<a href="javascript:void(0)" class="gallerylink button">Gallery</a>
 	<if ENABLE_CATALOG><a class="button" href="//<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a></if>
 	<if ENABLE_LIST><a class="button" href="//<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a></if>
 	<a class="button" href="#bottom">Bottom</a>
 </div>
+<div class="theader desktop"><const S_POSTING></div>
 </if>
 <if $postform>
 	<script type="text/javascript">
@@ -489,7 +491,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 						</div>
 						<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
 						<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
-						<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+						<a onmouseover="closeSub(this);" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num><if !REWRITTEN_URLS>.html</if>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 					</div>
 				</div>
 				<blockquote<if $email=~/aa$/i> class="aa"</if>>
@@ -520,7 +522,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="mobile-post-menu mobile">
 					<a class="button" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')">Report</a>
 					<a class="button delete-button" href="javascript:void(0)">Delete</a>
-					<a class="button" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>">Link</a>
+					<a class="button" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num><if !REWRITTEN_URLS>.html</if>#<var $num>">Link</a>
 					<a class="button filter-button" href="javascript:void(0)">Filter</a>
 					<div class="mobile-filter-menu">
 						By:
@@ -583,7 +585,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 								</div>
 								<if SOCIAL><a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="facebookPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Facebook</a>
 								<a onmouseover="closeSub(this);" href="javascript:void(0);" onclick="twitterPost(<var $num>,<var $parent>)" class="postMenuItem">Post to Twitter</a></if>
-								<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
+								<a href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent><if !REWRITTEN_URLS>.html</if>#<var $num>" class="postMenuItem" target="_blank">Permalink</a>
 							</div>
 						</div>
 						<div style="clear:both"></div>
@@ -618,7 +620,7 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 				<div class="mobile-post-menu mobile">
 					<a class="button" href="javascript:void(0)" onclick="reportPostPopup(<var $num>, '<var BOARD_DIR>')">Report</a>
 					<a class="button delete-button" href="javascript:void(0)">Delete</a>
-					<a class="button" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $num>#<var $num>">Link</a>
+					<a class="button" href="//<var DOMAIN>/<var BOARD_DIR>/res/<var $parent><if !REWRITTEN_URLS>.html</if>#<var $num>">Link</a>
 					<a class="button filter-button" href="javascript:void(0)">Filter</a>
 					<div class="mobile-filter-menu">
 						By:
@@ -644,12 +646,14 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 <if $thread>
 <div class="desktop threadlinks">
 [<a href="//<var DOMAIN>/<var BOARD_DIR>"><const S_RETURN></a>]
+[<a href="javascript:void(0)" class="gallerylink">Gallery Mode</a>]
 <if ENABLE_CATALOG>[<a href="//<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a>]</if>
 <if ENABLE_LIST>[<a href="//<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a>]</if>
 [<a href="#">Top</a>]
 </div>
 <div class="mobile threadlinks">
 <a href="//<var DOMAIN>/<var BOARD_DIR>" class="button"><const S_RETURN></a>
+<a href="javascript:void(0)" class="gallerylink button">Gallery</a>
 <if ENABLE_CATALOG><a class="button" href="//<const DOMAIN>/<const BOARD_DIR>/catalog<if !REWRITTEN_URLS>.html</if>">Catalog</a></if>
 <if ENABLE_LIST><a class="button" href="//<const DOMAIN>/<const BOARD_DIR>/subback<if !REWRITTEN_URLS>.html</if>">Thread List</a></if>
 <a class="button" href="#">Top</a>
@@ -937,7 +941,13 @@ use constant REGISTER_PASS_TEMPLATE => compile_template(CONTENT_HEAD_INCLUDE.q{
 			<h2>Get a <const SITE_NAME> Pass</h2>
 		</div>
 		<div class="boxContent">
-			<h3 style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px; font-weight:normal"><strong>&rarr; Already have a <const SITE_NAME> pass? <a href="<if !REWRITTEN_LINKS><var $self>?task=passauth</if><if REWRITTEN_LINKS>//<const DOMAIN>/pass/auth</if>">Click here</a> to login. &larr;</strong></h3>
+			<h3 style="font-size: large; color: red; text-align: center; margin-top: 9px; margin-bottom: 12px; font-weight:normal">
+				<strong>
+				&rarr; Already have a <const SITE_NAME> pass?
+					<a href="<if !REWRITTEN_URLS><var $self>?task=passauth</if><if REWRITTEN_URLS>//<const DOMAIN>/pass/auth</if>">Click here</a>
+					to login. &larr;
+				</strong>
+			</h3>
 			<hr>
 			<p>A <const SITE_NAME> pass is a feature intended to simplify the posting experience for loyal and quality posters. The <const SITE_NAME> Pass's main and only feature is the ability to bypass reCAPTCHA, a necessary evil to avoid spam and floods from other imageboard communities. Although inspired by 4chan's pass system, <const SITE_NAME> Pass is similar only in function. Unlike 4chan Pass, <const SITE_NAME> Pass costs nothing, and will be compatible across multiple sites running <const SITE_NAME> in the future.</p>
 			<p>You will not be able to bypass reCAPTCHA immediately after registering for a <const SITE_NAME> Pass. After signing up, you will be automatically logged into the pass system, and your posts will be identifiable by your pass, regardless of your IP address. After you've made a minimum of 5 posts while logged in with your pass, a <const SITE_NAME> moderator or administrator will either approve or deny your pass application. As long as the posts don't break any rules, chances are you will be approved immediately after review.</p>
@@ -1096,11 +1106,11 @@ use constant AUTHORIZE_PASS_TEMPLATE => compile_template(MINIMAL_HEAD_INCLUDE.q{
 			<div class="postBlock">Pin</div>
 			<div class="postField"><input type="text" style="text-align: center;" class="postInput" name="pin" id="pin"></div>
 		</div>
-		<div style="text-align:center">
-			[<input type="checkbox" id="remember" name="remember" value=1>
-			<label for="remember">Remember this device for 30 days</label>]
-			<br><button type="submit">Submit</button>
-		</div>
+	</div>
+	<div style="text-align:center">
+		[<input type="checkbox" id="remember" name="remember" value=1>
+		<label for="remember">Remember this device for 30 days</label>]
+		<br><button type="submit">Submit</button>
 	</div>
 	</form>
 	<br>
@@ -1127,7 +1137,7 @@ use constant JSON_THREAD_TEMPLATE => compile_template(q{
 		"name":"<var mahou_inyoufu $name>",
 		<if $trip>"trip":"<var $trip>",</if>
 		<if $email>"email":"<var mahou_inyoufu $email>",</if>
-		<if $sub>"sub":"<var mahou_inyoufu $subject>",</if>
+		<if $subject>"sub":"<var mahou_inyoufu $subject>",</if>
 		<if $comment>"com":"<var mahou_inyoufu $comment>",</if>
 		<if $image>
 			"image":"<var $image>",

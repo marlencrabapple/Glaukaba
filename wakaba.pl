@@ -1001,7 +1001,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		included_fields=>["field1","field2","field3","field4"],
 	) unless $whitelisted;
 	
-	if(!$no_captcha){
+	if((!$no_captcha) and (!$response)) {
 		@taargus=has_pass($passcookie);
 		make_error("You must enter a CAPTCHA until your pass is approved by a moderator.") if @taargus[0]==2;
 	}
@@ -3838,7 +3838,7 @@ sub add_pass($$$){
 		$email,
 		"cameron\@".DOMAIN,
 		SITE_NAME." Pass Info",
-		"Your pass is currently pending verification.\n\nToken: ".$token."\nPin: ".$pin."\n\nFor more info, visit http://".DOMAIN."/pass/"
+		"Your " . SITE_NAME . " pass is currently pending verification.\n\nToken: ".$token."\nPin: ".$pin."\n\nFor more info, visit http://".DOMAIN."/pass/"
 	);
 	
 	# redirect to an info page
@@ -3908,7 +3908,15 @@ sub authorize_pass($$$;$){
 sub update_pass($$$;$){
 	my($admin,$num,$action,$noredirect)=@_;
 	my($value,$message,$sth,$row,$unapprove);
-	my %types = ("ban","banned","unban","banned","verify","approved","unverfiy","approved");
+	#my %types = ("ban","banned","unban","banned","verify","approved","unverfiy","approved");
+	
+	my $types = {
+		ban => 'banned',
+		unban => 'banned',
+		verify => 'approved',
+		unverify => 'approved'
+	};
+	
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
@@ -3919,23 +3927,23 @@ sub update_pass($$$;$){
 	# some spaghetti code
 	if(($action eq "ban")or($action eq "verify")){
 		$unapprove=",approved=0" unless $action eq "verify";
-		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$types{$action}."=1".$unapprove." WHERE num=?;") or make_error(S_SQLFAIL);
+		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=1".$unapprove." WHERE num=?;") or make_error(S_SQLFAIL);
 		$sth->execute($num) or make_error(S_SQLFAIL);
 		if($action eq "ban"){
-			$message="Your pass was just banned.";
+			$message="Your pass " . SITE_NAME . " was banned.";
 		}
 		else{
-			$message="Congratulation! Your pass was just verified by a ".SITE_NAME." staff member!";
+			$message="Congratulations! Your " . SITE_NAME . " pass was just verified by a ".SITE_NAME." staff member. Login or solve a captcha (we promise it'll be your last) to start posting captcha free.";
 		}
 	}
 	elsif(($action eq "unban")or($action eq "unverify")){
-		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$types{$action}."=? WHERE num=?;") or make_error(S_SQLFAIL);
+		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=? WHERE num=?;") or make_error(S_SQLFAIL);
 		$sth->execute(0,$num) or make_error(S_SQLFAIL);
 		if($action eq "unverify"){
-			$message="Your pass was just disabled for inactivity. It will be eligible for renewal after you've made 5 more posts with it on.";
+			$message="Your " . SITE_NAME . " pass was just disabled for inactivity. It will be eligible for renewal after you've made 5 more posts while logged in.";
 		}
 		else{
-			$message="Congratulation! Your pass was just unbanned by a ".SITE_NAME." staff member!";
+			$message="Congratulations! Your " . SITE_NAME . " was just unbanned by a ".SITE_NAME." staff member!";
 		}
 	}
 	
@@ -3962,15 +3970,14 @@ sub make_pass_list($){
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
-	# put unverified and banned ones in seperate arrays
 	while($row=get_decoded_hashref($sth)){
-		if($$row{approved}==0){
-			push @unverified,$row;
-		}
-		elsif($$row{banned}==1){
+		if($$row{banned} == 1) {
 			push @banned,$row;
 		}
-		else{
+		elsif($$row{approved} == 0) {
+			push @unverified,$row;
+		}
+		else {
 			push @normal,$row;
 		}
 	}

@@ -712,7 +712,7 @@ use constant PASS_LIST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 <strong>Last Use:</strong> '<var make_date($lasthit,DATE_STYLE)>'
 <strong>Created:</strong> '<var make_date($timestamp,DATE_STYLE)>'
 <strong>IP List:</strong> '<var $ip>'
-[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Revoke</a>]
+[<a href="<var $self>?task=updatepass&amp;admin=<var $admin>&amp;num=<var $num>&amp;action=ban">Ban</a>]
 [<a href="<var $self>?task=viewposts&amp;admin=<var $admin>&amp;num=<var $num>&amp;selectby=passnum">View Posts</a>]
 </p>
 </loop>
