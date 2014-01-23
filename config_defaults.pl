@@ -15,6 +15,7 @@ BEGIN {
 	eval "use constant USE_CLOUDFLARE => 0" unless(defined &USE_CLOUDFLARE);
 	eval "use constant USE_FASTCGI => 0" unless(defined &USE_FASTCGI);
 	eval "use constant USE_SMTP => 0" unless(defined &USE_SMTP);
+	eval "use constant SMTP_INFO => 0" unless(defined &SMTP_INFO);
 	
 	
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
