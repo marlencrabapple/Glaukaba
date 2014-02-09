@@ -36,6 +36,7 @@
     border: none;
     padding: 0;
     display: inline-block;
+    word-wrap:break-word;
   }
 
   .replyContainer {
