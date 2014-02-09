@@ -771,7 +771,6 @@ use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<br />
 	<form action="<var $self>" method="post" enctype="multipart/form-data">
 		<input type="hidden" name="admin" value="<var $admin>" />
-		<input type="hidden" name="no_captcha" value="1" />
 		<input type="hidden" name="task" value="updatepost" />
 		<input type="hidden" name="num" value="<var $num>" />
 		<if $thread><input type="hidden" name="parent" value="<var $thread>" /></if>
@@ -798,8 +797,14 @@ use constant EDIT_POST_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 			</div>
 			<div class="postrow">
 				<div class="postBlock">Comment</div>
-				<div class="postField"><textarea name="field4" class="postInput" id="field4"><var decode_string($comment,CHARSET,1)></textarea></div>
+				<div class="postField"><textarea name="field4" class="postInput" id="field4"><var $originalcomment></textarea></div>
 			</div>
+			<if $session-\>[1] eq 'admin'>
+			<div class="postrow">
+				<div class="postBlock">Options</div>
+				<div class="postField">[<label><input type="checkbox" name="no_format" value="1" />HTML</label>]</div>
+			</div>
+			</if>
 			<if !$thread>
 			</div>
 			</if>

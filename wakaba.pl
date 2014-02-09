@@ -1079,11 +1079,15 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	$email="mailto:$email" if $email and $email!~/^$protocol_re:/;
 
 	# format comment
-	$comment=format_comment(clean_string(decode_string($comment,CHARSET))) unless $no_format;
-	$comment.=$postfix;
+	my $originalcomment = clean_string(decode_string($comment,CHARSET));
+	$comment = format_comment($originalcomment) unless $no_format;
+	$comment .= $postfix;
 	
-	# last second code tag fixes
-	$comment=~s/\<\/pre\>\<br \/\>$/\<\/pre\>/g;
+	$originalcomment =~ s/(\r\n|\n|\r)/&#10;/g;
+	$originalcomment =~ s/\t/&#09;/g;
+	
+	# last second code tag fixes (not sure if this is needed anymore)
+	$comment=~s/\<\/pre\>\<br\>$/\<\/pre\>/g;
 
 	# insert default values for empty fields
 	$parent=0 unless $parent;
@@ -1124,15 +1128,18 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	# set spoilered image
 	my $tnmask;
 	
-	if($spoiler==1){
+	if($spoiler == 1){
 		$tnmask = 1;
 	}
 	
 	# finally, write to the database
-	my $sth=$dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
-	$sth->execute($parent,$time,$lasthit,$numip,$id,
-	$date,$name,$trip,$email,$subject,$password,$comment,
-	$filename,$size,$md5,$width,$height,$thumbnail,$tn_width,$tn_height,$sticky,$permasage,$locked,$uploadname,$tnmask,$class,@taargus[1]) or make_error(S_SQLFAIL);
+	my $sth = $dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
+		$sth->execute($parent,$time,$lasthit,$numip,$id,
+		$date,$name,$trip,$email,$subject,$password,$comment,
+		$originalcomment,$filename,$size,$md5,$width,$height,
+		$thumbnail,$tn_width,$tn_height,$sticky,$permasage,
+		$locked,$uploadname,$tnmask,$class,@taargus[1]
+	) or make_error(S_SQLFAIL);
 
 	if($parent) # bumping
 	{
@@ -3186,17 +3193,18 @@ sub update_ban($$$$$){
 	make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ip,ALTERNATE_REDIRECT);
 }
 
-sub make_edit_post($$){
-	my ($admin,$num)=@_;
+sub make_edit_post($$) {
+	my ($admin,$num) = @_;
 	my @session = check_password($admin);
 	my ($row,@posts);
 	
-	make_error(S_CLASS) unless @session[1] eq 'admin';
+	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE num=?") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth)){
+	while($row = get_decoded_hashref($sth)) {
+		make_error("This post can only be edited by a board administrator.") if !$$row{originalcomment} and $$row{comment};
 		push @posts,$row;
 	}
 	
@@ -3208,18 +3216,23 @@ sub make_edit_post($$){
 	));
 }
 
-sub edit_post($$$$$$){
-	my ($admin,$num,$comment,$subject,$name,$link,$trip)=@_;
+sub edit_post($$$$$$;$){
+	my ($admin,$num,$comment,$subject,$name,$link,$trip,$no_format) = @_;
+	my $originalcomment = $comment;
 	my @session = check_password($admin);
-	make_error(S_CLASS) unless @session[1] eq 'admin';
+	make_error(S_CLASS) unless @session[1] ne 'janitor';
 	log_action("editpost",$num,@session);
 	
-	$comment=~s/^\s+//;
-	$comment=~s/\s+$//;
-	$comment=~s/\n\s*/ /sg;
+	# format comment
+	$comment = format_comment(clean_string(decode_string($comment,CHARSET))) unless $no_format and @session[1] eq 'admin';
+	$comment =~ s/\<\/pre\>\<br \/\>$/\<\/pre\>/g;
+	$comment = S_ANOTEXT unless $comment;
 	
-	my $sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET comment=?,subject=?,name=?,email=?,trip=? WHERE num=?") or make_error(S_SQLFAIL);
-	$sth->execute($comment,$subject,$name,$link,$trip,$num) or make_error(S_SQLFAIL);
+	$originalcomment =~ s/(\r\n|\n|\r)/&#10;/g;
+	$originalcomment =~ s/\t/&#09;/g;
+	
+	my $sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET comment=?,originalcomment=?,subject=?,name=?,email=?,trip=? WHERE num=?") or make_error(S_SQLFAIL);
+	$sth->execute($comment,$originalcomment,$subject,$name,$link,$trip,$num) or make_error(S_SQLFAIL);
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=mpanel",ALTERNATE_REDIRECT);
 }
@@ -3482,7 +3495,8 @@ sub init_database(){
 	"email TEXT,".				# Email address
 	"subject TEXT,".			# Subject
 	"password TEXT,".			# Deletion password (in plaintext) 
-	"comment TEXT,".			# Comment text, HTML encoded.
+	"comment TEXT,".			# Comment text, HTML encoded
+	"originalcomment TEXT,".	# Comment text before formatting
 
 	"image TEXT,".				# Image filename with path and extension (IE, src/1081231233721.jpg)
 	"size INTEGER,".			# File size in bytes
