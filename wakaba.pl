@@ -2492,7 +2492,7 @@ sub remove_admin_entry($$){
 	my ($sth);
 
 	my @session = check_password($admin);
-	log_action("removeadminentry",'#' . $num,@session);
+	log_action("removeadminentry",$num,@session);
 	
 	if (@session[1] eq "janitor"){
 		make_error(S_CLASS);
@@ -3244,20 +3244,16 @@ sub log_action($$;@){
 	$sth->execute(@session[0],$action,$object,BOARD_DIR,$time,dot_to_dec(get_ip(USE_CLOUDFLARE))) or make_error($dbh->errstr);
 }
 
-sub make_view_log($){
-	my ($admin)=@_;
+sub make_view_log($) {
+	my ($admin) = @_;
 	my ($row,$sth,@log);
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_LOG_TABLE." ORDER BY num DESC;") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_LOG_TABLE." ORDER BY num DESC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth)){
-		if($$row{object} =~ /^[0-9]+$/) {
-			$$row{object} = dec_to_dot($$row{object})
-		}
-		
+	while($row = get_decoded_hashref($sth)){
 		if($$row{user} =~ /^[0-9]+$/) {
 			$$row{user} = dec_to_dot($$row{user})
 		}

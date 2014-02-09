@@ -733,7 +733,28 @@ use constant STAFF_LOG_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
 	<tr class="listRow">
 		<td class="listCol"><var $user>@<var dec_to_dot $ip></td>
 		<td class="listCol"><var $action></td>
-		<td class="listCol"><var $object></td>
+		<td class="listCol">
+			<if $action =~ /(proxyentry|ban)|banrequest|dismissrequests$/ or $action eq 'deleteall'>
+				<a href="<var $self>?task=ippage&amp;ip=<var $object>&amp;admin=<var $admin>">
+					<var dec_to_dot $object>
+				</a>
+			</if>
+			<if $action =~ /post|file|sticky|close|permasage|open/>
+				<a href="<var $self>?task=viewdeletedpost&amp;num=<var $object>&amp;board=<var $board>&amp;admin=<var $admin>">
+					No.<var $object>
+				</a>
+			</if>
+			<if $action =~ /(add|edit)user/>
+				<a href="<var $self>?task=composemsg&amp;to=<var $object>&amp;admin=<var $admin>">
+					<var $object>
+				</a>
+			</if>
+			<if $action eq 'deleteuser'>
+				<a href="<var $self>?task=manageuser&amp;admin=<var $admin>">
+					<var $object>
+				</a>
+			</if>
+		</td>
 		<td class="listCol">/<var $board>/</td>
 		<td class="listCol"><var make_date $time,DATE_STYLE></td>
 	</tr>
