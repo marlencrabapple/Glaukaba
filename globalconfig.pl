@@ -44,6 +44,5 @@
 #use constant CSS_DIR => '/css/boards/';
 #use constant CONVERT_COMMAND => 'convert';					# location of the ImageMagick convert command (usually just 'convert', but sometime a full path is needed)
 #use constant CONVERT_COMMAND => '/usr/X11R6/bin/convert';
-use constant SPAM_FILES => ('../spam.txt');					# Go to http://wakaba.c3.cx/antispam/spam.txt for an updated list
-use constant IP_VAR => $ENV{REMOTE_ADDR};					# Default value is REMOTE_ADDR. Change to HTTP_CF_CONNECTING_IP if you're using Cloudflare									
+use constant SPAM_FILES => ('../spam.txt');					# Go to http://wakaba.c3.cx/antispam/spam.txt for an updated list							
 1;

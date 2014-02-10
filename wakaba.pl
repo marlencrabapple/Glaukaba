@@ -28,6 +28,7 @@ BEGIN { require "wakautils.pl"; }
 my ($has_encode, $use_fastcgi);
 my ($query,$dbh,$task);
 my $protocol_re=qr/(?:http|https|ftp|mailto|nntp)/;
+our @sessions = ();
 
 if(CONVERT_CHARSETS){
 	eval 'use Encode qw(decode encode)';
@@ -79,6 +80,7 @@ sub init(){
 	init_deleted_database()  if(!table_exists(SQL_DELETED_TABLE));
 	init_log_database()  if(!table_exists(SQL_LOG_TABLE));
 	init_pass_database() if(!table_exists(SQL_PASS_TABLE));
+	init_session_database() if(!table_exists(SQL_SESSION_TABLE));
 
 	if(!table_exists(SQL_USER_TABLE)){
 		init_user_database();
@@ -96,6 +98,9 @@ sub init(){
 		make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
 	}
 	elsif(!$task){
+		my $data = $query->param('POSTDATA');
+		json_handler($data) if $data;
+		
 		build_cache() unless -e HTML_SELF;
 		make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
 	}
@@ -123,8 +128,10 @@ sub init(){
 		my $nsfw=$query->param("nsfw");
 		my $ajax=$query->param("ajax");
 		my $passcookie=$query->cookie("wakapass");
+		my $prevalcookie = $query->cookie("wakapreval");
+		my $prevalajax = $query->param("preval");
 
-		post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax);
+		post_stuff($parent,$name,$email,$subject,$comment,$file,$file,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax,$prevalcookie,$prevalajax);
 	}
 	elsif($task eq "delete"){
 		my $password=$query->param("password");
@@ -482,6 +489,29 @@ sub init(){
 	unless($use_fastcgi){
 		$dbh->disconnect();
 	}
+}
+
+sub json_handler($) {
+	my ($data) = @_;
+	eval "use JSON qw( decode_json )";
+	return unless $data;
+	
+	if($@) {
+		make_error('POST requests to our JSON API are unsupported. Supported request methods are: GET, HEAD, OPTIONS.',1)
+	}
+	else {
+		my $req = decode_json($data) or make_error('Invalid JSON.',1);
+		
+		if($req->{task} eq 'preval') {
+			make_error('reCAPTCHA pre-validation disabled.',1) unless PREVALIDATE_RECAPTCHA;
+			prevalidate_captcha($dbh,undef,undef,undef,$req);
+		}
+		else {
+			make_error('Invalid task.',1);
+		}
+	}
+	
+	stop_script();
 }
 
 sub restart_script($){
@@ -904,24 +934,25 @@ sub build_thread_cache_all(){
 #
 
 sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax)=@_;
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax,,$prevalcookie,$prevalajax) = @_;
 	my ($parent_res,$id,$class,$time,@session,@taargus);
 	
 	# get a timestamp for future use
-	$time=time();
+	$time = time();
 
 	# check that the request came in as a POST, or from the command line
 	make_error(S_UNJUST) if($ENV{REQUEST_METHOD} and $ENV{REQUEST_METHOD} ne "POST");
+	make_error("Your post looks automated.") unless $ENV{HTTP_USER_AGENT};
 
 	if($admin) # check admin password - allow both encrypted and non-encrypted
 	{
 		if ($parent){
-			$parent_res=get_parent_post($parent) or make_error(S_NOTHREADERR);
+			$parent_res = get_parent_post($parent) or make_error(S_NOTHREADERR);
 		}
 		
 		@session = check_password($admin);
 		
-		if(($no_format)&&(@session[1] ne 'admin')){
+		if(($no_format) and (@session[1] ne 'admin')){
 			make_error(S_CLASS);
 		}
 	}
@@ -1010,13 +1041,19 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	
 	if(!$no_captcha) {
 		@taargus = has_pass($passcookie);
-		make_error("You must enter a CAPTCHA until your pass is approved by a moderator.") if @taargus[0] == 2 and !$response;
+		make_error('You must enter a CAPTCHA until your pass is approved by a moderator.') if @taargus[0] == 2 and !$response;
 	}
 
 	# check captcha
-	if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip) and @taargus[0]!=1){
-		check_captcha($dbh,$captcha,$ip,$parent) if(ENABLE_CAPTCHA ne 'recaptcha');
-		check_recaptcha($challenge,$response,$ip) if(ENABLE_CAPTCHA eq 'recaptcha');
+	if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip) and @taargus[0] != 1){
+		if($prevalajax or $prevalcookie) {
+			$prevalajax = $prevalcookie unless $prevalajax;
+			make_error('Invalid CAPTCHA prevalidation key.',$ajax) unless check_key($dbh,$prevalajax,$parent,$time,$ip,$ENV{HTTP_USER_AGENT},$ajax);
+		}
+		else {
+			check_captcha($dbh,$captcha,$ip,$parent) if(ENABLE_CAPTCHA ne 'recaptcha');
+			check_recaptcha($challenge,$response,$ip) if(ENABLE_CAPTCHA eq 'recaptcha');
+		}
 	}
 
 	# proxy check
@@ -1158,28 +1195,18 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 
 	# update the individual thread cache
 	my $num;
-	if($parent && !$noko && !$ajax) { build_thread_cache($parent);}
+	if($parent) { build_thread_cache($parent);}
 	else # must find out what our new thread number is
 	{
-		if($filename){
-			$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE image=?;") or make_error(S_SQLFAIL);
-			$sth->execute($filename) or make_error(S_SQLFAIL);
-		}
-		else
-		{
-			$sth=$dbh->prepare("SELECT num FROM ".SQL_TABLE." WHERE timestamp=? AND comment=?;") or make_error(S_SQLFAIL);
-			$sth->execute($time,$comment) or make_error(S_SQLFAIL);
-		}
-		$num=($sth->fetchrow_array())[0];
+		$num = get_post_num($time,$comment,$filename);
 
-		if($num){
+		if($num) {
 			build_thread_cache($parent || $num);
+			# update id
+			$id = make_id_code($ip,$time,$email,$num) if((DISPLAY_ID) && ($capcode != 1));
+			my $sth = $dbh->prepare("UPDATE " . SQL_TABLE . " SET id=? WHERE num=?;") or make_error(S_SQLFAIL);
+			$sth->execute($id,$num) or make_error(S_SQLFAIL);
 		}
-    
-    # update id
-    $id = make_id_code($ip,$time,$email,$num) if((DISPLAY_ID) && ($capcode!=1));
-    my $sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET id=? WHERE num=?;") or make_error(S_SQLFAIL);
-		$sth->execute($id,$num) or make_error(S_SQLFAIL);
 	}
 
 	# set the name, email and password cookies
@@ -1187,17 +1214,39 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
 
 	# forward back to the main page
-	if ($admin) #unless you're an admin, it'll go back to the manager post page
-	{
-		$parent=$num unless $parent;
-		make_http_forward($noko ? get_script_name()."?admin=$admin&task=viewthread&num=".$parent."#".$num : get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
+	if(!$ajax) {
+		if ($admin) {
+			$parent=$num unless $parent;
+			make_http_forward($noko ? get_script_name()."?admin=$admin&task=viewthread&num=".$parent."#".$num : get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
+		}
+		else {
+			$num = get_post_num($time,$comment,$filename);
+			make_http_forward(($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/"), ALTERNATE_REDIRECT);
+		}
 	}
-	else
-	{
-		my $alt = $ajax == 1 ? 1 : 0; # for requests from the extension
-		my $postdata = "{\"parent\": ".$parent.", \"num\": ".$num."}";
-		make_http_forward($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/",$alt,$postdata);
+	else {
+		$num = get_post_num($time,$comment,$filename);
+		
+		my $postdata = "{\"parent\":$parent,\"num\":$num}";
+		make_json_header();
+		print encode_string($postdata);
 	}
+}
+
+sub get_post_num {
+	my ($time,$comment,$filename) = @_;
+	my ($sth);
+	
+	if($filename) {
+		$sth = $dbh->prepare("SELECT num FROM " . SQL_TABLE . " WHERE image=?;") or make_error(S_SQLFAIL);
+		$sth->execute($filename) or make_error(S_SQLFAIL);
+	}
+	else {
+		$sth=$dbh->prepare("SELECT num FROM " . SQL_TABLE . " WHERE timestamp=? AND comment=?;") or make_error(S_SQLFAIL);
+		$sth->execute($time,$comment) or make_error(S_SQLFAIL);
+	}
+	
+	return ($sth->fetchrow_array())[0];
 }
 
 sub is_whitelisted($){
@@ -3360,11 +3409,19 @@ sub make_json_header(){
 	print "\n";
 }
 
-sub make_error($){
-	my ($error)=@_;
+sub make_error($;$) {
+	my ($error,$json) = @_;
 
-	make_http_header();
-	print encode_string(ERROR_TEMPLATE->(error=>$error));
+	if($json) {
+		make_json_header();
+		print encode_string(JSON_ERROR->(
+			error => $error
+		));
+	}
+	else {
+		make_http_header();
+		print encode_string(ERROR_TEMPLATE->(error=>$error));
+	}
 
 	if(!$use_fastcgi and $dbh){
 		$dbh->{Warn}=0;
@@ -3638,6 +3695,23 @@ sub init_user_database(){
 
 	");") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
+}
+
+sub init_session_database(){
+	my ($sth);
+
+	$sth=$dbh->do("DROP TABLE ".SQL_SESSION_TABLE.";") if(table_exists(SQL_SESSION_TABLE));
+	$sth=$dbh->prepare("CREATE TABLE ".SQL_SESSION_TABLE." (".
+
+	"num ".get_sql_autoincrement().",".
+	"sessionkey TEXT,".
+	"parent INTEGER,".
+	"ip TEXT,".
+	"ua TEXT,".
+	"timestamp TEXT".
+	
+	");") or make_error(S_SQLFAIL);
+	$sth->execute() or make_error($sth->errstr);
 }
 
 sub init_message_database(){

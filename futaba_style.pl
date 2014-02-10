@@ -116,6 +116,7 @@ var sitevars = {
 	"boarddir": "<const BOARD_DIR>",
 	"boardpath": "//<const DOMAIN>/<const BOARD_DIR>/",
 	<if ENABLE_CAPTCHA eq 'recaptcha'>"captcha": 1,</if>
+	<if PREVALIDATE_RECAPTCHA>"preval": 1,</if>
 	<if $textonly_inp>"nofile": 1,</if>
 	<if SPOILERIMAGE_ENABLED>"spoiler": 1,</if>
 	<if NSFWIMAGE_ENABLED>"nsfw": 1,</if>
@@ -844,7 +845,7 @@ Search: <input class="postInput" id="cat-input" type="text" onchange="search_cat
 <div class="cat-item-container" style="
 	width: 165px;
 ">
-	<div class="cat-item" style="
+	<div class="cat-item<% if (this.isdeleted) { %> deleted-image<% } %>" style="
 		background-image:url(<%= this.image %>);
 		width: <%= this.catitemw %>px;
 		height: <%= this.catitemh %>px;
@@ -887,7 +888,7 @@ Search: <input class="postInput" id="cat-input" type="text" onchange="search_cat
 					<if $email>"email":"<var mahou_inyoufu $email>",</if>
 					"sub":"<var mahou_inyoufu $subject>",
 					"com":"<var mahou_inyoufu $comment>",
-					<if $image>
+					<if $size>
 						"image":"<var $thumbnail>",
 						"fsize":<var $size>,
 						"md5":"<var $md5>",
@@ -1196,6 +1197,18 @@ use constant JSON_INDEX_TEMPLATE => compile_template(q{
 		}<if !$lastthread>,</if>
 	</loop>
 	]
+}
+},2);
+
+use constant PREVAL_RESPONSE_TEMPLATE => compile_template(q{
+{
+	"key": "<var $key>"
+}
+},2);
+
+use constant JSON_ERROR => compile_template(q{
+{
+	"error": "<var $error>"
 }
 },2);
 

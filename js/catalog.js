@@ -10,6 +10,7 @@ function init() {
 	
 	$(catalog.threads).each(function(index) {
 		if((this.image === undefined) || (this.image == sitevars.domain + "/img/nofile.png")) {
+			this.isdeleted = 1;
 			this.image = sitevars.domain + "/img/nofile.png";
 			this.catitemw = 100;
 			this.catitemh = 25;

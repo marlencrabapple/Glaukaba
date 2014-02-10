@@ -1447,7 +1447,7 @@ sub send_email($$$$){
 }
 
 sub get_ip($){
-	my ($cf)=@_;
+	my ($cf) = @_;
 	return $ENV{REMOTE_ADDR} unless $cf;
 	return $ENV{HTTP_CF_CONNECTING_IP};
 }

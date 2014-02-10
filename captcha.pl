@@ -183,17 +183,176 @@ sub delete_captcha_word($$$)
 # Recaptcha
 #
 
-sub check_recaptcha
-{
-	my($challenge,$response,$ip)=@_;
+sub check_recaptcha {
+	my($challenge,$response,$ip,$preval) = @_;
 	
 	eval "use Captcha::reCAPTCHA";
 	return if($@);
+	
+	make_error('You must enter a CAPTCHA.',$preval) unless $response;
 
 	my $c=Captcha::reCAPTCHA->new;	
 	my $result=$c->check_answer(RECAPTCHA_PRIVATE_KEY,$ip,$challenge,$response);
 	
-	make_error(S_BADCAPTCHA) unless $result->{is_valid};
+	return $result if $preval == 1 && $result->{is_valid};
+	
+	make_error(S_BADCAPTCHA,$preval) unless $result->{is_valid};
+}
+
+sub prevalidate_captcha {
+	my ($dbh,$challenge,$response,$parent,$data) = @_;
+	my ($result,$sth,$row,$i,$dupe,$time,$ip,@newsessions);
+	$ip = get_ip(USE_CLOUDFLARE);
+	$time = time();
+	our @sessions;
+	
+	# check if ip already has an open session and remove expired sessions
+	if(USE_FASTCGI == 1) {
+		foreach my $session (@sessions) {
+			if($session->{created} + PREVAL_KEY_LIFETIME > $time) {
+				push @newsessions, $session;
+				$dupe = 1 if $session->{ip} eq $ip
+			}
+		}
+		
+		@sessions = @newsessions;
+	}
+	else {
+		my (@delete,$delete);
+		$sth = $dbh->prepare("SELECT * FROM " . SQL_SESSION_TABLE . ";") or make_error(S_SQLFAIL,$data);
+		$sth->execute() or make_error(S_SQLFAIL,$data);
+		
+		while($row = $sth->fetchrow_hashref()) {
+			if($$row{timestamp} + PREVAL_KEY_LIFETIME < $time) {
+				push @delete, $$row{num};
+			}
+			else {
+				$dupe = 1 if $$row{ip} eq $ip;
+			}
+		}
+		
+		if($delete[0]) {
+			$delete = join(',',@delete);
+			$sth = $dbh->prepare("DELETE FROM ".SQL_SESSION_TABLE." WHERE num IN ($delete);") or make_error(S_SQLFAIL,$data);
+			$sth->execute() if ($delete =~ /[0-9\,]/) or make_error(S_SQLFAIL,$data) # just in case
+		}
+	}
+	
+	# as long as data is undefined otherwise this should return json only when the request is json
+	make_error('You can only have one active key. Please wait up to ' . PREVAL_KEY_LIFETIME . ' seconds before posting again.' ,$data) if $dupe;
+	
+	if($data) {
+		$result = check_recaptcha($data->{challenge},$data->{response},$ip,1);
+		
+		if($result->{is_valid}) {
+			my $session = make_session($dbh,$data->{challenge},$data->{response},$data->{parent},$ip,$time,1);
+			
+			make_json_header();
+			print encode_string(PREVAL_RESPONSE_TEMPLATE->(
+				key => $session->{key}
+			));
+		}
+	}
+	else {
+		$result = check_recaptcha($challenge,$response,$ip,1);
+			
+		if($result->{is_valid}) {
+			my $session = make_session($dbh,$challenge,$response,$parent,$ip,$time);
+			
+			make_cookies(
+				wakapreval=>$session->{key},
+				-charset => CHARSET,
+				-autopath => COOKIE_PATH,
+				-expires => $time + PREVAL_KEY_LIFETIME
+			);
+			
+			make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
+		}
+		else {
+			make_error(S_BADCAPTCHA);
+		}
+	}
+}
+
+sub make_session {
+	my ($dbh,$challenge,$response,$parent,$ip,$time,$json) = @_;
+	my ($sth,$row);
+	my $key = crypt_password($ENV{HTTP_USER_AGENT}.$challenge,$response,$parent,$ip,$time);
+	our @sessions;
+	
+	# we could use a users comment, name, etc for validation but it probably wouldn't make a difference in abuse
+	my $session = {
+		key => $key,
+		parent => $parent,
+		ip => $ip,
+		ua => $ENV{HTTP_USER_AGENT},
+		created => $time
+	};
+	
+	if(USE_FASTCGI == 1) {
+		push @sessions, $session;
+	}
+	else {
+		$sth = $dbh->prepare("INSERT INTO ".SQL_SESSION_TABLE." VALUES(NULL,?,?,?,?,?);") or make_error(S_SQLFAIL,$json);
+		$sth->execute($key,$parent,$ip,$ENV{HTTP_USER_AGENT},$time) or make_error(S_SQLFAIL,$json);
+	}
+	
+	return $session;
+}
+
+sub check_key {
+	my ($dbh,$key,$parent,$time,$ip,$ua,$json) = @_;
+	my ($i,$sth,$row,$valid,@newsessions);
+	our @sessions;
+	
+	if(USE_FASTCGI == 1) {		
+		# this could probably be done more perlishly with grep but whatever
+		foreach my $session (@sessions) {
+			if($key eq $sessions[0]->{key} and 
+			$parent eq $sessions[0]->{parent} and 
+			$ua eq $sessions[0]->{ua} and
+			$ip eq $sessions[0]->{ip}) {
+				$valid = 1;
+			}
+			else {
+				push @newsessions,$session unless $session->{created} + PREVAL_KEY_LIFETIME < $time;
+			}
+		}
+		
+		@sessions = @newsessions;
+		return $valid;
+	}
+	else {
+		my (@delete,$delete);
+		$sth = $dbh->prepare("SELECT * FROM ".SQL_SESSION_TABLE.";") or make_error(S_SQLFAIL,$json);
+		$sth->execute() or make_error(S_SQLFAIL,$json);
+		
+		while($row = $sth->fetchrow_hashref()) {
+			push @delete, $$row{num} if $$row{timestamp} + PREVAL_KEY_LIFETIME < $time;
+			
+			$parent = 0 unless $parent;
+			$$row{parent} = 0 unless $$row{parent};
+			
+			if($key eq $$row{sessionkey} and 
+			$parent == $$row{parent} and 
+			$ua eq $$row{ua} and
+			$ip eq $$row{ip}) {
+				push @delete, $$row{num};
+				$valid = 1;
+				last;
+			}
+		}
+		
+		if($delete[0]) {
+			$delete = join(',', @delete);
+			$sth = $dbh->prepare("DELETE FROM ".SQL_SESSION_TABLE." WHERE num IN ($delete);")  or make_error(S_SQLFAIL,$json);
+			$sth->execute() or make_error(S_SQLFAIL,$json) if $delete =~ /[0-9\,]/; # just in case
+		}
+		
+		return $valid;
+	}
+	
+	return 0;
 }
 
 

@@ -1,7 +1,7 @@
 use strict;
 
 BEGIN {
-	use constant S_NOADMIN => 'No NUKE_PASS defined in the configuration';	# Returns error when the config is incomplete
+	use constant S_NOADMIN => 'No NUKE_PASS defined in the configuration';		# Returns error when the config is incomplete
 	use constant S_NOSECRET => 'No SECRET defined in the configuration';		# Returns error when the config is incomplete
 	use constant S_NOSQL => 'No SQL settings defined in the configuration';		# Returns error when the config is incomplete
 
@@ -16,6 +16,7 @@ BEGIN {
 	eval "use constant USE_FASTCGI => 0" unless(defined &USE_FASTCGI);
 	eval "use constant USE_SMTP => 0" unless(defined &USE_SMTP);
 	eval "use constant SMTP_INFO => 0" unless(defined &SMTP_INFO);
+	eval "use constant IP_VAR => 0" unless(defined &IP_VAR);
 	
 	
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
@@ -28,6 +29,7 @@ BEGIN {
 	eval "use constant SQL_DELETED_TABLE => 'deleted'" unless(defined &SQL_DELETED_TABLE);
 	eval "use constant SQL_LOG_TABLE => 'log'" unless(defined &SQL_LOG_TABLE);
 	eval "use constant SQL_PASS_TABLE => 'passes'" unless(defined &SQL_PASS_TABLE);
+	eval "use constant SQL_SESSION_TABLE => 'sessions'" unless(defined &SQL_SESSION_TABLE);
 
 	eval "use constant USE_TEMPFILES => 1" unless(defined &USE_TEMPFILES);
 
@@ -48,7 +50,7 @@ BEGIN {
 	eval "use constant DEFAULT_STYLE => 'Yotsuba B'" unless(defined &DEFAULT_STYLE);
 	eval "use constant SOCIAL => 0" unless(defined &SOCIAL);
 	eval "use constant ADD_BREAKS => 0" unless(defined &ADD_BREAKS);
-	eval "use constant ENABLE_JSON => 0" unless(defined &ENABLE_JSON);
+	eval "use constant ENABLE_JSON => 1" unless(defined &ENABLE_JSON);
 	eval "use constant SHOW_STAFF_POSTS => 0" unless(defined &SHOW_STAFF_POSTS);
 
 	eval "use constant MAX_KB => 5000" unless(defined &MAX_KB);
@@ -77,9 +79,11 @@ BEGIN {
 	eval "use constant CAPTCHA_SPACING => 2.5" unless(defined &CAPTCHA_SPACING);
 	eval "use constant RECAPTCHA_PRIVATE_KEY => ''" unless(defined &RECAPTCHA_PRIVATE_KEY);
 	eval "use constant RECAPTCHA_PUBLIC_KEY => ''" unless(defined &RECAPTCHA_PUBLIC_KEY);
+	eval "use constant PREVALIDATE_RECAPTCHA => 0" unless(defined &PREVALIDATE_RECAPTCHA);
+	eval "use constant PREVAL_KEY_LIFETIME => 120" unless(defined &PREVAL_KEY_LIFETIME);
 	eval "use constant PASS_ENABLED => 0" unless(defined &PASS_ENABLED);
 	eval "use constant ENABLE_LIST => 0" unless(defined &ENABLE_LIST);
-	eval "use constant ENABLE_CATALOG => 1" unless(defined &ENABLE_CATALOG);
+	eval "use constant ENABLE_CATALOG => 2" unless(defined &ENABLE_CATALOG);
 	eval "use constant REWRITTEN_URLS => 0" unless(defined &REWRITTEN_URLS);
 
 	eval "use constant ENABLE_LOAD => 0" unless(defined &ENABLE_LOAD);
