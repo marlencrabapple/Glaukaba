@@ -630,11 +630,7 @@ display:none
 }
 
 #recaptcha_response_field {
-  padding: 0px;
-}
-
-#recaptcha_response_field {
-  margin: 0px;
+  margin-top:-2px!important;
   margin-right: 2px;
   padding: 2px 4px 3px 4px;
   border: 1px solid #AAA;
@@ -860,7 +856,6 @@ width: 50px;
 }
 
 #qr-form > input, #qr-form img, #recaptcha_response_field,#qr-catpcha {
-  margin: 1px 0 0!important;
   width: 300px;
 }
 
@@ -877,7 +872,7 @@ width: 50px;
 #qr-form > .sub-row {
   width: 300px;
   clear: both;
-  margin-top:1px;
+  margin:1px 0;
 }
 
 #qr-form > .sub-row > input:nth-child(1) {
@@ -890,6 +885,14 @@ width: 50px;
   width: 55px!important;
   padding-left: 0;
   padding-right: 0;
+}
+
+#qr-form > textarea {
+  margin: 1px 0
+}
+
+#qr-form input[name=field1] {
+  margin: 0 0 1px;
 }
 
 .qr-close {
@@ -931,10 +934,14 @@ width: 50px;
 }
 
 .cat-item {
-  background-size: 100%,auto;
+  background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
   box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+.deleted-image {
+	background-size: contain;
 }
 
 .cat-item-inner {
