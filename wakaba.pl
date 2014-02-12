@@ -3253,7 +3253,7 @@ sub make_edit_post($$) {
 	$sth->execute($num) or make_error(S_SQLFAIL);
 	
 	while($row = get_decoded_hashref($sth)) {
-		make_error("This post can only be edited by a board administrator.") if !$$row{originalcomment} and $$row{comment};
+		make_error("This post can only be edited by a board administrator.") if !$$row{originalcomment} and $$row{comment} and @session[1] ne 'admin';
 		push @posts,$row;
 	}
 	
