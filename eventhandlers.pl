@@ -43,15 +43,21 @@ use constant EVENT_HANDLERS => {
 		return 0;
 	},
 	before_template_formatted => sub {
-		my ($board,$board,$query,$templatedata) = @_;
-		return 0;
+		my (%templatevars) = @_;
+		%templatevars->{title} = 'Pastor Erickson\'s Miney Miney Tiny Time Town' if %templatevars->{title} eq SITE_NAME . " Pass";
+		
+		return %templatevars;
 	},
 	after_template_formatted => sub {
-		my ($board,$query,$templatedata,$formattedtemplate) = @_;
-		return 0;
+		my ($str) = @_;
+		$str =~ s/pass/ssap/g if($str =~ /<title>Pastor Erickson's Miney Miney Tiny Time Town<\/title>/);
+		return $str;
 	},
 	on_pass_application => sub {
-		my ($board,$query,$passnum,$token,$email,$ip) = @_;
+		my ($board,$query,$pin,$token,$email,$ip) = @_;
+		
+		# you can redirect users to a paypal donate page, interface with a payment gateway's api, etc.
+		make_http_forward('http://www.google.com',ALTERNATE_REDIRECT);
 		return 0;
 	}
 };

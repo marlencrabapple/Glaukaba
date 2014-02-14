@@ -1596,9 +1596,14 @@ sub simple_format($@){
 	} split /\n/,$comment;
 }
 
-sub encode_string($){
-	my ($str)=@_;
-
+sub encode_string($) {
+	my ($str) = @_;
+	
+	if(ENABLE_EVENT_HANDLERS) {
+		return handle_event('after_template_formatted',$str) unless($has_encode);
+		return encode(CHARSET,handle_event('after_template_formatted',$str),0x0400);
+	}
+	
 	return $str unless($has_encode);
 	return encode(CHARSET,$str,0x0400);
 }
@@ -3954,20 +3959,20 @@ sub make_pass_page(){
 
 sub add_pass($$$){
 	my ($email,$mailver,$accept)=@_;
-	my ($token,$pin,$time,$sth,$row);
+	my ($token,$pin,$time,$sth,$row,$ip);
 	
-	$time=time();
+	$time = time();
+	$ip = get_ip(USE_CLOUDFLARE);
 	
 	# clean up input
 	make_error(S_UNUSUAL) if($email=~/[\n\r]/);
 	make_error(S_TOOLONG) if(length($email)>MAX_FIELD_LENGTH);
 	make_error("The two email fields do not match.") unless ($email eq $mailver);
 	make_error("You did not accept the terms of use or terms of application.") unless ($accept==1);
-	$email=clean_string(decode_string($email,CHARSET));
 	
 	# check for an existing pass
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE email=? OR ip=?;") or make_error(S_SQLFAIL);
-	$sth->execute($email,get_ip(USE_CLOUDFLARE)) or make_error(S_SQLFAIL);
+	$sth->execute($email,dot_to_dec $ip) or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
 		if(length $$row{token}) { make_error("You already have a pass.") }
@@ -3975,7 +3980,7 @@ sub add_pass($$$){
 	
 	# check for bans
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' AND (? & ival2 = ival1 & ival2) AND (active='1') ORDER BY num DESC;") or make_error(S_SQLFAIL);
-	$sth->execute(dot_to_dec get_ip(USE_CLOUDFLARE)) or make_error(S_SQLFAIL);
+	$sth->execute(dot_to_dec($ip)) or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
 		if ($$row{active}==1){
@@ -3990,7 +3995,7 @@ sub add_pass($$$){
 	
 	# insert the pass into the pass table
 	my $sth=$dbh->prepare("INSERT INTO ".SQL_PASS_TABLE." VALUES(NULL,?,?,?,?,NULL,?,?,0,NULL);") or make_error(S_SQLFAIL);
-	$sth->execute($token,$pin,get_ip(USE_CLOUDFLARE),$time,$time,$email) or make_error(S_SQLFAIL);
+	$sth->execute($token,$pin,dot_to_dec $ip,$time,$time,$email) or make_error(S_SQLFAIL);
 	
 	# create cookie and log user in
 	make_cookies(wakapass=>$pin."##".$token."##"."0",
@@ -4003,6 +4008,8 @@ sub add_pass($$$){
 		SITE_NAME." Pass Info",
 		"Your " . SITE_NAME . " pass is currently pending verification.\n\nToken: ".$token."\nPin: ".$pin."\n\nFor more info, visit http://".DOMAIN."/pass/"
 	);
+	
+	handle_event('on_pass_application',SQL_TABLE,$query,$pin,$token,$email,$ip) if ENABLE_EVENT_HANDLERS;
 	
 	# redirect to an info page
 	make_http_header();
@@ -4028,9 +4035,11 @@ sub make_authorize_pass($){
 
 sub authorize_pass($$$;$){
 	my ($token,$pin,$remember,$noredirect)=@_;
-	my ($sth,$row,$i,$time,$expiration,$verified);
+	my ($sth,$row,$i,$time,$expiration,$verified,$ip);
 	#$pin=clean_string(decode_string($pin,CHARSET));
 	#$token=clean_string(decode_string($token,CHARSET));
+	
+	$ip = dot_to_dec(get_ip(USE_CLOUDFLARE));
 	
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
 	$sth->execute($pin) or make_error(S_SQLFAIL);
@@ -4042,7 +4051,7 @@ sub authorize_pass($$$;$){
 		
 		# checks if its been 30 minutes since the last ip authorized
 		if((($$row{lastswitch}+1800) > $time) and ($$row{lastswitch}>0)){
-			make_error("Another IP has authorized for this pass within the last 30 minutes.") unless ($$row{ip} eq get_ip(USE_CLOUDFLARE));
+			make_error("Another IP has authorized for this pass within the last 30 minutes.") unless ($$row{ip} eq $ip);
 		}
 		
 		# checks if its been 31 days since the last post made with a pass
@@ -4058,7 +4067,7 @@ sub authorize_pass($$$;$){
 	
 	# update ip list
 	my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ip=?, lastswitch=? WHERE pin=?;") or make_error(S_SQLFAIL);
-	$sth->execute(get_ip(USE_CLOUDFLARE),$time,$pin) or make_error(S_SQLFAIL);
+	$sth->execute($ip,$time,$pin) or make_error(S_SQLFAIL);
 	
 	# create cookie and log user in
 	$expiration=$time+(60*60*24*30) if $remember;
@@ -4083,10 +4092,6 @@ sub update_pass($$$;$){
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
-	# get pass
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
-	$sth->execute($num) or make_error(S_SQLFAIL);
-	
 	# some spaghetti code
 	if(($action eq "ban")or($action eq "verify")){
 		$unapprove=",approved=0" unless $action eq "verify";
@@ -4109,6 +4114,10 @@ sub update_pass($$$;$){
 			$message="Congratulations! Your " . SITE_NAME . " was just unbanned by a ".SITE_NAME." staff member!";
 		}
 	}
+	
+	# get pass
+	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth->execute($num) or make_error(S_SQLFAIL);
 	
 	# send an email
 	while($row=get_decoded_hashref($sth)){

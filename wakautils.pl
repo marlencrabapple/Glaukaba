@@ -297,7 +297,7 @@ sub do_spans($@){
 
 sub compile_template($;$){
 	my ($str,$nostrip)=@_;
-	my $code;
+	my ($code);
 
 	unless($nostrip){
 		$str=~s/^\s+//;
@@ -338,14 +338,14 @@ sub compile_template($;$){
 		'my $absolute_self="http://$ENV{SERVER_NAME}$port$ENV{SCRIPT_NAME}";'.
 		'my ($path)=$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;'.
 		'my $absolute_path="http://$ENV{SERVER_NAME}$port$path";'.
-		'my %__v=@_;my %__ov;for(keys %__v){$__ov{$_}=$$_;$$_=$__v{$_};}'.
+		'my %__v=ENABLE_EVENT_HANDLERS?handle_event(\'before_template_formatted\',@_):@_;my %__ov;for(keys %__v){$__ov{$_}=$$_;$$_=$__v{$_};}'.
 		'my $res;'.
 		$code.
 		'$$_=$__ov{$_} for(keys %__ov);'.
 		'return $res; }';
 
 	die "Template format error" unless $sub;
-
+	
 	return $sub;
 }
 
