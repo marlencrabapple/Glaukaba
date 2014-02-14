@@ -17,9 +17,10 @@ BEGIN { require "../globalconfig.pl"; } # path to your global config file
 BEGIN { require "config_defaults.pl"; }
 BEGIN { require "strings_en.pl"; }		# edit this line to change the language
 BEGIN { require "futaba_style.pl"; }	# edit this line to change the board style
-BEGIN { require "admin_style.pl"; } # awwwwwwwwwwww shit
+BEGIN { require "admin_style.pl"; }
 BEGIN { require "captcha.pl"; }
 BEGIN { require "wakautils.pl"; }
+BEGIN { require "../eventhandlers.pl" if ENABLE_EVENT_HANDLERS; }
 
 #
 # Optional modules
@@ -106,6 +107,9 @@ sub init(){
 		make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
 	}
 	elsif($task eq "post"){
+		# run pre-post procecessing event
+		handle_event('before_post_processing',SQL_TABLE,$query) if ENABLE_EVENT_HANDLERS;
+		
 		my $parent=$query->param("parent");
 		my $name=$query->param("field1");
 		my $email=$query->param("field2");
@@ -1059,6 +1063,9 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 
 	# proxy check
 	proxy_check($ip) if (!$whitelisted and ENABLE_PROXY_CHECK);
+	
+	# dnsbl
+	#check_dnsbl($ip) unless $whitelisted;
 
 	# check if thread exists, and get lasthit value
 	# checks for sticky as well
@@ -1131,10 +1138,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	$comment=~s/\<\/pre\>\<br\>$/\<\/pre\>/g;
 
 	# insert default values for empty fields
-	$parent=0 unless $parent;
-	$name=make_anonymous($ip,$time) unless $name or $trip;
-	$subject=S_ANOTITLE unless $subject;
-	$comment=S_ANOTEXT unless $comment;
+	$parent = 0 unless $parent;
+	$name = make_anonymous($ip,$time) unless $name or $trip;
+	$subject = S_ANOTITLE unless $subject;
+	$comment = S_ANOTEXT unless $comment;
 
 	# flood protection - must happen after inputs have been cleaned up
 	flood_check($numip,$time,$comment,$file) unless (defined @session[1]) and (@session[1] ne 'janitor');
@@ -1172,6 +1179,9 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	if($spoiler == 1){
 		$tnmask = 1;
 	}
+	
+	# post-post processing event
+	($name,$email,$subject,$comment,$originalcomment,$id) = handle_event('after_post_processing',SQL_TABLE,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time) if ENABLE_EVENT_HANDLERS;
 	
 	# finally, write to the database
 	my $sth = $dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
@@ -1217,16 +1227,20 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	# set the name, email and password cookies
 	make_cookies(name=>$c_name,email=>$c_email,password=>$c_password,
 	-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
+	
+	# get num if needed
+	$num = get_post_num($time,$comment,$filename) if ($admin or $noko) and !$num;
+	
+	# post-post event
+	handle_event('after_post',SQL_TABLE,$query,$num,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time) if ENABLE_EVENT_HANDLERS;
 
 	# forward back to the main page
 	if(!$ajax) {
 		if ($admin) {
-			$num = get_post_num($time,$comment,$filename);
 			$parent = $num unless $parent;
 			make_http_forward($noko ? get_script_name()."?admin=$admin&task=viewthread&num=".$parent."#".$num : get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
 		}
 		else {
-			$num = get_post_num($time,$comment,$filename) if $noko;
 			make_http_forward(($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/"), ALTERNATE_REDIRECT);
 		}
 	}
@@ -3439,6 +3453,15 @@ sub make_error($;$) {
 	stop_script();
 }
 
+sub exit_script {
+	if(!$use_fastcgi and $dbh){
+		$dbh->{Warn}=0;
+		$dbh->disconnect();
+	}
+	
+	stop_script();
+}
+
 sub stop_script(){
 	if($use_fastcgi) { next FASTCGI; }
 	else { exit; }
@@ -4049,7 +4072,6 @@ sub authorize_pass($$$;$){
 sub update_pass($$$;$){
 	my($admin,$num,$action,$noredirect)=@_;
 	my($value,$message,$sth,$row,$unapprove);
-	#my %types = ("ban","banned","unban","banned","verify","approved","unverfiy","approved");
 	
 	my $types = {
 		ban => 'banned',
@@ -4131,4 +4153,13 @@ sub make_pass_list($){
 		banned=>\@banned,
 		unverified=>\@unverified
 	));
+}
+
+sub handle_event {
+	my $handler = shift;
+	
+	if(EVENT_HANDLERS->{$handler}) {
+		my @vars = EVENT_HANDLERS->{$handler}->(@_);
+		return @vars;
+	}
 }

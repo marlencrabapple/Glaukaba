@@ -91,6 +91,7 @@ BEGIN {
 	eval "use constant ENABLE_LIST => 0" unless(defined &ENABLE_LIST);
 	eval "use constant ENABLE_CATALOG => 2" unless(defined &ENABLE_CATALOG);
 	eval "use constant REWRITTEN_URLS => 0" unless(defined &REWRITTEN_URLS);
+	eval "use constant ENABLE_DNSBL => 1" unless(defined &ENABLE_DNSBL);
 
 	eval "use constant ENABLE_LOAD => 0" unless(defined &ENABLE_LOAD);
 	eval "use constant LOAD_SENDER_SCRIPT => 'sender.pl'" unless(defined &LOAD_SENDER_SCRIPT);
@@ -147,6 +148,9 @@ BEGIN {
 	eval "use constant PAGE_EXT => '.html'" unless(defined &PAGE_EXT);
 	eval "use constant ERRORLOG => ''" unless(defined &ERRORLOG);
 	eval "use constant CONVERT_COMMAND => 'convert'" unless(defined &CONVERT_COMMAND);
+	
+	eval "use constant ENABLE_EVENT_HANDLERS => 0" unless(defined &ENABLE_EVENT_HANDLERS);
+	eval "use constant EVENT_HANDLERS => {}" unless(defined &EVENT_HANDLERS);
 	
 	unless(defined &SPAM_FILES)
 	{

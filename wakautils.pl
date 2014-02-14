@@ -573,6 +573,16 @@ sub get_http($;$$$){
 	}
 }
 
+sub reverse_ip {
+	return join ".", reverse split /\./, shift;
+}
+
+sub check_dnsbl {
+	my ($ip);
+	return if($ip=~/\:/);
+	# tbd
+}
+
 sub make_http_forward($;$$){
 	my ($location,$alternate_method,$postdata)=@_;
 
