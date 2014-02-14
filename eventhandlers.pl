@@ -1,15 +1,14 @@
 # The following are examples of event handlers.
-# Don't mess with this unless you know what you're doing.
+# Don't mess with these unless you know what you're doing.
 # $query is an object containing any and all data sent to the server via GET or POST. (http://perldoc.perl.org/CGI.html#SETTING-THE-VALUE(S)-OF-A-NAMED-PARAMETER%3a)
 
 use constant EVENT_HANDLERS => {
 	before_post_processing => sub {
 		my ($board,$query) = @_;
 		$query->param('field1','fuck you') unless $query->param('admin');
-		return 0;
 	},
 	after_post_processing => sub {
-		my ($board,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax) = @_;
+		my ($board,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) = @_;
 		
 		$name =~ s/fuck/hack/ unless $query->param('admin');
 		
@@ -19,7 +18,7 @@ use constant EVENT_HANDLERS => {
 		return ($name,$email,$subject,$comment,$originalcomment,$id);
 	},
 	after_post => sub {
-		my ($board,$query,$parent,$num,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax) = @_;
+		my ($board,$query,$num,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) = @_;
 		
 		if(!$ajax and !$query->param('admin')) {
 			$num = get_post_num($time,$comment,$filename) if !$num;
@@ -39,8 +38,6 @@ use constant EVENT_HANDLERS => {
 			
 			exit_script();
 		}
-		
-		return 0;
 	},
 	before_template_formatted => sub {
 		my (%templatevars) = @_;

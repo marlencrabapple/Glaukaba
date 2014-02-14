@@ -939,7 +939,7 @@ sub build_thread_cache_all(){
 #
 
 sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
-	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax,,$prevalcookie,$prevalajax) = @_;
+	my ($parent,$name,$email,$subject,$comment,$file,$uploadname,$password,$nofile,$captcha,$admin,$no_captcha,$no_format,$postfix,$challenge,$response,$sticky,$permasage,$locked,$capcode,$spoiler,$nsfw,$passcookie,$ajax,$prevalcookie,$prevalajax) = @_;
 	my ($parent_res,$id,$class,$time,@session,@taargus);
 	
 	# get a timestamp for future use
@@ -1048,7 +1048,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		@taargus = has_pass($passcookie);
 		make_error('You must enter a CAPTCHA until your pass is approved by a moderator.') if @taargus[0] == 2 and !$response;
 	}
-
+	
 	# check captcha
 	if(ENABLE_CAPTCHA and !$no_captcha and !is_trusted($trip) and @taargus[0] != 1){
 		if($prevalajax or $prevalcookie) {
@@ -1181,7 +1181,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	}
 	
 	# post-post processing event
-	($name,$email,$subject,$comment,$originalcomment,$id) = handle_event('after_post_processing',SQL_TABLE,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time) if ENABLE_EVENT_HANDLERS;
+	($name,$email,$subject,$comment,$originalcomment,$id) = handle_event('after_post_processing',SQL_TABLE,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) if ENABLE_EVENT_HANDLERS;
 	
 	# finally, write to the database
 	my $sth = $dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
@@ -1232,7 +1232,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	$num = get_post_num($time,$comment,$filename) if ($admin or $noko) and !$num;
 	
 	# post-post event
-	handle_event('after_post',SQL_TABLE,$query,$num,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time) if ENABLE_EVENT_HANDLERS;
+	handle_event('after_post',SQL_TABLE,$query,$num,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) if ENABLE_EVENT_HANDLERS;
 
 	# forward back to the main page
 	if(!$ajax) {
@@ -1299,55 +1299,55 @@ sub is_trusted($){
 sub has_pass($){
 	my($passcookie)=@_;
 	my($row,$sth,$time,$invalid,$num);
-	my($pin,$token,$verified)=split("##",$passcookie);
+	my($pin,$token,$verified) = split("##",$passcookie);
 	
 	return 0 unless $passcookie;
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
 	$sth->execute($pin) or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth)){
-		$time=time();
-		$invalid=1 unless $token eq $$row{token};
+	while($row = get_decoded_hashref($sth)) {
+		$time = time();
+		$invalid = 1 unless $token eq $$row{token};
 		$num = $$row{num};
 		
 		# gives an error code if the pass isn't approved yet
 		return 2,$num unless $$row{approved}==1;
 		
-		if(($verified==0)and($$row{approved}==1)){
+		if(($verified==0)and($$row{approved}==1)) {
 			make_cookies(wakapass=>$pin."##".$token."##"."1",
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$time+(60*60*24*30));
 		}
 		
 		# checks if pass has expired
-		if(($$row{lasthit}+2678000) < $time){
-			my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET approved=0 WHERE pin=?;") or make_error(S_SQLFAIL);
+		if(($$row{lasthit}+2678000) < $time) {
+			my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET approved=0 WHERE pin=?;") or make_error(S_SQLFAIL);
 			$sth->execute($pin) or make_error(S_SQLFAIL);
-			$invalid=2;
+			$invalid = 2;
 		}
 		
 		# checks if a different IP is currently authorized
-		if($$row{ip} ne get_ip(USE_CLOUDFLARE)){
-			authorize_pass($token,$pin,1);
+		if($$row{ip} ne get_ip(USE_CLOUDFLARE)) {
+			authorize_pass($token,$pin,undef,1);
 		}
 		else{
 			# update lasthit
-			my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET lasthit=? WHERE pin=?;") or make_error(S_SQLFAIL);
+			my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET lasthit=? WHERE pin=?;") or make_error(S_SQLFAIL);
 			$sth->execute($time,$pin) or make_error(S_SQLFAIL);
 		}
 	}
 	
-	$invalid=1 unless $time;
+	$invalid = 1 unless $time;
 	
 	# removes pass cookie if its invalid or expired
-	if($invalid!=0){
+	if($invalid != 0) {
 		make_cookies(wakapass=>$pin."##".$token."##"."0",
 		-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>"Thu, 01-Jan-1970 00:00:01 GMT");
 		make_error("Your pass has expired due to inactivity.") if $invalid==2;
 		make_error("Invalid Pass.") if $invalid==1;
 	}
 
-	return 1,$num;
+	return 1, $num;
 }
 
 sub ban_check($$$$){
@@ -2765,21 +2765,19 @@ sub add_user($$$$$;@){
 	
 	make_select_boards($admin,$user,$pass,$email) if (($class eq 'janitor') && ((scalar @boards)==0));
 	
-	$user=clean_string(decode_string($user,CHARSET));
-	$pass=clean_string(decode_string($pass,CHARSET));
-	$email=clean_string(decode_string($email,CHARSET));
+	my $hpass = crypt($pass,time());
 	
 	make_error("Invalid Class") unless $class=~m/(admin|mod|janitor|vip)/;
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
 	if($class ne 'janitor'){
 		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(NULL,?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
-		$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
+		$sth->execute($user,$hpass,$email,$class) or make_error(S_SQLFAIL);
 	}
 	else{
 		my $statement = "INSERT INTO ".SQL_USER_TABLE." VALUES(NULL,?,?,?,?,".join( ',', map { "?" } @boards ).",NULL,NULL,NULL,NULL,NULL);";
 		my $sth=$dbh->prepare($statement) or make_error(S_SQLFAIL);
-		$sth->execute($user,$pass,$email,$class,@boards) or make_error(S_SQLFAIL);
+		$sth->execute($user,$hpass,$email,$class,@boards) or make_error(S_SQLFAIL);
 	}
 	
 	make_http_forward(get_script_name()."?admin=$admin&task=manageusers",ALTERNATE_REDIRECT);
@@ -4033,49 +4031,49 @@ sub make_authorize_pass($){
 	));
 }
 
-sub authorize_pass($$$;$){
-	my ($token,$pin,$remember,$noredirect)=@_;
+sub authorize_pass($$$;$) {
+	my ($token,$pin,$remember,$noredirect) = @_;
 	my ($sth,$row,$i,$time,$expiration,$verified,$ip);
-	#$pin=clean_string(decode_string($pin,CHARSET));
-	#$token=clean_string(decode_string($token,CHARSET));
 	
 	$ip = dot_to_dec(get_ip(USE_CLOUDFLARE));
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE pin=?;") or make_error(S_SQLFAIL);
 	$sth->execute($pin) or make_error(S_SQLFAIL);
 	
 	# check if pass is valid and trim ip list
-	while($row=get_decoded_hashref($sth)){
-		$time=time();
+	while($row = get_decoded_hashref($sth)) {
+		$time = time();
 		make_error("Invalid pass") unless $token eq $$row{token};
 		
 		# checks if its been 30 minutes since the last ip authorized
-		if((($$row{lastswitch}+1800) > $time) and ($$row{lastswitch}>0)){
+		if((($$row{lastswitch}+1800) > $time) and ($$row{lastswitch}>0)) {
 			make_error("Another IP has authorized for this pass within the last 30 minutes.") unless ($$row{ip} eq $ip);
 		}
 		
 		# checks if its been 31 days since the last post made with a pass
-		if(($$row{lasthit}+2678000) < $time){
-			my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET approved=0 WHERE pin=?;") or make_error(S_SQLFAIL);
+		if(($$row{lasthit}+2678000) < $time) {
+			my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET approved=0 WHERE pin=?;") or make_error(S_SQLFAIL);
 			$sth->execute($pin) or make_error(S_SQLFAIL);
 		}
 		
-		$verified=$$row{approved};
+		$verified = $$row{approved};
 	}
 	
 	make_error("Invalid Pass") unless $time;
 	
 	# update ip list
-	my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ip=?, lastswitch=? WHERE pin=?;") or make_error(S_SQLFAIL);
+	my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ip=?, lastswitch=? WHERE pin=?;") or make_error(S_SQLFAIL);
 	$sth->execute($ip,$time,$pin) or make_error(S_SQLFAIL);
 	
 	# create cookie and log user in
-	$expiration=$time+(60*60*24*30) if $remember;
-	$expiration="session" if !$remember;
-	make_cookies(wakapass=>$pin."##".$token."##".$verified,
-	-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$expiration) unless $noredirect;
-	
-	make_http_forward(HTML_SELF,ALTERNATE_REDIRECT) unless $noredirect;
+	if(!$noredirect) {
+		$expiration=$time+(60*60*24*30) if $remember;
+		$expiration="session" if !$remember;
+		make_cookies(wakapass=>$pin."##".$token."##".$verified,
+		-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$expiration);
+		
+		make_http_forward(HTML_SELF,ALTERNATE_REDIRECT);
+	}
 }
 
 sub update_pass($$$;$){
