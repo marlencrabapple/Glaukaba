@@ -57,6 +57,7 @@ BEGIN {
 	eval "use constant ENABLE_JSON => 1" unless(defined &ENABLE_JSON);
 	eval "use constant SHOW_STAFF_POSTS => 0" unless(defined &SHOW_STAFF_POSTS);
 	eval "use constant AUTO_NOKO => 0" unless(defined &AUTO_NOKO);
+	eval "use constant SILENT_SAGE => 0" unless(defined &SILENT_SAGE);
 
 	eval "use constant MAX_KB => 5000" unless(defined &MAX_KB);
 	eval "use constant MAX_W => 250" unless(defined &MAX_W);

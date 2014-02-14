@@ -1112,6 +1112,9 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		$noko=1;
 		$email='';
 	}
+	
+	# silent sage
+	$email = '' if SILENT_SAGE;
 
 	# fix up the email/link
 	$email="mailto:$email" if $email and $email!~/^$protocol_re:/;
