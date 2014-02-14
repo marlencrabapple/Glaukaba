@@ -56,6 +56,7 @@ BEGIN {
 	eval "use constant ADD_BREAKS => 0" unless(defined &ADD_BREAKS);
 	eval "use constant ENABLE_JSON => 1" unless(defined &ENABLE_JSON);
 	eval "use constant SHOW_STAFF_POSTS => 0" unless(defined &SHOW_STAFF_POSTS);
+	eval "use constant AUTO_NOKO => 0" unless(defined &AUTO_NOKO);
 
 	eval "use constant MAX_KB => 5000" unless(defined &MAX_KB);
 	eval "use constant MAX_W => 250" unless(defined &MAX_W);

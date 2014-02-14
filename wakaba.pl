@@ -1105,8 +1105,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	my $noko = 0;
 	my $nokosage = 0;
 	
-	if($email=~/noko/i){
-		if($email=~/nokosage/i){
+	if(($email =~ /noko/i) or (AUTO_NOKO)) {
+		if($email=~/nokosage/i) {
 			$nokosage=1;
 		}
 		$noko=1;
@@ -1134,7 +1134,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	$comment=S_ANOTEXT unless $comment;
 
 	# flood protection - must happen after inputs have been cleaned up
-	flood_check($numip,$time,$comment,$file);
+	flood_check($numip,$time,$comment,$file) unless (defined @session[1]) and (@session[1] ne 'janitor');
 
 	# Manager and deletion stuff - duuuuuh?
 
@@ -1142,7 +1142,7 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	my $date=make_date($time,DATE_STYLE);
 
 	# generate ID code if enabled
-	$id = make_id_code($ip,$time,$email,$parent) if((DISPLAY_ID) && ($capcode != 1));
+	$id = make_id_code($ip,$time,$email,$parent) if((DISPLAY_ID) and ($capcode != 1));
 
 	# copy file, do checksums, make thumbnail, etc
 	my ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height)=process_file($file,$uploadname,$time,$nsfw) if($file);
@@ -1196,9 +1196,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 
 	# update the individual thread cache
 	my $num;
-	if($parent) { build_thread_cache($parent);}
-	else # must find out what our new thread number is
-	{
+	if($parent) {
+		build_thread_cache($parent);
+	}
+	else {
 		$num = get_post_num($time,$comment,$filename);
 
 		if($num) {
@@ -1217,17 +1218,16 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	# forward back to the main page
 	if(!$ajax) {
 		if ($admin) {
-			$parent=$num unless $parent;
+			$num = get_post_num($time,$comment,$filename);
+			$parent = $num unless $parent;
 			make_http_forward($noko ? get_script_name()."?admin=$admin&task=viewthread&num=".$parent."#".$num : get_script_name()."?admin=$admin&task=viewthreads",ALTERNATE_REDIRECT);
 		}
 		else {
-			$num = get_post_num($time,$comment,$filename);
+			$num = get_post_num($time,$comment,$filename) if $noko;
 			make_http_forward(($noko ? get_reply_link($num,$parent) : "http://".DOMAIN."/".BOARD_DIR."/"), ALTERNATE_REDIRECT);
 		}
 	}
 	else {
-		$num = get_post_num($time,$comment,$filename);
-		
 		my $postdata = "{\"parent\":$parent,\"num\":$num}";
 		make_json_header();
 		print encode_string($postdata);
