@@ -1113,10 +1113,11 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	my $sage = 0;
 	my $nokosage = 0;
 	
-	if($email =~ /^(noko|sage)/) {
-		$noko = 1 if $1 eq 'noko';
-		$sage = 1 if $1 eq 'sage';
-		$nokosage = $email =~ /^nokosage$/; # emulating an old futaba bug
+	if($email =~ /^(noko|sage)/i) {
+		my $lc1 = lc $1;
+		$noko = 1 if $lc1 eq 'noko';
+		$sage = 1 if $lc1 eq 'sage';
+		$nokosage = $email =~ /^nokosage$/i; # emulating an old futaba bug
 		$email = '' if $noko or SILENT_SAGE or $nokosage;
 	}
 
