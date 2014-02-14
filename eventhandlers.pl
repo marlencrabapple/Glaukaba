@@ -2,6 +2,7 @@
 # Don't mess with these unless you know what you're doing.
 # Completely comment out or delete an event handler, including its subroutine to properly disable it.
 # $query is an object containing any and all data sent to the server via GET or POST. (http://perldoc.perl.org/CGI.html#SETTING-THE-VALUE(S)-OF-A-NAMED-PARAMETER%3a)
+# Every other variable available is simply what's in scope when the event handler is ran.
 
 use constant EVENT_HANDLERS => {
 	before_post_processing => sub {
@@ -65,6 +66,7 @@ use constant EVENT_HANDLERS => {
 #
 # Defaults. Don't touch these.
 #
+
 eval q{
 EVENT_HANDLERS->{before_post_processing} = sub {
 return 0;

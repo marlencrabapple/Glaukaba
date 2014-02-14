@@ -1217,11 +1217,12 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		$num = get_post_num($time,$comment,$filename);
 
 		if($num) {
-			build_thread_cache($parent || $num);
 			# update id
-			$id = make_id_code($ip,$time,$email,$num) if((DISPLAY_ID) && ($capcode != 1));
+			$id = make_id_code($ip,$time,$email,$num) if((DISPLAY_ID) && ($capcode != 1));	
 			my $sth = $dbh->prepare("UPDATE " . SQL_TABLE . " SET id=? WHERE num=?;") or make_error(S_SQLFAIL);
 			$sth->execute($id,$num) or make_error(S_SQLFAIL);
+			
+			build_thread_cache($parent || $num);
 		}
 	}
 
@@ -1646,7 +1647,7 @@ sub make_id_code($$$;$){
 	$string.=",".int($time/86400) if(DISPLAY_ID=~/day/i);
 	$string.=",".$ENV{SCRIPT_NAME} if(DISPLAY_ID=~/board/i);
 
-  return mask_ip(get_ip(USE_CLOUDFLARE),make_key("threadmask",SECRET,32).$parent) if(DISPLAY_ID=~/threadmask/i);
+	return mask_ip(get_ip(USE_CLOUDFLARE),make_key("threadmask",SECRET,32).$parent) if(DISPLAY_ID=~/threadmask/i);
 	return mask_ip(get_ip(USE_CLOUDFLARE),make_key("mask",SECRET,32).$string) if(DISPLAY_ID=~/mask/i);
 
 	return hide_data($ip.$string,6,"id",SECRET,1);
