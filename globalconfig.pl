@@ -20,8 +20,6 @@
 #	}
 #];
 
-# This is completely optional
-
 #use constant LINKS => [
 #	{
 #		name => "@",
@@ -30,6 +28,11 @@
 #		lastlink => 1
 #	}
 #];
+
+# change these in glaukaba (not here) after logging in
+#use constant DEFAULT_USER => 'admin';
+#use constant DEFAULT_PASS => 'admin';
+#use constant DEFAULT_EMAIL => 'admin@admin.com';
 
 #use constant SQL_DBI_SOURCE => 'DBI:mysql:database=CHANGEME;host=CHANGEME';
 #use constant SQL_USERNAME => '';

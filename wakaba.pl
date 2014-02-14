@@ -84,8 +84,9 @@ sub init(){
 
 	if(!table_exists(SQL_USER_TABLE)){
 		init_user_database();
-		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
-		$sth->execute('admin','admin','admin@admin.com','admin') or make_error(S_SQLFAIL);
+		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(NULL,?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+		my $cpass = crypt(DEFAULT_PASS,time());
+		$sth->execute(DEFAULT_USER,$cpass,DEFAULT_EMAIL,'admin') or make_error(S_SQLFAIL);
 	}
 
 	# check for proxy table
@@ -2429,49 +2430,49 @@ sub add_ip_ban($$$){
 	make_http_forward(get_script_name()."?admin=$admin&task=ippage&ip=".$ival1,ALTERNATE_REDIRECT);
 }
 
-sub do_login($$$$$){
+sub do_login($$$$$) {
 	my ($user,$password,$nexttask,$savelogin,$admincookie)=@_;
 	my ($crypt,$dengus,$time,$lastip,$sth,$loglogin);
 
-	$time=time();
-	$lastip = get_ip(USE_CLOUDFLARE);
+	$time = time();
+	$lastip = dot_to_dec(get_ip(USE_CLOUDFLARE));
 	
-	if($password and $user){
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+	if($password and $user) {
+		$sth = $dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($user) or make_error($sth->errstr);
-		$dengus=get_decoded_hashref($sth);
+		$dengus = get_decoded_hashref($sth);
 		
-		if($$dengus{pass} eq $password){
-			$crypt=crypt_password($user.$password);
+		if($$dengus{pass} eq crypt($password,$$dengus{pass})) {
+			$crypt = crypt_password($user.$$dengus{pass});
 			$loglogin = 1;
 		}
 	}
-	elsif($admincookie){
+	elsif($admincookie) {
 		$user=substr($admincookie,0,index($admincookie,":"));
 		
-		$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth = $dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($user) or make_error($sth->errstr);
-		$dengus=get_decoded_hashref($sth);
+		$dengus = get_decoded_hashref($sth);
 	
-		if ($admincookie eq $user.":".crypt_password($$dengus{user}.$$dengus{pass})){
-			$crypt = crypt_password($$dengus{user}.$$dengus{pass}); # BECAUSE FUCK YOU THAT'S WHY
-			$nexttask="mpanel"; # BECAUSE FUCK YOU THAT'S WHY AGAIN
+		if ($admincookie eq $user.":".crypt_password($$dengus{user}.$$dengus{pass})) {
+			$crypt = crypt_password($$dengus{user}.$$dengus{pass});
+			$nexttask = "mpanel";
 		}
 	}
 	
-	if($crypt){
-		if($savelogin and $nexttask ne "nuke"){
-			make_cookies(wakaadmin=>$user.":".$crypt,
+	if($crypt) {
+		if($savelogin and $nexttask ne "nuke") {
+			make_cookies(wakaadmin => $user.":".$crypt,
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>time+365*24*3600);
 		}
 		
-		$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET lastdate=?,lastip=? WHERE user=?;") or make_error(S_SQLFAIL);
+		$sth = $dbh->prepare("UPDATE ".SQL_USER_TABLE." SET lastdate=?,lastip=? WHERE user=?;") or make_error(S_SQLFAIL);
 		$sth->execute($time,$lastip,$user) or make_error($sth->errstr);
 
 		if($loglogin) { log_action("login","",$crypt) }
 		make_http_forward(get_script_name()."?task=$nexttask&admin=$crypt",ALTERNATE_REDIRECT);
 	}
-	else{
+	else {
 		log_action("attemptlogin","");
 		make_admin_login();
 	}
@@ -2693,15 +2694,16 @@ sub make_add_user($){
 	print encode_string(REGISTER_TEMPLATE->(admin=>$admin,session=>\@session));
 }
 
-sub make_manage_users($){
-	my ($admin)=@_;
+sub make_manage_users($) {
+	my ($admin) = @_;
 	my (@users,$row);
 	my @session = check_password($admin);
 	
 	my $sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE) or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth)){
+	while($row=get_decoded_hashref($sth)) {
+		$$row{lastip} = dec_to_dot($$row{lastip});
 		push @users,$row;
 	}
 	
@@ -2749,11 +2751,11 @@ sub add_user($$$$$;@){
 	make_error(S_CLASS) unless @session[1] eq "admin";
 	
 	if($class ne 'janitor'){
-		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
+		my $sth=$dbh->prepare("INSERT INTO ".SQL_USER_TABLE." VALUES(NULL,?,?,?,?,NULL,NULL,NULL,NULL,NULL,NULL);") or make_error(S_SQLFAIL);
 		$sth->execute($user,$pass,$email,$class) or make_error(S_SQLFAIL);
 	}
 	else{
-		my $statement = "INSERT INTO ".SQL_USER_TABLE." VALUES(?,?,?,?,".join( ',', map { "?" } @boards ).",NULL,NULL,NULL,NULL,NULL);";
+		my $statement = "INSERT INTO ".SQL_USER_TABLE." VALUES(NULL,?,?,?,?,".join( ',', map { "?" } @boards ).",NULL,NULL,NULL,NULL,NULL);";
 		my $sth=$dbh->prepare($statement) or make_error(S_SQLFAIL);
 		$sth->execute($user,$pass,$email,$class,@boards) or make_error(S_SQLFAIL);
 	}
@@ -2801,32 +2803,26 @@ sub update_user_details($$$$$$){
 	
 	log_action("edituser",$user,@session);
 	
-	$oldpass=clean_string(decode_string($oldpass,CHARSET));
-	$newpass=clean_string(decode_string($newpass,CHARSET));
-	$user=clean_string(decode_string($user,CHARSET));
-	$email=clean_string(decode_string($email,CHARSET));
-	$class=clean_string(decode_string($class,CHARSET));
-	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_USER_TABLE." WHERE user=?;") or make_error(S_SQLFAIL);
 	$sth->execute($user) or make_error(S_SQLFAIL);
-	my $dengus=get_decoded_hashref($sth);
+	my $dengus = get_decoded_hashref($sth);
 	
-	if(@session[1] eq "admin"){
+	if(@session[1] eq "admin") {
 		# protect admins from other admins (if there are other admins for whatever reason)
 		if(($$dengus{class} eq "admin") and ($$dengus{user} ne @session[0])) { make_error("ya turkey") }
 		elsif(($oldpass ne $$dengus{pass}) and ($$dengus{user} eq @session[0]) and ($newpass)) { make_error("Your old password was incorrect") } # don't let admins change own password without entering their old pass
 	}
-	else{
+	else {
 		if($$dengus{user} ne @session[0]) { make_error("ya turkey") }
 		if(($$dengus{pass} ne $oldpass) and ($newpass)) { make_error("Your old password was incorrect") }
 	}
 	
 	# keep original values if user input is null
-	$newpass=$$dengus{pass} unless $newpass;
-	$email=$$dengus{email} unless $email;
-	$class=$$dengus{class} unless $class;
+	$newpass = $newpass ? crypt($newpass,time()) : $$dengus{pass};
+	$email = $$dengus{email} unless $email;
+	$class = $$dengus{class} unless $class;
 		
-	$sth=$dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=?,class=?,email=? WHERE user=?") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("UPDATE ".SQL_USER_TABLE." SET pass=?,class=?,email=? WHERE user=?") or make_error(S_SQLFAIL);
 	$sth->execute($newpass,$class,$email,$user) or make_error(S_SQLFAIL);
 	
 	if($$dengus{user} eq @session[0]) { make_http_forward(get_script_name()."?admin=$admin&task=logout&type=admin",ALTERNATE_REDIRECT) }
@@ -3350,15 +3346,15 @@ sub view_deleted($){
 
 }
 
-sub check_password($){
-	my ($admin)=@_; # $password is useless now
+sub check_password($) {
+	my ($admin) = @_; # $password is useless now
 	my ($dengus,$sth,$board,@session);
 	
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_USER_TABLE.";") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
-	while($dengus=get_decoded_hashref($sth)){
-		if($admin eq crypt_password($$dengus{user}.$$dengus{pass})){
+	while($dengus = get_decoded_hashref($sth)) {
+		if($admin eq crypt_password($$dengus{user}.$$dengus{pass})) {
 			@session[0] = $$dengus{user};
 			@session[1] = $$dengus{class};
 			@session[2] = $$dengus{newmsgs};
@@ -3367,7 +3363,7 @@ sub check_password($){
 			@session[5] = $$dengus{lastdate};
 			@session[6] = [];
 
-			foreach $board (split(",",$$dengus{boards})){
+			foreach $board (split(",",$$dengus{boards})) {
 				push @{@session[6]},{'board' => $board};
 				make_error("You are not authorized to moderate this board.") unless BOARD_DIR eq $board;
 			}
@@ -3611,7 +3607,7 @@ sub init_deleted_database(){
 	$sth=$dbh->do("DROP TABLE ".SQL_DELETED_TABLE.";") if(table_exists(SQL_DELETED_TABLE));
 	$sth=$dbh->prepare("CREATE TABLE ".SQL_DELETED_TABLE." (".
 
-	"indexnum ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"indexnum ".get_sql_autoincrement().",".
 	"num INTEGER,".				# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
 	"parent INTEGER,".			# Parent post for replies in threads. For original posts, must be set to 0 (and not null)
 	"timestamp INTEGER,".		# Timestamp in seconds for when the post was created
@@ -3642,7 +3638,7 @@ sub init_log_database(){
 	$sth=$dbh->do("DROP TABLE ".SQL_LOG_TABLE.";") if(table_exists(SQL_LOG_TABLE));
 	$sth=$dbh->prepare("CREATE TABLE ".SQL_LOG_TABLE." (".
 
-	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"num ".get_sql_autoincrement().",".
 	"user TEXT,".
 	"action TEXT,".
 	"object TEXT,".	
@@ -3660,7 +3656,7 @@ sub init_pass_database(){
 	$sth=$dbh->do("DROP TABLE ".SQL_PASS_TABLE.";") if(table_exists(SQL_PASS_TABLE));
 	$sth=$dbh->prepare("CREATE TABLE ".SQL_PASS_TABLE." (".
 
-	"num ".get_sql_autoincrement().",".	# Post number, auto-increments
+	"num ".get_sql_autoincrement().",".	
 	"token TEXT,".						# On 4chan this would probably be used for checking if Stripe processed a vald payment
 										# Here, its just a bunch of hashed shit
 	"pin INTEGER,".						# A 'randomly' generated pin
@@ -3681,7 +3677,8 @@ sub init_user_database(){
 
 	$sth=$dbh->do("DROP TABLE ".SQL_USER_TABLE.";") if(table_exists(SQL_USER_TABLE));
 	$sth=$dbh->prepare("CREATE TABLE ".SQL_USER_TABLE." (".
-
+	
+	"num ".get_sql_autoincrement().",".
 	"user TEXT,".
 	"pass TEXT,".
 	"email TEXT,".

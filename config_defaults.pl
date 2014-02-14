@@ -1,9 +1,10 @@
 use strict;
 
 BEGIN {
-	use constant S_NOADMIN => 'No NUKE_PASS defined in the configuration';		# Returns error when the config is incomplete
-	use constant S_NOSECRET => 'No SECRET defined in the configuration';		# Returns error when the config is incomplete
-	use constant S_NOSQL => 'No SQL settings defined in the configuration';		# Returns error when the config is incomplete
+	use constant S_NOADMIN => 'No NUKE_PASS defined in the configuration';					# Returns error when the config is incomplete
+	use constant S_NOSECRET => 'No SECRET defined in the configuration';					# Returns error when the config is incomplete
+	use constant S_NOSQL => 'No SQL settings defined in the configuration';					# Returns error when the config is incomplete
+	use constant S_NOUSER => 'No default admin credentials defined in the configuration';	# Returns error when the config is incomplete
 
 	die S_NOADMIN unless(defined &NUKE_PASS);
 	die S_NOSECRET unless(defined &SECRET);
@@ -11,13 +12,16 @@ BEGIN {
 	die S_NOSQL unless(defined &SQL_USERNAME);
 	die S_NOSQL unless(defined &SQL_PASSWORD);
 	
+	die S_NOUSER unless(defined &DEFAULT_USER);
+	die S_NOUSER unless(defined &DEFAULT_PASS);
+	die S_NOUSER unless(defined &DEFAULT_EMAIL);
+	
 	eval "use constant BOARD_DIR => ''" unless(defined BOARD_DIR);
 	eval "use constant USE_CLOUDFLARE => 0" unless(defined &USE_CLOUDFLARE);
 	eval "use constant USE_FASTCGI => 0" unless(defined &USE_FASTCGI);
 	eval "use constant USE_SMTP => 0" unless(defined &USE_SMTP);
 	eval "use constant SMTP_INFO => 0" unless(defined &SMTP_INFO);
 	eval "use constant IP_VAR => 0" unless(defined &IP_VAR);
-	
 	
 	eval "use constant SQL_TABLE => 'comments'" unless(defined &SQL_TABLE);
 	eval "use constant SQL_ADMIN_TABLE => 'admin'" unless(defined &SQL_ADMIN_TABLE);
