@@ -1107,21 +1107,18 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	$email=clean_string(decode_string($email,CHARSET));
 	$subject=clean_string(decode_string($subject,CHARSET));
 	$uploadname=clean_string(decode_string($uploadname,CHARSET));
-
-	# noko and nokosage
+	
+	# sage and noko
 	my $noko = 0;
+	my $sage = 0;
 	my $nokosage = 0;
 	
-	if(($email =~ /noko/i) or (AUTO_NOKO)) {
-		if($email=~/nokosage/i) {
-			$nokosage=1;
-		}
-		$noko=1;
-		$email='';
+	if($email =~ /^(noko|sage)/) {
+		$noko = 1 if $1 eq 'noko';
+		$sage = 1 if $1 eq 'sage';
+		$nokosage = $email =~ /^nokosage$/; # emulating an old futaba bug
+		$email = '' if $noko or SILENT_SAGE or $nokosage;
 	}
-	
-	# silent sage
-	$email = '' if SILENT_SAGE;
 
 	# fix up the email/link
 	$email="mailto:$email" if $email and $email!~/^$protocol_re:/;
@@ -1192,12 +1189,12 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		$thumbnail,$tn_width,$tn_height,$sticky,$permasage,
 		$locked,$uploadname,$tnmask,$class,@taargus[1]
 	) or make_error(S_SQLFAIL);
-
-	if($parent) # bumping
-	{
+	
+	# bumping
+	if($parent) {
 		# check for sage, or too many replies
-		unless($email=~/sage/i or sage_count($parent_res)>MAX_RES or $nokosage==1 or $permasage==1){
-			$sth=$dbh->prepare("UPDATE ".SQL_TABLE." SET lasthit=$time WHERE num=? OR parent=?;") or make_error(S_SQLFAIL);
+		unless($sage == 1 or sage_count($parent_res) > MAX_RES or $nokosage == 1 or $permasage == 1) {
+			$sth = $dbh->prepare("UPDATE ".SQL_TABLE." SET lasthit=$time WHERE num=? OR parent=?;") or make_error(S_SQLFAIL);
 			$sth->execute($parent,$parent) or make_error(S_SQLFAIL);
 		}
 	}
