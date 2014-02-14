@@ -5,13 +5,13 @@
 use constant EVENT_HANDLERS => {
 	before_post_processing => sub {
 		my ($board,$query) = @_;
-		$query->param('field1','fuck you');
+		$query->param('field1','fuck you') unless $query->param('admin');
 		return 0;
 	},
 	after_post_processing => sub {
 		my ($board,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax) = @_;
 		
-		$name =~ s/fuck/hack/;
+		$name =~ s/fuck/hack/ unless $query->param('admin');
 		
 		# these are the variables that can be modified in this function. don't change what's returned
 		# note: this can probably be done via references as well unless i've completely misunderstood them all this time
@@ -36,9 +36,10 @@ use constant EVENT_HANDLERS => {
 				title => 'Post Successful',
 				forwardto => $forwardto
 			));
+			
+			exit_script();
 		}
 		
-		exit_script();
 		return 0;
 	},
 	before_template_formatted => sub {
