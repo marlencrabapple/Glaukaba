@@ -1,5 +1,6 @@
 # The following are examples of event handlers.
 # Don't mess with these unless you know what you're doing.
+# Completely comment out or delete an event handler, including its subroutine to properly disable it.
 # $query is an object containing any and all data sent to the server via GET or POST. (http://perldoc.perl.org/CGI.html#SETTING-THE-VALUE(S)-OF-A-NAMED-PARAMETER%3a)
 
 use constant EVENT_HANDLERS => {
@@ -12,9 +13,9 @@ use constant EVENT_HANDLERS => {
 		
 		$name =~ s/fuck/hack/ unless $query->param('admin');
 		
-		# these are the variables that can be modified in this function. don't change what's returned
-		# note: this can probably be done via references as well unless i've completely misunderstood them all this time
-		#		a post object of sorts would make sense too, i guess
+		# These are the variables that can be modified in this function. Don't change what's returned.
+		# The event handler will fail unless all 6 of the following variables are returned.
+		# A post object of sorts would probably make more sense, but I'm too lazy to try.
 		return ($name,$email,$subject,$comment,$originalcomment,$id);
 	},
 	after_post => sub {
@@ -47,7 +48,7 @@ use constant EVENT_HANDLERS => {
 	},
 	after_template_formatted => sub {
 		my ($str) = @_;
-		$str =~ s/pass/ssap/g if($str =~ /<title>Pastor Erickson's Miney Miney Tiny Time Town<\/title>/);
+		$str =~ s/([Pp])ass/ssa$1/g if($str =~ /<title>Pastor Erickson's Miney Miney Tiny Time Town - @{[ SITE_NAME ]}<\/title>/);
 		return $str;
 	},
 	on_pass_application => sub {
@@ -58,5 +59,46 @@ use constant EVENT_HANDLERS => {
 		return 0;
 	}
 };
+
+
+
+#
+# Defaults. Don't touch these.
+#
+eval q{
+EVENT_HANDLERS->{before_post_processing} = sub {
+return 0;
+}
+}unless(EVENT_HANDLERS->{before_post_processing});
+
+eval q{
+EVENT_HANDLERS->{after_post_processing} = sub {
+return 0;
+}
+}unless(EVENT_HANDLERS->{after_post_processing});
+
+eval q{
+EVENT_HANDLERS->{after_post} = sub {
+return 0;
+}
+}unless(EVENT_HANDLERS->{after_post});
+
+eval q{
+EVENT_HANDLERS->{before_template_formatted} = sub {
+return @_;
+}
+}unless(EVENT_HANDLERS->{before_template_formatted});
+
+eval q{
+EVENT_HANDLERS->{after_template_formatted} = sub {
+return @_;
+}
+}unless(EVENT_HANDLERS->{after_template_formatted});
+
+eval q{
+EVENT_HANDLERS->{on_pass_application} = sub {
+return @_;
+}
+}unless(EVENT_HANDLERS->{on_pass_application});
 
 1;

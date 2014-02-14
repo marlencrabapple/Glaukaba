@@ -1181,7 +1181,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 	}
 	
 	# post-post processing event
-	($name,$email,$subject,$comment,$originalcomment,$id) = handle_event('after_post_processing',SQL_TABLE,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) if ENABLE_EVENT_HANDLERS;
+	my @eventmodded = handle_event('after_post_processing',SQL_TABLE,$query,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) if ENABLE_EVENT_HANDLERS;
+	($name,$email,$subject,$comment,$originalcomment,$id) = @eventmodded unless scalar @eventmodded < 6;
 	
 	# finally, write to the database
 	my $sth = $dbh->prepare("INSERT INTO ".SQL_TABLE." VALUES(null,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);") or make_error(S_SQLFAIL);
