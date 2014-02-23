@@ -1120,6 +1120,8 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 		$nokosage = $email =~ /^nokosage$/i; # emulating an old futaba bug
 		$email = '' if $noko or SILENT_SAGE or $nokosage;
 	}
+	
+	$noko = 1 if AUTO_NOKO;
 
 	# fix up the email/link
 	$email="mailto:$email" if $email and $email!~/^$protocol_re:/;
@@ -1226,10 +1228,10 @@ sub post_stuff($$$$$$$$$$$$$$$$$$$$$$){
 
 	# set the name, email and password cookies
 	make_cookies(name=>$c_name,email=>$c_email,password=>$c_password,
-	-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
+		-charset=>CHARSET,-autopath=>COOKIE_PATH); # yum!
 	
 	# get num if needed
-	$num = get_post_num($time,$comment,$filename) if ($admin or $noko) and !$num;
+	$num = get_post_num($time,$comment,$filename) if !$num;
 	
 	# post-post event
 	handle_event('after_post',SQL_TABLE,$query,$num,$parent,$name,$email,$subject,$comment,$originalcomment,$filename,$uploadname,$thumbnail,$tnmask,$password,$id,$time,$ajax,$noko) if ENABLE_EVENT_HANDLERS;

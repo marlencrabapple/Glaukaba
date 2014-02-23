@@ -15,7 +15,7 @@
 #	{
 #		name  => "",
 #		dir     => "",
-#		public      => 1
+#		public      => 1,
 #		lastboard => 1
 #	}
 #];
