@@ -1198,7 +1198,7 @@ sub make_thumbnail($$$$$$;$){
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 	$convert="convert" unless($convert);
 	
-	if($nsfw==1){
+	if($nsfw == 1){
 		my $scaleup = int(2000*($width/$height));
 		my $scaledown = int(1*($width/$height));
 		
