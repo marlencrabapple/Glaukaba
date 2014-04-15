@@ -77,16 +77,56 @@ use constant ADMIN_POST_BUTTONS_TEMPLATE => q{
 };
 
 use constant ADMIN_LOGIN_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{
-<div align="center"><form id="login" action="<var $self>" method="post">
-<input type="hidden" name="task" value="admin" />
-<input type="hidden" name="nexttask" value="mpanel" />
-<table style="border-spacing: 2px"><tbody>
-<tr><td><strong>Username </strong></td><td style="text-align: right"><input type="text" name="user" size="9" value="" /></td></tr>
-<tr><td><strong>Password </strong></td><td style="text-align: right"><input type="password" name="berra" size="9" value="" /></td></tr>
-<tr><td colspan=2><label><input type="checkbox" name="savelogin" /> Remember me</label></td></tr>
-<tr><td colspan=2><input type="submit" value="Login" /></td></tr>
-</tbody></table>
-</form><br /></div>
+<style>
+.adminlogin-form {
+	text-align:center;
+}
+.adminlogin-form > form {
+	display:inline-block;
+}
+.adminlogin-form > form input[type=text], .adminlogin-form > form input[type=password] {
+	width:75px
+}
+</style>
+<div class="adminlogin-form">
+	<form id="login" action="<var $self>" method="post">
+		<input type="hidden" name="task" value="admin" />
+		<input type="hidden" name="nexttask" value="mpanel" />
+		<table style="border-spacing: 2px">
+			<tbody>
+				<tr>
+					<td>
+						<strong>Username </strong>
+					</td>
+					<td style="text-align: right">
+						<input type="text" name="user" class="postInput">
+					</td>
+					</tr>
+				<tr>
+					<td>
+						<strong>Password </strong>
+					</td>
+					<td style="text-align: right">
+						<input type="password" name="berra" class="postInput">
+					</td>
+				</tr>
+				<tr>
+					<td colspan=2 style="text-align:left">
+						<label for="saveLogin">
+							<input type="checkbox" name="savelogin" id="saveLogin">
+							Remember me
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<td colspan=2>
+						<input type="submit" value="Login">
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</form>
+</div>
 }.NORMAL_FOOT_INCLUDE);
 
 use constant BAN_PANEL_TEMPLATE => compile_template(MANAGER_HEAD_INCLUDE.q{

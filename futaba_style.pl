@@ -448,12 +448,33 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 					<div class="fileinfo"><span class="filesize"><const S_PICNAME>
 					<a target="_blank" href="<var expand_image_filename($image)>" title="<var $filename>" class="filename">
 						<if !$filename><var get_filename($image)></if><if $filename><var truncateLine($filename)></if></a>
-					- (<var int($size/1024)> KB, <var $width>x<var $height>)</span></div>
-					<if $thumbnail><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>">
-						<if !$tnmask><img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb"></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb"></if></a></if>
+					- (<var int($size/1024)> KB, <var $width>x<var $height>)</span>
+					</div>
+					<if $thumbnail>
+						<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>" data-width="<var $width>" data-height="<var $height>" data-tnwidth="<var $tn_width>" data-tnheight="<var $tn_height>">
+							<if !$tnmask>
+							<img src="<var expand_filename($thumbnail)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb">
+							</if>
+							<if $tnmask>
+							<img src="//<var DOMAIN>/img/spoiler.png" data-md5="<var $md5>" alt="<var $size>" class="thumb opThumb">
+							</if>
+						</a>
+					</if>
 					<if !$thumbnail>
-						<if DELETED_THUMBNAIL><a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>"><img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb"></a></if>
-					<if !DELETED_THUMBNAIL><div class="thumb nothumb"><a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div></if></if></if>
+						<if DELETED_THUMBNAIL>
+						<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>" data-width="<var $width>" data-height="<var $height>" data-tnwidth="<var $tn_width>" data-tnheight="<var $tn_height>">
+							<img src="<var expand_filename(DELETED_THUMBNAIL)>" style="width:<var $tn_width>px; height:<var $tn_height>px;" alt="" class="thumb opThumb">
+						</a>
+						</if>
+						<if !DELETED_THUMBNAIL>
+						<div class="thumb nothumb">
+							<a target="_blank" class="thumbLink" href="<var expand_image_filename($image)>" data-width="<var $width>" data-height="<var $height>" data-tnwidth="<var $tn_width>" data-tnheight="<var $tn_height>">
+								<const S_NOTHUMB>
+							</a>
+						</div>
+						</if>
+					</if>
+				</if>
 				<a id="<var $num>"></a>
 				<div class="parentPostInfo">
 					<input type="checkbox" name="delete" value="<var $num>">
@@ -602,16 +623,20 @@ use constant PAGE_TEMPLATE => compile_template(NORMAL_HEAD_INCLUDE.q{
 							</span>
 						</div>
 						<if $thumbnail>
-							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>">
+							<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>" data-width="<var $width>" data-height="<var $height>" data-tnwidth="<var $tn_width>" data-tnheight="<var $tn_height>">
 								<if !$tnmask><img src="<var expand_filename($thumbnail)>" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>" style="width: <var $tn_width*.504>px; height: <var $tn_height*.504>px;"></if><if $tnmask><img src="//<var DOMAIN>/img/spoiler.png" alt="<var $size>" class="thumb replyThumb" data-md5="<var $md5>"></if></a>
 						</if>
 						<if !$thumbnail>
 							<if DELETED_THUMBNAIL>
-								<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>">
+								<a target="_blank" class="thumbLink" href="<var expand_image_filename(DELETED_IMAGE)>" data-width="<var $width>" data-height="<var $height>" data-tnwidth="<var $tn_width>" data-tnheight="<var $tn_height>">
 								<img src="<var expand_filename(DELETED_THUMBNAIL)>" width="<var $tn_width>" height="<var $tn_height>" alt="" class="thumb replyThumb"></a>
 							</if>
 							<if !DELETED_THUMBNAIL>
-								<div class="thumb replyThumb nothumb"><a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>"><const S_NOTHUMB></a></div>
+								<div class="thumb replyThumb nothumb">
+									<a class="thumbLink" target="_blank" href="<var expand_image_filename($image)>" data-width="<var $width>" data-height="<var $height>" data-tnwidth="<var $tn_width>" data-tnheight="<var $tn_height>">
+										<const S_NOTHUMB>
+									</a>
+								</div>
 							</if></if></if>
 					<blockquote<if $email=~/aa$/i> class="aa"</if>>
 						<var $comment>

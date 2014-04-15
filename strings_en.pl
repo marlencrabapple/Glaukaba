@@ -141,7 +141,10 @@ use constant S_REDIR => 'If the redirect didn\'t work, please choose one of the 
 use constant S_CLASS => 'Your user class does not have permission to do this.'; # Permissions error
 use constant S_REPORTS => 'Report Queue'; # Report Queue
 
-use constant S_LOCKED => 'You cannot reply to a locked thread'; # Thread is locked
+use constant S_LOCKED => 'You cannot reply to a locked thread.'; # Thread is locked
+
+use constant S_GENWEBMERR => 'Invalid or corrupt webm file.';
+use constant S_WEBMAUTIOERR => 'Audio stream detected.';
 
 1;
 

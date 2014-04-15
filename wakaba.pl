@@ -31,6 +31,8 @@ my ($query,$dbh,$task);
 my $protocol_re=qr/(?:http|https|ftp|mailto|nntp)/;
 our @sessions = ();
 
+eval 'use Data::Dumper' if DEBUG_MODE;
+
 if(CONVERT_CHARSETS){
 	eval 'use Encode qw(decode encode)';
 	$has_encode=1 unless($@);
@@ -1314,9 +1316,9 @@ sub has_pass($){
 		$num = $$row{num};
 		
 		# gives an error code if the pass isn't approved yet
-		return 2,$num unless $$row{approved}==1;
+		return 2,$num unless $$row{approved} == 1;
 		
-		if(($verified==0)and($$row{approved}==1)) {
+		if(($verified == 0) and ($$row{approved} == 1)) {
 			make_cookies(wakapass=>$pin."##".$token."##"."1",
 			-charset=>CHARSET,-autopath=>COOKIE_PATH,-expires=>$time+(60*60*24*30));
 		}
@@ -1710,61 +1712,67 @@ sub get_file_size($){
 	return($size);
 }
 
-sub process_file($$$$){
-	my ($file,$uploadname,$time,$nsfw)=@_;
-	my %filetypes=FILETYPES;
+sub check_resolution($$) {
+	my ($width,$height) = @_;
+
+	return 0 if(MAX_IMAGE_WIDTH and $width > MAX_IMAGE_WIDTH);
+	return 0 if(MAX_IMAGE_HEIGHT and $height > MAX_IMAGE_HEIGHT);
+	return 0 if(MAX_IMAGE_PIXELS and $width*$height > MAX_IMAGE_PIXELS);
+	return 1;
+}
+
+sub process_file($$$$) {
+	my ($file,$uploadname,$time,$nsfw) = @_;
+	my %filetypes = FILETYPES;
 
 	# make sure to read file in binary mode on platforms that care about such things
 	binmode $file;
 
 	# analyze file and check that it's in a supported format
-	my ($ext,$width,$height)=analyze_image($file,$uploadname);
-
-	my $known=($width or $filetypes{$ext});
+	my ($ext,$width,$height) = analyze_image($file,$uploadname);
+	my $known = ($width or $filetypes{$ext});
+	$known = 1 if ENABLE_WEBM and $ext eq 'webm';
 
 	make_error(S_BADFORMAT) unless(ALLOW_UNKNOWN or $known);
 	make_error(S_BADFORMAT) if(grep { $_ eq $ext } FORBIDDEN_EXTENSIONS);
-	make_error(S_TOOBIG) if(MAX_IMAGE_WIDTH and $width>MAX_IMAGE_WIDTH);
-	make_error(S_TOOBIG) if(MAX_IMAGE_HEIGHT and $height>MAX_IMAGE_HEIGHT);
-	make_error(S_TOOBIG) if(MAX_IMAGE_PIXELS and $width*$height>MAX_IMAGE_PIXELS);
+	make_error(S_TOOBIG) unless check_resolution($width,$height);
 
 	# generate random filename - fudges the microseconds
-	my $filebase=$time.sprintf("%03d",int(rand(1000)));
-	my $filename=IMG_DIR.$filebase.'.'.$ext;
-	my $thumbnail=THUMB_DIR.$filebase."s.jpg";
-	$filename.=MUNGE_UNKNOWN unless($known);
+	my $filebase = $time.sprintf("%03d",int(rand(1000)));
+	my $filename = IMG_DIR.$filebase.'.'.$ext;
+	my $thumbnail = THUMB_DIR.$filebase."s.jpg";
+	$filename .= MUNGE_UNKNOWN unless($known);
 
 	# do copying and MD5 checksum
 	my ($md5,$md5ctx,$buffer);
 
 	# prepare MD5 checksum if the Digest::MD5 module is available
 	eval 'use Digest::MD5 qw(md5_hex)';
-	$md5ctx=Digest::MD5->new unless($@);
+	$md5ctx = Digest::MD5->new unless($@);
 
 	# copy file
 	open (OUTFILE,">>$filename") or make_error(S_NOTWRITE);
 	binmode OUTFILE;
-	while (read($file,$buffer,1024)) # should the buffer be larger?
-	{
+	while (read($file,$buffer,1024)) {
 		print OUTFILE $buffer;
 		$md5ctx->add($buffer) if($md5ctx);
 	}
 	close $file;
 	close OUTFILE;
 
-	if($md5ctx) # if we have Digest::MD5, get the checksum
-	{
-		$md5=$md5ctx->hexdigest();
+	if($md5ctx) {
+		# if we have Digest::MD5, get the checksum
+		$md5 = $md5ctx->hexdigest();
 	}
-	else # otherwise, try using the md5sum command
-	{
-		my $md5sum=`md5sum $filename`; # filename is always the timestamp name, and thus safe
-		($md5)=$md5sum=~/^([0-9a-f]+)/ unless($?);
+	else {
+		# otherwise, try using the md5sum command
+		my $md5sum = `md5sum $filename`; # filename is always the timestamp name, and thus safe
+		($md5) = $md5sum =~ /^([0-9a-f]+)/ unless($?);
 	}
 
 	if($md5) # if we managed to generate an md5 checksum, check for duplicate files
 	{
-		my $sth=$dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE md5=?;") or make_error(S_SQLFAIL);
+		my $sth = $dbh->prepare("SELECT * FROM ".SQL_TABLE." WHERE md5=?;") or make_error(S_SQLFAIL);
 		$sth->execute($md5) or make_error(S_SQLFAIL);
 
 		if(my $match=$sth->fetchrow_hashref()){
@@ -1775,79 +1783,72 @@ sub process_file($$$$){
 
 	# do thumbnail
 	my ($tn_width,$tn_height,$tn_ext);
+	
+	if($ext eq 'webm' and ENABLE_WEBM) {
+		($width,$height,$tn_width,$tn_height) = webm_handler($filename,$thumbnail);
 
-	if(!$width) # unsupported file
-	{
-		if($filetypes{$ext}) # externally defined filetype
-		{
-			open THUMBNAIL,$filetypes{$ext};
-			binmode THUMBNAIL;
-			($tn_ext,$tn_width,$tn_height)=analyze_image(\*THUMBNAIL,$filetypes{$ext});
-			close THUMBNAIL;
-
-			# was that icon file really there?
-			if(!$tn_width) { $thumbnail=undef }
-			else { $thumbnail=$filetypes{$ext} }
-		}
-		else
-		{
-			$thumbnail=undef;
+		if(!check_resolution($width,$height)) {
+			# delete file
+			unlink $filename;
+			make_error(S_TOOBIG);
 		}
 	}
-	elsif($width>MAX_W or $height>MAX_H or THUMBNAIL_SMALL){
-		if($width<=MAX_W and $height<=MAX_H){
-			$tn_width=$width;
-			$tn_height=$height;
-		}
-		else
-		{
-			$tn_width=MAX_W;
-			$tn_height=int(($height*(MAX_W))/$width);
+	else {
+		# unsupported file
+		if(!$width) {
+			# externally defined filetype
+			if($filetypes{$ext}) {
+				open THUMBNAIL,$filetypes{$ext};
+				binmode THUMBNAIL;
+				($tn_ext,$tn_width,$tn_height) = analyze_image(\*THUMBNAIL,$filetypes{$ext});
+				close THUMBNAIL;
 
-			if($tn_height>MAX_H){
-				$tn_width=int(($width*(MAX_H))/$height);
-				$tn_height=MAX_H;
+				# was that icon file really there?
+				if(!$tn_width) { $thumbnail=undef }
+				else { $thumbnail = $filetypes{$ext} }
+			}
+			else
+			{
+				$thumbnail = undef;
 			}
 		}
-
-		if(STUPID_THUMBNAILING) { $thumbnail=$filename }
-		else
-		{
-			$thumbnail=undef unless(make_thumbnail($filename,$thumbnail,$nsfw,$tn_width,$tn_height,THUMBNAIL_QUALITY,CONVERT_COMMAND));
+		elsif($width > MAX_W or $height > MAX_H or THUMBNAIL_SMALL){
+			if(STUPID_THUMBNAILING) { $thumbnail=$filename }
+			else {
+				($tn_width,$tn_height) = get_thumbnail_dimensions($width,$height);
+				$thumbnail = undef unless(make_thumbnail($filename,$thumbnail,$nsfw,$tn_width,$tn_height,THUMBNAIL_QUALITY,CONVERT_COMMAND));
+			}
+		}
+		else {
+			$tn_width = $width;
+			$tn_height = $height;
+			$thumbnail = $filename;
 		}
 	}
-	else
-	{
-		$tn_width=$width;
-		$tn_height=$height;
-		$thumbnail=$filename;
-	}
-
-	if($filetypes{$ext}) # externally defined filetype - restore the name
-	{
-		my $newfilename=$uploadname;
+		
+	# externally defined filetype - restore the name
+	if($filetypes{$ext}) {
+		my $newfilename = $uploadname;
 		$newfilename=~s!^.*[\\/]!!; # cut off any directory in filename
 		$newfilename=IMG_DIR.$newfilename;
-
-		unless(-e $newfilename) # verify no name clash
-		{
+		
+		# verify no name clash
+		unless(-e $newfilename) {
 			rename $filename,$newfilename;
 			$thumbnail=$newfilename if($thumbnail eq $filename);
 			$filename=$newfilename;
 		}
-		else
-		{
+		else {
 			unlink $filename;
 			make_error(S_DUPENAME);
 		}
 	}
 
-        if(ENABLE_LOAD)
-        {       # only called if files to be distributed across web     
-                $ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;
+	if(ENABLE_LOAD) {
+		$ENV{SCRIPT_NAME}=~m!^(.*/)[^/]+$!;
 		my $root=$1;
-                system(LOAD_SENDER_SCRIPT." $filename $root $md5 &");
-        }
+		system(LOAD_SENDER_SCRIPT." $filename $root $md5 &");
+	}
 
 
 	return ($filename,$md5,$width,$height,$thumbnail,$tn_width,$tn_height);
@@ -2829,17 +2830,16 @@ sub update_user_details($$$$$$){
 	$sth->execute($user) or make_error(S_SQLFAIL);
 	my $dengus = get_decoded_hashref($sth);
 	
-	if(@session[1] eq "admin") {
-		# protect admins from other admins (if there are other admins for whatever reason)
-		if(($$dengus{class} eq "admin") and ($$dengus{user} ne @session[0])) { make_error("ya turkey") }
-		elsif(($oldpass ne $$dengus{pass}) and ($$dengus{user} eq @session[0]) and ($newpass)) { make_error("Your old password was incorrect") } # don't let admins change own password without entering their old pass
+	if(($$dengus{class} eq 'admin') and ($$dengus{user} ne $session[0])) {
+		make_error("You do not have permission to edit this user");
 	}
-	else {
-		if($$dengus{user} ne @session[0]) { make_error("ya turkey") }
-		if(($$dengus{pass} ne $oldpass) and ($newpass)) { make_error("Your old password was incorrect") }
+	elsif(($$dengus{class} ne 'admin') and ($$dengus{user} ne $session[0])) {
+		make_error("You do not have permission to edit this user");
 	}
-	
-	# keep original values if user input is null
+	elsif($newpass) {
+		make_error("Your old password was incorrect") if(crypt($oldpass,$$dengus{pass}) ne $$dengus{pass});
+	}
+
 	$newpass = $newpass ? crypt($newpass,time()) : $$dengus{pass};
 	$email = $$dengus{email} unless $email;
 	$class = $$dengus{class} unless $class;
@@ -3962,7 +3962,7 @@ sub add_pass($$$){
 	my ($token,$pin,$time,$sth,$row,$ip);
 	
 	$time = time();
-	$ip = get_ip(USE_CLOUDFLARE);
+	$ip = dot_to_dec(get_ip(USE_CLOUDFLARE));
 	
 	# clean up input
 	make_error(S_UNUSUAL) if($email=~/[\n\r]/);
@@ -3980,7 +3980,7 @@ sub add_pass($$$){
 	
 	# check for bans
 	$sth=$dbh->prepare("SELECT * FROM ".SQL_ADMIN_TABLE." WHERE type='ipban' AND (? & ival2 = ival1 & ival2) AND (active='1') ORDER BY num DESC;") or make_error(S_SQLFAIL);
-	$sth->execute(dot_to_dec($ip)) or make_error(S_SQLFAIL);
+	$sth->execute($ip) or make_error(S_SQLFAIL);
 	
 	while($row=get_decoded_hashref($sth)){
 		if ($$row{active}==1){
@@ -3995,7 +3995,7 @@ sub add_pass($$$){
 	
 	# insert the pass into the pass table
 	my $sth=$dbh->prepare("INSERT INTO ".SQL_PASS_TABLE." VALUES(NULL,?,?,?,?,NULL,?,?,0,NULL);") or make_error(S_SQLFAIL);
-	$sth->execute($token,$pin,dot_to_dec $ip,$time,$time,$email) or make_error(S_SQLFAIL);
+	$sth->execute($token,$pin,$ip,$time,$time,$email) or make_error(S_SQLFAIL);
 	
 	# create cookie and log user in
 	make_cookies(wakapass=>$pin."##".$token."##"."0",
@@ -4079,7 +4079,7 @@ sub authorize_pass($$$;$) {
 }
 
 sub update_pass($$$;$){
-	my($admin,$num,$action,$noredirect)=@_;
+	my($admin,$num,$action,$noredirect) = @_;
 	my($value,$message,$sth,$row,$unapprove);
 	
 	my $types = {
@@ -4093,34 +4093,36 @@ sub update_pass($$$;$){
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
 	# some spaghetti code
-	if(($action eq "ban")or($action eq "verify")){
-		$unapprove=",approved=0" unless $action eq "verify";
-		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=1".$unapprove." WHERE num=?;") or make_error(S_SQLFAIL);
+	if(($action eq "ban") or ($action eq "verify")) {
+		$unapprove = ",approved=0" unless $action eq "verify";
+		my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=1".$unapprove." WHERE num=?;") or make_error(S_SQLFAIL);
 		$sth->execute($num) or make_error(S_SQLFAIL);
-		if($action eq "ban"){
-			$message="Your pass " . SITE_NAME . " was banned.";
+		
+		if($action eq "ban") {
+			$message = "Your pass " . SITE_NAME . " was banned.";
 		}
 		else{
-			$message="Congratulations! Your " . SITE_NAME . " pass was just verified by a ".SITE_NAME." staff member. Login or solve a captcha (we promise it'll be your last) to start posting captcha free.";
+			$message = "Congratulations! Your " . SITE_NAME . " pass was just verified by a " . SITE_NAME . " staff member. Login or solve a captcha (we promise it'll be your last) to start posting captcha free.";
 		}
 	}
-	elsif(($action eq "unban")or($action eq "unverify")){
-		my $sth=$dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=? WHERE num=?;") or make_error(S_SQLFAIL);
+	elsif(($action eq "unban") or ($action eq "unverify")) {
+		my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=? WHERE num=?;") or make_error(S_SQLFAIL);
 		$sth->execute(0,$num) or make_error(S_SQLFAIL);
-		if($action eq "unverify"){
+		
+		if($action eq "unverify") {
 			$message="Your " . SITE_NAME . " pass was just disabled for inactivity. It will be eligible for renewal after you've made 5 more posts while logged in.";
 		}
 		else{
-			$message="Congratulations! Your " . SITE_NAME . " was just unbanned by a ".SITE_NAME." staff member!";
+			$message="Congratulations! Your " . SITE_NAME . " was just unbanned by a " . SITE_NAME . " staff member!";
 		}
 	}
 	
 	# get pass
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
+	$sth = $dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." WHERE num=?;") or make_error(S_SQLFAIL);
 	$sth->execute($num) or make_error(S_SQLFAIL);
 	
 	# send an email
-	while($row=get_decoded_hashref($sth)){
+	while($row = get_decoded_hashref($sth)) {
 		send_email(
 			$$row{email},
 			"cameron\@".DOMAIN,
@@ -4133,16 +4135,18 @@ sub update_pass($$$;$){
 }
 
 sub make_pass_list($){
-	my ($admin)=@_;
+	my ($admin) = @_;
 	my (@unverified,@banned,@normal,$sth,$row);
 	my @session = check_password($admin);
 	make_error(S_CLASS) if @session[1] eq 'janitor';
 	
 	# grab all passes organized by last hit
-	$sth=$dbh->prepare("SELECT * FROM ".SQL_PASS_TABLE." ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
+	$sth=$dbh->prepare("SELECT * FROM " . SQL_PASS_TABLE . " ORDER BY lasthit DESC;") or make_error(S_SQLFAIL);
 	$sth->execute() or make_error(S_SQLFAIL);
 	
-	while($row=get_decoded_hashref($sth)){
+	while($row=get_decoded_hashref($sth)) {
+		$$row{ip} = dec_to_dot($$row{ip}) unless $$row{ip} =~ /\./g; # apparently some IPs were still being saved in dot notation
+
 		if($$row{banned} == 1) {
 			push @banned,$row;
 		}

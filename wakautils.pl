@@ -1100,15 +1100,15 @@ sub spam_screen($){
 # Image utilities
 #
 
-sub analyze_image($$){
-	my ($file,$name)=@_;
+sub analyze_image($$) {
+	my ($file,$name) = @_;
 	my (@res);
 
 	safety_check($file);
 
-	return ("jpg",@res) if(@res=analyze_jpeg($file));
-	return ("png",@res) if(@res=analyze_png($file));
-	return ("gif",@res) if(@res=analyze_gif($file));
+	return ("jpg",@res) if(@res = analyze_jpeg($file));
+	return ("png",@res) if(@res = analyze_png($file));
+	return ("gif",@res) if(@res = analyze_gif($file));
 
 	# find file extension for unknown files
 	my ($ext)=$name=~/\.([^\.]+)$/;
@@ -1191,6 +1191,57 @@ sub analyze_gif($){
 	return ($width,$height);
 }
 
+sub get_thumbnail_dimensions($$) {
+	my ($width,$height) = @_;
+	my ($tn_width,$tn_height);
+
+	if($width <= MAX_W and $height <= MAX_H) {
+		$tn_width = $width;
+		$tn_height = $height;
+	}
+	else {
+		$tn_width = MAX_W;
+		$tn_height = int(($height*(MAX_W))/$width);
+
+		if($tn_height>MAX_H) {
+			$tn_width = int(($width*(MAX_H))/$height);
+			$tn_height = MAX_H;
+		}
+	}
+
+	return ($tn_width,$tn_height);
+}
+
+sub webm_handler($$) {
+	my ($fname,$tnfname) = @_;
+	my (@args,$ffprobe,$ffmpeg,$stdout,$width,$height,$tn_width,$tn_height);
+	$ffprobe = FFPROBE_PATH;
+	$ffmpeg = FFMPEG_PATH;
+	eval "use JSON qw( decode_json )";
+	make_error('Missing JSON module.') if $@;
+	
+	# get webm info
+	$stdout = `$ffprobe -v quiet -print_format json -show_format -show_streams $fname`;
+	$stdout = decode_json($stdout) or make_error(S_GENWEBMERR);
+	
+	# check if file is legitimate
+	make_error(S_GENWEBMERR) if(!%$stdout); # empty json response from ffprobe
+	make_error(S_GENWEBMERR) unless($$stdout{format}->{format_name} eq 'matroska,webm'); # invalid format
+	make_error(S_WEBMAUTIOERR) if(scalar @{$$stdout{streams}} > 1); # too many streams
+	make_error(S_GENWEBMERR) if(@{$$stdout{streams}}->[0]->{codec_name} ne 'vp8'); # stream isn't webm
+	make_error(S_GENWEBMERR) unless(@{$$stdout{streams}}->[0]->{width} and @{$$stdout{streams}}->[0]->{height});
+	make_error() if(!$$stdout{format} or $$stdout{format}->{duration} > 120);
+
+	($width,$height) = (@{$$stdout{streams}}->[0]->{width},@{$$stdout{streams}}->[0]->{height});
+	
+	# thumbnail stuff
+	($tn_width,$tn_height) = get_thumbnail_dimensions($width,$height);
+	$stdout = `$ffmpeg -i $fname -v quiet -ss 00:00:00 -an -vframes 1 -f mjpeg -vf scale=$tn_width:$tn_height $tnfname 2>&1`;
+	make_error($stdout) if $stdout;
+
+	return ($width,$height,$tn_width,$tn_height);
+}
+
 sub make_thumbnail($$$$$$;$){
 	my ($filename,$thumbnail,$nsfw,$width,$height,$quality,$convert)=@_;
 	my $magickname=$filename;
@@ -1198,7 +1249,7 @@ sub make_thumbnail($$$$$$;$){
 	$magickname.="[0]" if($magickname=~/\.gif$/);
 	$convert="convert" unless($convert);
 	
-	if($nsfw == 1){
+	if(($nsfw) && (NSFWIMAGE_ENABLED)) {
 		my $scaleup = int(2000*($width/$height));
 		my $scaledown = int(1*($width/$height));
 		
