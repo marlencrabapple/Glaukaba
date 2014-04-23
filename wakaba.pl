@@ -2819,7 +2819,7 @@ sub make_edit_user($$){
 	else { print encode_string(EDIT_USER_TEMPLATE->(admin=>$admin,user=>@session[0],session=>\@session,userinfo=>$dengus)) }
 }
 
-sub update_user_details($$$$$$){
+sub update_user_details($$$$$$) {
 	my ($user,$oldpass,$newpass,$email,$class,$admin)=@_;
 	my @session = check_password($admin);
 	my ($sth);
@@ -2833,7 +2833,7 @@ sub update_user_details($$$$$$){
 	if(($$dengus{class} eq 'admin') and ($$dengus{user} ne $session[0])) {
 		make_error("You do not have permission to edit this user");
 	}
-	elsif(($$dengus{class} ne 'admin') and ($$dengus{user} ne $session[0])) {
+	elsif(($session[1] ne 'admin') and ($$dengus{user} ne $session[0])) {
 		make_error("You do not have permission to edit this user");
 	}
 	elsif($newpass) {
