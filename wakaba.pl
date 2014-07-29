@@ -1331,7 +1331,7 @@ sub has_pass($){
 		}
 		
 		# checks if a different IP is currently authorized
-		if($$row{ip} ne get_ip(USE_CLOUDFLARE)) {
+		if($$row{ip} ne dot_to_dec(get_ip(USE_CLOUDFLARE))) {
 			authorize_pass($token,$pin,undef,1);
 		}
 		else{
@@ -4094,8 +4094,15 @@ sub update_pass($$$;$){
 	
 	# some spaghetti code
 	if(($action eq "ban") or ($action eq "verify")) {
-		$unapprove = ",approved=0" unless $action eq "verify";
-		my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=1".$unapprove." WHERE num=?;") or make_error(S_SQLFAIL);
+		if($action ne 'verify') {
+			$unapprove = ',approved=0';
+		}
+		else {
+			# update lasthit on verify to avoid being deactivated on first post after inactivity period
+			$unapprove = ',lasthit='.time();
+		}
+		
+		my $sth = $dbh->prepare("UPDATE ".SQL_PASS_TABLE." SET ".$$types{$action}."=1$unapprove WHERE num=?;") or make_error(S_SQLFAIL);
 		$sth->execute($num) or make_error(S_SQLFAIL);
 		
 		if($action eq "ban") {
