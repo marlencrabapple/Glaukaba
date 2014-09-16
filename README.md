@@ -5,16 +5,15 @@ Glaukaba
 Glaukaba is a Wakaba (an imageboard script) fork with many additional features and enhancements. As of July 2013, its stable enough to run without any security or major usability issues when configured properly. Try it out for yourself and let me know.
 
 ## Abridged Setup Guide ##
-1. Create a directory for each board You plan on using, and copy every file (no directories except /include) in Glaukaba's root except for globalconfig.pl and spam.txt into each directory.
-2. Download Glaukaba-JS and move glaukaba-main.js and glaukaba-extra.js into your /js directory.
-3. Create three directories (/src, /res, and /thumb) in each board's directory
-4. Setup URL rewriting in an .htaccess file or your HTTP server's configuration files so each board's pages and threads inside of /res are accesible without their extensions.
-5. Make sure globalconfig.pl, spam.txt, and the included directories are exactly one level above each board.
-6. Edit globalconfig.pl each board's config.pl to your liking.
-7. Set some reasonable permissions.
-8. If you want to use FastCGI, enable it in globalconfig.pl, and use spawn-fcgi to get the processes for your board running.
-9. Find the exact center of your living residence and occupy the space until forced to explain yourself to someone.
-10. Run wakaba.pl in each board directory from your browser of choice and pray that it works.
+1. Make a directory for each board you plan on creating, and copy every *file* and the /include directory in Glaukaba's root except for globalconfig.pl and spam.txt into each directory.
+2. Make three directories (/src, /res, and /thumb) in each board's directory.
+3. Download Glaukaba-JS and move glaukaba-main.js and glaukaba-extra.js into the /js directory in your site's root directory.
+4. Make sure globalconfig.pl and spam.txt are in your site's root, one level above each board.
+5. Edit globalconfig.pl each board's config.pl to your liking.
+6. Set some reasonable permissions.
+7. If you want to use FastCGI, enable it in globalconfig.pl, and use spawn-fcgi to get the processes for your board running.
+8. Find the exact center of your living residence and occupy the space until forced to explain yourself to someone.
+9. Run wakaba.pl in each board directory from your browser of choice and pray that it works.
 	
 ## Example Installation ##
 A semi-current version (usually a few commits behind) of this software is in use on http://www.glauchan.org and a live demo with a public moderator account will be available at http://onlinebargainshrimptoyourdoor.com at some point in the future.
