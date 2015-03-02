@@ -137,6 +137,7 @@ BEGIN {
 	eval "use constant SPAM_TRAP => 1" unless(defined &SPAM_TRAP);
 	eval "use constant SPOILERIMAGE_ENABLED => 1" unless(defined &SPAM_TRAP);
 	eval "use constant NSFWIMAGE_ENABLED => 0" unless(defined &SPAM_TRAP);
+	eval "use constant ENABLE_WEBM => 0" unless(defined &ENABLE_WEBM);
 
 	eval "use constant IMG_DIR => 'src/'" unless(defined &IMG_DIR);
 	eval "use constant THUMB_DIR => 'thumb/'" unless(defined &THUMB_DIR);
@@ -148,6 +149,8 @@ BEGIN {
 	eval "use constant PAGE_EXT => '.html'" unless(defined &PAGE_EXT);
 	eval "use constant ERRORLOG => ''" unless(defined &ERRORLOG);
 	eval "use constant CONVERT_COMMAND => 'convert'" unless(defined &CONVERT_COMMAND);
+	eval "use constant FFMPEG_PATH => 'ffmpeg'" unless(defined &FFMPEG_PATH);
+	eval "use constant FFPROBE_PATH => 'ffprobe'" unless(defined &FFPROBE_PATH);
 	
 	eval "use constant ENABLE_EVENT_HANDLERS => 0" unless(defined &ENABLE_EVENT_HANDLERS);
 	eval "use constant EVENT_HANDLERS => {}" unless(defined &EVENT_HANDLERS);
