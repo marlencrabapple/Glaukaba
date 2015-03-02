@@ -16,13 +16,13 @@ Glaukaba is a Wakaba (an imageboard script) fork with many additional features a
 9. Run wakaba.pl in each board directory from your browser of choice and pray that it works.
 	
 ## Example Installation ##
-A semi-current version (usually a few commits behind) of this software is in use on http://www.glauchan.org and a live demo with a public moderator account will be available at http://onlinebargainshrimptoyourdoor.com at some point in the future.
+A semi-current version (usually a few commits behind) of this software is in use on https://www.glauchan.org and a live demo with a public moderator account will be available at http://onlinebargainshrimptoyourdoor.com at some point in the future.
 
 ## Issues ##
 - Single board installations will require a bit of tinkering. Then again, so will any installation.
 - This software is only in use on three sites (that I know of), so there's not much I can do to vouch for this software's usability.
 - SQLite support isn't perfect.
-- A current list of issues and fixes is available http://www.glauchan.org/meta/res/410
+- A current list of issues and fixes is available https://www.glauchan.org/meta/res/410
 
 ## Notable Features ##
 This is a list of features I believe make Glaukaba stand out from other free imageboard scripts.
@@ -33,7 +33,7 @@ This is a list of features I believe make Glaukaba stand out from other free ima
 - Mobile interface
 - *Its not Kusaba X*
 - Anything you've come to expect after being spoiled by 4chan's new-found interest in improving their software
-- A complete list of features can be found at http://onlinebargainshrimptoyourdoor.com/2012/07/22/glaukaba/ and http://www.glauchan.org/meta/res/410
+- A complete list of features can be found at http://onlinebargainshrimptoyourdoor.com/2012/07/22/glaukaba/ and https://www.glauchan.org/meta/res/410
 
 ## Support ##
-Free support is available via email on http://www.glauchan.org/meta/res/410 or by emailing me at mrmanager@glauchan.org.
+Free support is available via email on https://www.glauchan.org/meta/res/410 or by emailing me at mrmanager@glauchan.org.
